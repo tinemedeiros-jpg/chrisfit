@@ -1,70 +1,160 @@
 
-import React, { useState, useEffect } from 'react';
-import { Product, ViewMode } from './types';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Product, ProductUpsertPayload, ViewMode } from './types';
 import Header from './components/Header';
 import Catalog from './components/Catalog';
 import AdminPanel from './components/AdminPanel';
 import Footer from './components/Footer';
 import { ShoppingBag, Settings } from 'lucide-react';
+import { supabase } from './lib/supabaseClient';
 
-const STORAGE_KEY = 'chrisfit_products_v1';
+const BUCKET_NAME = 'product-images';
+const MAX_IMAGES = 5;
 
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('catalog');
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        setProducts(JSON.parse(saved));
-      } catch (e) {
-        console.error("Error loading products", e);
-      }
-    } else {
-      const mockData: Product[] = [
-        {
-          id: '1',
-          code: '01',
-          name: 'Conjunto Importado Meia coxa',
-          price: 70,
-          sizes: ['P/M', 'G/GG'],
-          imageUrl: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&q=80&w=800',
-          observation: 'á confirmar disponibilidade de cores e tamanhos.',
-          createdAt: Date.now()
-        },
-        {
-          id: '2',
-          code: '02',
-          name: 'Legging Texturizada',
-          price: 85,
-          sizes: ['M', 'G'],
-          imageUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&q=80&w=800',
-          observation: 'Várias cores disponíveis.',
-          createdAt: Date.now() - 1000
-        }
-      ];
-      setProducts(mockData);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockData));
+  const fetchProducts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    const { data, error: fetchError } = await supabase
+      .from('products')
+      .select('id, code, name, price, sizes, observation, created_at, product_images ( url, position )')
+      .order('created_at', { ascending: false });
+
+    if (fetchError) {
+      setError(fetchError.message);
+      setIsLoading(false);
+      return;
     }
+
+    const mappedProducts = (data ?? []).map((product) => {
+      const images = (product.product_images ?? [])
+        .sort((a, b) => a.position - b.position)
+        .map((image) => image.url);
+
+      return {
+        id: product.id,
+        code: product.code ?? '',
+        name: product.name ?? '',
+        price: typeof product.price === 'number' ? product.price : Number(product.price ?? 0),
+        sizes: Array.isArray(product.sizes) ? product.sizes : [],
+        images,
+        observation: product.observation ?? null,
+        createdAt: product.created_at ?? ''
+      } satisfies Product;
+    });
+
+    setProducts(mappedProducts);
+    setIsLoading(false);
   }, []);
 
-  const saveProducts = (newProducts: Product[]) => {
-    setProducts(newProducts);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProducts));
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const uploadImages = async (productId: string, files: File[]) => {
+    const uploadedUrls: string[] = [];
+
+    for (const file of files) {
+      const filePath = `${productId}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, {
+        upsert: true
+      });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+      uploadedUrls.push(data.publicUrl);
+    }
+
+    return uploadedUrls;
   };
 
-  const addProduct = (product: Product) => {
-    saveProducts([product, ...products]);
+  const syncProductImages = async (productId: string, existingImages: string[], newImages: File[]) => {
+    const uploadedUrls = newImages.length > 0 ? await uploadImages(productId, newImages) : [];
+    const allImages = [...existingImages, ...uploadedUrls].slice(0, MAX_IMAGES);
+
+    const { error: deleteError } = await supabase
+      .from('product_images')
+      .delete()
+      .eq('product_id', productId);
+
+    if (deleteError) {
+      throw new Error(deleteError.message);
+    }
+
+    if (allImages.length > 0) {
+      const payload = allImages.map((url, index) => ({
+        product_id: productId,
+        url,
+        position: index + 1
+      }));
+
+      const { error: insertError } = await supabase.from('product_images').insert(payload);
+
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
+    }
   };
 
-  const updateProduct = (updatedProduct: Product) => {
-    saveProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+  const addProduct = async (payload: ProductUpsertPayload) => {
+    const { data, error: insertError } = await supabase
+      .from('products')
+      .insert({
+        code: payload.code,
+        name: payload.name,
+        price: payload.price,
+        sizes: payload.sizes,
+        observation: payload.observation ?? null
+      })
+      .select('id')
+      .single();
+
+    if (insertError) {
+      throw new Error(insertError.message);
+    }
+
+    await syncProductImages(data.id, payload.existingImages, payload.newImages);
+    await fetchProducts();
   };
 
-  const deleteProduct = (id: string) => {
+  const updateProduct = async (payload: ProductUpsertPayload) => {
+    if (!payload.id) return;
+
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({
+        code: payload.code,
+        name: payload.name,
+        price: payload.price,
+        sizes: payload.sizes,
+        observation: payload.observation ?? null
+      })
+      .eq('id', payload.id);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    await syncProductImages(payload.id, payload.existingImages, payload.newImages);
+    await fetchProducts();
+  };
+
+  const deleteProduct = async (id: string) => {
     if (confirm('Deseja realmente excluir este item?')) {
-      saveProducts(products.filter(p => p.id !== id));
+      const { error: deleteError } = await supabase.from('products').delete().eq('id', id);
+      if (deleteError) {
+        setError(deleteError.message);
+        return;
+      }
+      await fetchProducts();
     }
   };
 
@@ -74,13 +164,16 @@ const App: React.FC = () => {
       
       <main className="flex-grow container mx-auto px-4 py-8">
         {viewMode === 'catalog' ? (
-          <Catalog products={products} />
+          <Catalog products={products} isLoading={isLoading} error={error} />
         ) : (
           <AdminPanel 
             products={products} 
+            isLoading={isLoading}
+            error={error}
             onAdd={addProduct} 
             onUpdate={updateProduct}
             onDelete={deleteProduct} 
+            onRefresh={fetchProducts}
           />
         )}
       </main>

@@ -6,9 +6,11 @@ import { Search } from 'lucide-react';
 
 interface CatalogProps {
   products: Product[];
+  isLoading: boolean;
+  error: string | null;
 }
 
-const Catalog: React.FC<CatalogProps> = ({ products }) => {
+const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error }) => {
   const [search, setSearch] = useState('');
 
   const filteredProducts = products.filter(p => 
@@ -31,7 +33,16 @@ const Catalog: React.FC<CatalogProps> = ({ products }) => {
         />
       </div>
 
-      {filteredProducts.length > 0 ? (
+      {isLoading ? (
+        <div className="bg-white/70 rounded-3xl py-24 text-center border border-[#a15278]/10">
+          <p className="text-[#a15278] font-bold sport-font italic">Carregando catálogo...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-white/70 rounded-3xl py-24 text-center border border-red-200">
+          <p className="text-red-500 font-bold sport-font italic">Não foi possível carregar os produtos.</p>
+          <p className="text-xs text-gray-400 mt-2">{error}</p>
+        </div>
+      ) : filteredProducts.length > 0 ? (
         <div className="catalog-grid">
           {filteredProducts.map(product => (
             <ProductCard key={product.id} product={product} />

@@ -11,6 +11,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const whatsappNumber = "5511963554043";
   const message = encodeURIComponent(`Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+  const coverImage = product.images[0] ?? 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800';
 
   return (
     <div className="group animate-in zoom-in duration-300">
@@ -25,7 +26,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Image Container */}
           <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
             <img 
-              src={product.imageUrl} 
+              src={coverImage} 
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               loading="lazy"
