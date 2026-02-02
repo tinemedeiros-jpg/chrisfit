@@ -15,6 +15,7 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
+const ADMIN_VERSION = '2024-09-14.1';
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onAdd, onUpdate, onDelete, onRefresh }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,7 +26,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
-  const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImages, setNewImages] = useState<(File | null)[]>(() => Array(MAX_IMAGES).fill(null));
   
   const [formData, setFormData] = useState({
     code: '',
@@ -78,7 +79,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       observation: product.observation || ''
     });
     setExistingImages(product.images);
-    setNewImages([]);
+    setNewImages(Array(MAX_IMAGES).fill(null));
     setShowAddForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -87,25 +88,34 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setEditingId(null);
     setFormData({ code: '', name: '', price: '', sizes: '', observation: '' });
     setExistingImages([]);
-    setNewImages([]);
+    setNewImages(Array(MAX_IMAGES).fill(null));
     setShowAddForm(false);
     setIsSubmitting(false);
   };
 
-  const remainingSlots = useMemo(() => MAX_IMAGES - existingImages.length, [existingImages.length]);
+  const remainingSlots = useMemo(() => {
+    const selectedCount = newImages.filter(Boolean).length;
+    return MAX_IMAGES - existingImages.length - selectedCount;
+  }, [existingImages.length, newImages]);
 
-  const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length === 0) return;
+  const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
 
-    const totalImages = existingImages.length + files.length;
-    if (totalImages > MAX_IMAGES) {
-      alert(`Você pode enviar no máximo ${MAX_IMAGES} imagens por produto.`);
-      event.target.value = '';
-      return;
-    }
+    setNewImages((prev) => {
+      const next = [...prev];
+      next[index] = file;
 
-    setNewImages(files);
+      const selectedCount = next.filter(Boolean).length;
+      const totalImages = existingImages.length + selectedCount;
+      if (totalImages > MAX_IMAGES) {
+        alert(`Você pode enviar no máximo ${MAX_IMAGES} imagens por produto.`);
+        event.target.value = '';
+        return prev;
+      }
+
+      return next;
+    });
   };
 
   const removeExistingImage = (url: string) => {
@@ -125,7 +135,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       sizes: formData.sizes.split(',').map(s => s.trim()).filter(s => s !== ''),
       observation: formData.observation,
       existingImages,
-      newImages
+      newImages: newImages.filter((file): file is File => Boolean(file))
     };
 
     try {
@@ -185,6 +195,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         <div>
           <h2 className="text-4xl font-black text-[#a15278] sport-font italic">Dashboard</h2>
           <p className="text-gray-500 text-sm font-medium">Gerenciamento de Produtos</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 mt-2">Versão {ADMIN_VERSION}</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -237,14 +248,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Imagens do Produto</label>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFilesChange}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#a15278]"
-                />
+              <div className="grid grid-cols-1 gap-3">
+                {Array.from({ length: MAX_IMAGES }).map((_, index) => (
+                  <label key={`image-input-${index}`} className="block text-[11px] text-gray-400">
+                    Imagem {index + 1}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => handleFileChange(index, event)}
+                      className="mt-1 w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#a15278]"
+                    />
+                  </label>
+                ))}
               </div>
               <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
               {existingImages.length > 0 && (

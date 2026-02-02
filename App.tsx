@@ -76,7 +76,12 @@ const App: React.FC = () => {
     return uploadedUrls;
   };
 
-  const syncProductImages = async (productId: string, existingImages: string[], newImages: File[]) => {
+  const syncProductImages = async (
+    productId: string,
+    existingImages: string[],
+    newImages: File[],
+    userId: string
+  ) => {
     const uploadedUrls = newImages.length > 0 ? await uploadImages(productId, newImages) : [];
     const allImages = [...existingImages, ...uploadedUrls].slice(0, MAX_IMAGES);
 
@@ -93,7 +98,8 @@ const App: React.FC = () => {
       const payload = allImages.map((url, index) => ({
         product_id: productId,
         url,
-        position: index + 1
+        position: index + 1,
+        user_id: userId
       }));
 
       const { error: insertError } = await supabase.from('product_images').insert(payload);
@@ -105,6 +111,14 @@ const App: React.FC = () => {
   };
 
   const addProduct = async (payload: ProductUpsertPayload) => {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('Faça login para cadastrar itens.');
+    }
+
     const { data, error: insertError } = await supabase
       .from('products')
       .insert({
@@ -112,7 +126,8 @@ const App: React.FC = () => {
         name: payload.name,
         price: payload.price,
         sizes: payload.sizes,
-        observation: payload.observation ?? null
+        observation: payload.observation ?? null,
+        user_id: user.id
       })
       .select('id')
       .single();
@@ -121,12 +136,19 @@ const App: React.FC = () => {
       throw new Error(insertError.message);
     }
 
-    await syncProductImages(data.id, payload.existingImages, payload.newImages);
+    await syncProductImages(data.id, payload.existingImages, payload.newImages, user.id);
     await fetchProducts();
   };
 
   const updateProduct = async (payload: ProductUpsertPayload) => {
     if (!payload.id) return;
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('Faça login para editar itens.');
+    }
 
     const { error: updateError } = await supabase
       .from('products')
@@ -143,7 +165,7 @@ const App: React.FC = () => {
       throw new Error(updateError.message);
     }
 
-    await syncProductImages(payload.id, payload.existingImages, payload.newImages);
+    await syncProductImages(payload.id, payload.existingImages, payload.newImages, user.id);
     await fetchProducts();
   };
 
