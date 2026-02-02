@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
@@ -56,6 +57,20 @@ const App: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserId(data.session?.user?.id ?? null);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   const uploadImages = async (productId: string, files: File[]) => {
     const uploadedUrls: string[] = [];
 
@@ -93,7 +108,8 @@ const App: React.FC = () => {
       const payload = allImages.map((url, index) => ({
         product_id: productId,
         url,
-        position: index + 1
+        position: index + 1,
+        ...(userId ? { user_id: userId } : {})
       }));
 
       const { error: insertError } = await supabase.from('product_images').insert(payload);
@@ -105,6 +121,10 @@ const App: React.FC = () => {
   };
 
   const addProduct = async (payload: ProductUpsertPayload) => {
+    if (!userId) {
+      throw new Error('Faça login para cadastrar itens.');
+    }
+
     const { data, error: insertError } = await supabase
       .from('products')
       .insert({
@@ -112,7 +132,8 @@ const App: React.FC = () => {
         name: payload.name,
         price: payload.price,
         sizes: payload.sizes,
-        observation: payload.observation ?? null
+        observation: payload.observation ?? null,
+        user_id: userId
       })
       .select('id')
       .single();
@@ -127,6 +148,9 @@ const App: React.FC = () => {
 
   const updateProduct = async (payload: ProductUpsertPayload) => {
     if (!payload.id) return;
+    if (!userId) {
+      throw new Error('Faça login para editar itens.');
+    }
 
     const { error: updateError } = await supabase
       .from('products')
