@@ -1,38 +1,71 @@
 
-import React, { useState } from 'react';
-import { Product } from '../types';
-import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Product, ProductUpsertPayload } from '../types';
+import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 interface AdminPanelProps {
   products: Product[];
-  onAdd: (product: Product) => void;
-  onUpdate: (product: Product) => void;
-  onDelete: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  onAdd: (payload: ProductUpsertPayload) => Promise<void>;
+  onUpdate: (payload: ProductUpsertPayload) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onRefresh: () => Promise<void>;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDelete }) => {
+const MAX_IMAGES = 5;
+
+const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onAdd, onUpdate, onDelete, onRefresh }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
   
   const [formData, setFormData] = useState({
     code: '',
     name: '',
     price: '',
     sizes: '',
-    observation: '',
-    imageUrl: ''
+    observation: ''
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setIsAuthenticated(Boolean(data.session));
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(Boolean(session));
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Senha simples para controle de acesso
-    if (password === 'chris2025') {
-      setIsAuthenticated(true);
+    setAuthError(null);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (signInError) {
+      setAuthError('Login inválido. Confira email e senha.');
     } else {
-      alert('Senha incorreta!');
+      await onRefresh();
     }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   const startEdit = (product: Product) => {
@@ -42,41 +75,70 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDe
       name: product.name,
       price: product.price.toString(),
       sizes: product.sizes.join(', '),
-      observation: product.observation || '',
-      imageUrl: product.imageUrl
+      observation: product.observation || ''
     });
+    setExistingImages(product.images);
+    setNewImages([]);
     setShowAddForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ code: '', name: '', price: '', sizes: '', observation: '', imageUrl: '' });
+    setFormData({ code: '', name: '', price: '', sizes: '', observation: '' });
+    setExistingImages([]);
+    setNewImages([]);
     setShowAddForm(false);
+    setIsSubmitting(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const remainingSlots = useMemo(() => MAX_IMAGES - existingImages.length, [existingImages.length]);
+
+  const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    const totalImages = existingImages.length + files.length;
+    if (totalImages > MAX_IMAGES) {
+      alert(`Você pode enviar no máximo ${MAX_IMAGES} imagens por produto.`);
+      event.target.value = '';
+      return;
+    }
+
+    setNewImages(files);
+  };
+
+  const removeExistingImage = (url: string) => {
+    setExistingImages((prev) => prev.filter((image) => image !== url));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.code) return;
+    setIsSubmitting(true);
 
-    const productData: Product = {
-      id: editingId || Math.random().toString(36).substr(2, 9),
+    const payload: ProductUpsertPayload = {
+      id: editingId || undefined,
       code: formData.code,
       name: formData.name,
       price: parseFloat(formData.price),
       sizes: formData.sizes.split(',').map(s => s.trim()).filter(s => s !== ''),
       observation: formData.observation,
-      imageUrl: formData.imageUrl || `https://picsum.photos/seed/${Math.random()}/400/600`,
-      createdAt: editingId ? (products.find(p => p.id === editingId)?.createdAt || Date.now()) : Date.now()
+      existingImages,
+      newImages
     };
 
-    if (editingId) {
-      onUpdate(productData);
-    } else {
-      onAdd(productData);
+    try {
+      if (editingId) {
+        await onUpdate(payload);
+      } else {
+        await onAdd(payload);
+      }
+      cancelEdit();
+    } catch (submitError) {
+      alert(submitError instanceof Error ? submitError.message : 'Erro ao salvar.');
+      setIsSubmitting(false);
     }
-
-    cancelEdit();
   };
 
   if (!isAuthenticated) {
@@ -87,16 +149,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDe
             <LogIn className="text-[#a15278]" size={32} />
           </div>
           <h2 className="text-3xl font-bold text-gray-800 mb-2 sport-font italic">Acesso Restrito</h2>
-          <p className="text-gray-500 text-sm mb-8">Digite a senha para gerenciar o catálogo.</p>
+          <p className="text-gray-500 text-sm mb-8">Entre com seu usuário do Supabase para gerenciar.</p>
           <form onSubmit={handleLogin} className="space-y-4">
+            <input 
+              type="email" 
+              placeholder="Seu email..."
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#a15278] transition-all text-center"
+              autoFocus
+            />
             <input 
               type="password" 
               placeholder="Sua senha..."
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#a15278] transition-all text-center"
-              autoFocus
             />
+            {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button 
               type="submit"
               className="w-full bg-[#a15278] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2"
@@ -116,15 +186,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDe
           <h2 className="text-4xl font-black text-[#a15278] sport-font italic">Dashboard</h2>
           <p className="text-gray-500 text-sm font-medium">Gerenciamento de Produtos</p>
         </div>
-        <button 
-          onClick={() => showAddForm ? cancelEdit() : setShowAddForm(true)}
-          className={`px-6 py-3 rounded-full flex items-center space-x-2 shadow-lg transition-all ${
-            showAddForm ? 'bg-gray-200 text-gray-600' : 'bg-[#a15278] text-white hover:bg-[#8e4669]'
-          }`}
-        >
-          {showAddForm ? <X size={20} /> : <Plus size={20} />}
-          <span className="font-bold sport-font">{showAddForm ? 'Fechar' : 'Novo Item'}</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleLogout}
+            className="px-4 py-3 rounded-full flex items-center space-x-2 bg-gray-100 text-gray-600 shadow-md hover:bg-gray-200 transition-all"
+          >
+            <LogOut size={18} />
+            <span className="font-bold sport-font">Sair</span>
+          </button>
+          <button 
+            onClick={() => showAddForm ? cancelEdit() : setShowAddForm(true)}
+            className={`px-6 py-3 rounded-full flex items-center space-x-2 shadow-lg transition-all ${
+              showAddForm ? 'bg-gray-200 text-gray-600' : 'bg-[#a15278] text-white hover:bg-[#8e4669]'
+            }`}
+          >
+            {showAddForm ? <X size={20} /> : <Plus size={20} />}
+            <span className="font-bold sport-font">{showAddForm ? 'Fechar' : 'Novo Item'}</span>
+          </button>
+        </div>
       </div>
 
       {showAddForm && (
@@ -157,12 +236,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDe
                 className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]" placeholder="Ex: P, M, G" />
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">URL da Imagem</label>
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Imagens do Produto</label>
               <div className="relative">
-                <input type="text" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 pl-12 outline-none focus:border-[#a15278]" placeholder="Link da imagem..." />
-                <Camera className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFilesChange}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#a15278]"
+                />
               </div>
+              <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
+              {existingImages.length > 0 && (
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {existingImages.map((url) => (
+                    <div key={url} className="relative">
+                      <img src={url} alt="Imagem do produto" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(url)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="space-y-2">
@@ -172,9 +272,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDe
           </div>
           
           <div className="flex space-x-4">
-            <button type="submit" className="flex-grow bg-[#a15278] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2">
+            <button type="submit" disabled={isSubmitting} className="flex-grow bg-[#a15278] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2 disabled:opacity-60">
               <CheckCircle2 size={20} />
-              <span className="sport-font">{editingId ? 'Salvar Alterações' : 'Adicionar ao Catálogo'}</span>
+              <span className="sport-font">{isSubmitting ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Adicionar ao Catálogo'}</span>
             </button>
             {editingId && (
               <button type="button" onClick={cancelEdit} className="bg-gray-100 text-gray-500 px-8 rounded-2xl font-bold hover:bg-gray-200 transition-all">
@@ -201,7 +301,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDe
               {products.map(product => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-8 py-4">
-                    <img src={product.imageUrl} className="w-14 h-14 object-cover rounded-xl shadow-md border-2 border-white" />
+                    <img src={product.images[0] ?? 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'} className="w-14 h-14 object-cover rounded-xl shadow-md border-2 border-white" />
                   </td>
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
@@ -229,7 +329,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, onAdd, onUpdate, onDe
             </tbody>
           </table>
         </div>
-        {products.length === 0 && (
+        {isLoading && (
+          <div className="py-24 text-center">
+            <p className="text-gray-400 font-medium">Carregando produtos...</p>
+          </div>
+        )}
+        {!isLoading && error && (
+          <div className="py-24 text-center">
+            <p className="text-red-500 font-medium">Erro ao carregar produtos.</p>
+            <p className="text-xs text-gray-400 mt-2">{error}</p>
+          </div>
+        )}
+        {!isLoading && !error && products.length === 0 && (
           <div className="py-24 text-center">
             <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Plus className="text-gray-300" size={32} />
