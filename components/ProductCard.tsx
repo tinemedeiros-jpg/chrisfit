@@ -19,27 +19,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800';
   const images = availableImages.length ? availableImages : [coverImage];
   const [hoverIndex, setHoverIndex] = React.useState(0);
-  const [isTouchDevice, setIsTouchDevice] = React.useState(false);
   const [isHovering, setIsHovering] = React.useState(false);
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) {
-      return;
-    }
-
-    const coarsePointer = window.matchMedia('(pointer: coarse)');
-    const noHover = window.matchMedia('(hover: none)');
-    const updateTouch = () => setIsTouchDevice(coarsePointer.matches || noHover.matches);
-
-    updateTouch();
-    coarsePointer.addEventListener('change', updateTouch);
-    noHover.addEventListener('change', updateTouch);
-
-    return () => {
-      coarsePointer.removeEventListener('change', updateTouch);
-      noHover.removeEventListener('change', updateTouch);
-    };
-  }, []);
 
   React.useEffect(() => {
     if (images.length <= 1 || isHovering) {
@@ -119,11 +99,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 <span className="sport-font text-sm">Quero este</span>
               </a>
             </div>
-          </div>
-
-          {isTouchDevice && images.length > 1 && (
-            <div className="flex justify-end mt-2">
-              <div className="flex items-center gap-1">
+            {images.length > 1 && (
+              <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-white/80 px-1.5 py-1 shadow-md backdrop-blur">
                 {images.map((image, index) => (
                   <button
                     key={`${product.id}-thumb-${index}`}
@@ -143,8 +120,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
           
           {/* Details Bar */}
           <div className="bg-white py-5 px-3">
