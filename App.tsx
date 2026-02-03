@@ -32,9 +32,13 @@ const App: React.FC = () => {
     }
 
     const mappedProducts = (data ?? []).map((product) => {
-      const images = (product.product_images ?? [])
-        .sort((a, b) => a.position - b.position)
-        .map((image) => image.url);
+      const images = Array<string | null>(MAX_IMAGES).fill(null);
+      const sortedImages = (product.product_images ?? []).sort((a, b) => a.position - b.position);
+      sortedImages.forEach((image) => {
+        if (image.position >= 1 && image.position <= MAX_IMAGES) {
+          images[image.position - 1] = image.url;
+        }
+      });
 
       return {
         id: product.id,
@@ -56,10 +60,10 @@ const App: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const uploadImages = async (productId: string, files: File[]) => {
-    const uploadedUrls: string[] = [];
+  const uploadImages = async (productId: string, files: Array<{ file: File; position: number }>) => {
+    const uploadedEntries: Array<{ url: string; position: number }> = [];
 
-    for (const file of files) {
+    for (const { file, position } of files) {
       const filePath = `${productId}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, {
         upsert: true
@@ -70,15 +74,34 @@ const App: React.FC = () => {
       }
 
       const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
-      uploadedUrls.push(data.publicUrl);
+      uploadedEntries.push({ url: data.publicUrl, position });
     }
 
-    return uploadedUrls;
+    return uploadedEntries;
   };
 
-  const syncProductImages = async (productId: string, existingImages: string[], newImages: File[]) => {
-    const uploadedUrls = newImages.length > 0 ? await uploadImages(productId, newImages) : [];
-    const allImages = [...existingImages, ...uploadedUrls].slice(0, MAX_IMAGES);
+  const syncProductImages = async (
+    productId: string,
+    existingImages: Array<string | null>,
+    newImages: Array<File | null>
+  ) => {
+    const imagesWithPosition = newImages
+      .map((file, index) => (file ? { file, position: index + 1 } : null))
+      .filter((entry): entry is { file: File; position: number } => Boolean(entry));
+    const uploadedEntries = imagesWithPosition.length > 0 ? await uploadImages(productId, imagesWithPosition) : [];
+    const allImages = Array<string | null>(MAX_IMAGES).fill(null);
+
+    existingImages.forEach((url, index) => {
+      if (index < MAX_IMAGES) {
+        allImages[index] = url ?? null;
+      }
+    });
+
+    uploadedEntries.forEach(({ url, position }) => {
+      if (position >= 1 && position <= MAX_IMAGES) {
+        allImages[position - 1] = url;
+      }
+    });
 
     const { error: deleteError } = await supabase
       .from('product_images')
@@ -89,13 +112,19 @@ const App: React.FC = () => {
       throw new Error(deleteError.message);
     }
 
-    if (allImages.length > 0) {
-      const payload = allImages.map((url, index) => ({
-        products_id: productId,
-        url,
-        position: index + 1
-      }));
+    const payload = allImages
+      .map((url, index) =>
+        url
+          ? {
+              products_id: productId,
+              url,
+              position: index + 1
+            }
+          : null
+      )
+      .filter((entry): entry is { products_id: string; url: string; position: number } => Boolean(entry));
 
+    if (payload.length > 0) {
       const { error: insertError } = await supabase.from('product_images').insert(payload);
 
       if (insertError) {

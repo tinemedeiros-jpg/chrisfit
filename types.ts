@@ -5,7 +5,7 @@ export interface Product {
   name: string;
   price: number;
   sizes: string[];
-  images: string[];
+  images: Array<string | null>;
   observation?: string | null;
   createdAt: string;
 }
@@ -19,6 +19,6 @@ export interface ProductUpsertPayload {
   price: number;
   sizes: string[];
   observation?: string;
-  existingImages: string[];
-  newImages: File[];
+  existingImages: Array<string | null>;
+  newImages: Array<File | null>;
 }

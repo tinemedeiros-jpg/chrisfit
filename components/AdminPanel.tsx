@@ -25,8 +25,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
-  const [newImages, setNewImages] = useState<(File | null)[]>(() => Array(MAX_IMAGES).fill(null));
+  const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
+  const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
   
   const [formData, setFormData] = useState({
     code: '',
@@ -69,6 +69,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     await supabase.auth.signOut();
   };
 
+  const normalizeImageSlots = (images: Array<string | null>) => {
+    const next = Array<string | null>(MAX_IMAGES).fill(null);
+    images.forEach((image, index) => {
+      if (index < MAX_IMAGES) {
+        next[index] = image;
+      }
+    });
+    return next;
+  };
+
+  const countImages = (existing: Array<string | null>, nextFiles: Array<File | null>) =>
+    existing.reduce((count, url, index) => count + (nextFiles[index] ? 1 : url ? 1 : 0), 0);
+
   const startEdit = (product: Product) => {
     setEditingId(product.id);
     setFormData({
@@ -78,7 +91,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       sizes: product.sizes.join(', '),
       observation: product.observation || ''
     });
-    setExistingImages(product.images);
+    setExistingImages(normalizeImageSlots(product.images));
     setNewImages(Array(MAX_IMAGES).fill(null));
     setShowAddForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -94,9 +107,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   };
 
   const remainingSlots = useMemo(() => {
-    const selectedCount = newImages.filter(Boolean).length;
-    return MAX_IMAGES - existingImages.length - selectedCount;
-  }, [existingImages.length, newImages]);
+    const totalSelected = countImages(normalizeImageSlots(existingImages), newImages);
+    return MAX_IMAGES - totalSelected;
+  }, [existingImages, newImages]);
 
   const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -106,8 +119,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       const next = [...prev];
       next[index] = file;
 
-      const selectedCount = next.filter(Boolean).length;
-      const totalImages = existingImages.length + selectedCount;
+      const totalImages = countImages(normalizeImageSlots(existingImages), next);
       if (totalImages > MAX_IMAGES) {
         alert(`Você pode enviar no máximo ${MAX_IMAGES} imagens por produto.`);
         event.target.value = '';
@@ -118,8 +130,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
   };
 
-  const removeExistingImage = (url: string) => {
-    setExistingImages((prev) => prev.filter((image) => image !== url));
+  const removeExistingImage = (index: number) => {
+    setExistingImages((prev) => {
+      const next = normalizeImageSlots(prev);
+      next[index] = null;
+      return next;
+    });
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewImages((prev) => {
+      const next = [...prev];
+      next[index] = null;
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,8 +158,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       price: parseFloat(formData.price),
       sizes: formData.sizes.split(',').map(s => s.trim()).filter(s => s !== ''),
       observation: formData.observation,
-      existingImages,
-      newImages: newImages.filter((file): file is File => Boolean(file))
+      existingImages: normalizeImageSlots(existingImages),
+      newImages
     };
 
     try {
@@ -258,26 +282,38 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       onChange={(event) => handleFileChange(index, event)}
                       className="mt-1 w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#a15278]"
                     />
+                    <div className="mt-2 flex items-center gap-2">
+                      {existingImages[index] ? (
+                        <div className="relative">
+                          <img src={existingImages[index] ?? ''} alt={`Imagem ${index + 1}`} className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+                          <button
+                            type="button"
+                            onClick={() => removeExistingImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-gray-300 uppercase tracking-widest">Vazio</span>
+                      )}
+                      {newImages[index] && (
+                        <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                          <span>Novo: {newImages[index]?.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeNewImage(index)}
+                            className="text-red-400 hover:text-red-500"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </label>
                 ))}
               </div>
               <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
-              {existingImages.length > 0 && (
-                <div className="flex flex-wrap gap-3 pt-2">
-                  {existingImages.map((url) => (
-                    <div key={url} className="relative">
-                      <img src={url} alt="Imagem do produto" className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
-                      <button
-                        type="button"
-                        onClick={() => removeExistingImage(url)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
           <div className="space-y-2">
@@ -309,6 +345,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 <th className="px-8 py-6">Cód.</th>
                 <th className="px-8 py-6">Nome</th>
                 <th className="px-8 py-6">Preço</th>
+                <th className="px-8 py-6">Tamanhos</th>
+                <th className="px-8 py-6">Observações</th>
+                <th className="px-8 py-6">Imagens</th>
                 <th className="px-8 py-6 text-right">Ações</th>
               </tr>
             </thead>
@@ -316,11 +355,37 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               {products.map(product => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-8 py-4">
-                    <img src={product.images[0] ?? 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'} className="w-14 h-14 object-cover rounded-xl shadow-md border-2 border-white" />
+                    <img
+                      src={
+                        product.images.find((image): image is string => Boolean(image)) ??
+                        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'
+                      }
+                      className="w-14 h-14 object-cover rounded-xl shadow-md border-2 border-white"
+                    />
                   </td>
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
                   <td className="px-8 py-4 text-[#a15278] font-black">R$ {product.price.toFixed(2)}</td>
+                  <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
+                  <td className="px-8 py-4 text-sm text-gray-400">
+                    {product.observation ? product.observation : '—'}
+                  </td>
+                  <td className="px-8 py-4">
+                    <div className="flex items-center gap-2">
+                      {product.images.map((image, index) => (
+                        <div
+                          key={`${product.id}-slot-${index}`}
+                          className="w-10 h-10 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 text-[9px] text-gray-300 font-semibold"
+                        >
+                          {image ? (
+                            <img src={image} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
                   <td className="px-8 py-4 text-right">
                     <div className="flex justify-end space-x-2">
                       <button 
