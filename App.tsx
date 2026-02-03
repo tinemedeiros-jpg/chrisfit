@@ -83,7 +83,7 @@ const App: React.FC = () => {
     const { error: deleteError } = await supabase
       .from('product_images')
       .delete()
-      .eq('product_id', productId);
+      .eq('products_id', productId);
 
     if (deleteError) {
       throw new Error(deleteError.message);
@@ -91,7 +91,7 @@ const App: React.FC = () => {
 
     if (allImages.length > 0) {
       const payload = allImages.map((url, index) => ({
-        product_id: productId,
+        products_id: productId,
         url,
         position: index + 1
       }));
