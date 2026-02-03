@@ -11,9 +11,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const whatsappNumber = "5511963554043";
   const message = encodeURIComponent(`Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+  const availableImages = product.images.filter(
+    (image): image is string => Boolean(image)
+  );
   const coverImage =
-    product.images.find((image): image is string => Boolean(image)) ??
+    availableImages[0] ??
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800';
+  const hoverImage = availableImages[1] ?? coverImage;
 
   return (
     <div className="group animate-in zoom-in duration-300">
@@ -30,7 +34,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <img 
               src={coverImage} 
               alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:opacity-0"
+              loading="lazy"
+            />
+            <img 
+              src={hoverImage} 
+              alt={`${product.name} - hover`}
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 opacity-0 group-hover:scale-110 group-hover:opacity-100"
               loading="lazy"
             />
             {/* Hover Overlay Button */}
