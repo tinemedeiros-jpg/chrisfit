@@ -15,7 +15,7 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
-const ADMIN_VERSION = '2024-09-14.1';
+const ADMIN_VERSION = '2024-09-14.2';
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onAdd, onUpdate, onDelete, onRefresh }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
