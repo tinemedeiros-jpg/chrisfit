@@ -15,7 +15,32 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
-const ADMIN_VERSION = '2024-09-14.2';
+const ADMIN_VERSION = '2024-09-14.3';
+
+const sanitizePriceInput = (value: string) => {
+  const normalized = value.replace(/\./g, ',').replace(/[^\d,]/g, '');
+  const [integerPart, ...decimalParts] = normalized.split(',');
+  if (decimalParts.length === 0) {
+    return integerPart;
+  }
+  return `${integerPart},${decimalParts.join('')}`;
+};
+
+const parsePriceToNumber = (value: string) => {
+  const normalized = value.replace(/\./g, '').replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : NaN;
+};
+
+const formatPriceDisplay = (value: string) => {
+  if (!value) return '';
+  const parsed = parsePriceToNumber(value);
+  if (!Number.isFinite(parsed)) return value;
+  return parsed.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onAdd, onUpdate, onDelete, onRefresh }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -32,9 +57,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     code: '',
     name: '',
     price: '',
-    sizes: '',
+    sizes: [] as string[],
     observation: ''
   });
+  const [sizeInput, setSizeInput] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -87,29 +113,73 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setFormData({
       code: product.code,
       name: product.name,
-      price: product.price.toString(),
-      sizes: product.sizes.join(', '),
+      price: product.price.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }),
+      sizes: product.sizes,
       observation: product.observation || ''
     });
     setExistingImages(normalizeImageSlots(product.images));
     setNewImages(Array(MAX_IMAGES).fill(null));
     setShowAddForm(true);
+    setSizeInput('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ code: '', name: '', price: '', sizes: '', observation: '' });
+    setFormData({ code: '', name: '', price: '', sizes: [], observation: '' });
     setExistingImages([]);
     setNewImages(Array(MAX_IMAGES).fill(null));
     setShowAddForm(false);
     setIsSubmitting(false);
+    setSizeInput('');
   };
 
   const remainingSlots = useMemo(() => {
     const totalSelected = countImages(normalizeImageSlots(existingImages), newImages);
     return MAX_IMAGES - totalSelected;
   }, [existingImages, newImages]);
+
+  const sizeOptions = useMemo(() => {
+    const uniqueSizes = new Set<string>();
+    products.forEach((product) => {
+      product.sizes.forEach((size) => {
+        if (size.trim()) {
+          uniqueSizes.add(size.trim());
+        }
+      });
+    });
+    return Array.from(uniqueSizes).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [products]);
+
+  const addSize = (rawSize: string) => {
+    const trimmed = rawSize.trim();
+    if (!trimmed) return;
+    setFormData((prev) => {
+      const exists = prev.sizes.some((size) => size.toLowerCase() === trimmed.toLowerCase());
+      if (exists) return prev;
+      return { ...prev, sizes: [...prev.sizes, trimmed] };
+    });
+    setSizeInput('');
+  };
+
+  const removeSize = (sizeToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      sizes: prev.sizes.filter((size) => size !== sizeToRemove)
+    }));
+  };
+
+  const handlePriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const sanitized = sanitizePriceInput(event.target.value);
+    setFormData((prev) => ({ ...prev, price: sanitized }));
+  };
+
+  const handlePriceBlur = () => {
+    setFormData((prev) => ({ ...prev, price: formatPriceDisplay(prev.price) }));
+  };
 
   const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -148,15 +218,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.price || !formData.code) return;
+    if (!formData.name || !formData.price || !formData.code || formData.sizes.length === 0) {
+      alert('Preencha nome, código, preço e pelo menos um tamanho.');
+      return;
+    }
+    const parsedPrice = parsePriceToNumber(formData.price);
+    if (!Number.isFinite(parsedPrice)) {
+      alert('Informe um preço válido.');
+      return;
+    }
     setIsSubmitting(true);
 
     const payload: ProductUpsertPayload = {
       id: editingId || undefined,
       code: formData.code,
       name: formData.name,
-      price: parseFloat(formData.price),
-      sizes: formData.sizes.split(',').map(s => s.trim()).filter(s => s !== ''),
+      price: parsedPrice,
+      sizes: formData.sizes,
       observation: formData.observation,
       existingImages: normalizeImageSlots(existingImages),
       newImages
@@ -262,13 +340,71 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Preço (R$)</label>
-              <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]" placeholder="0.00" />
+              <input
+                required
+                type="text"
+                inputMode="decimal"
+                value={formData.price}
+                onChange={handlePriceChange}
+                onBlur={handlePriceBlur}
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]"
+                placeholder="0,00"
+              />
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Tamanhos (P, M, G...)</label>
-              <input required type="text" value={formData.sizes} onChange={e => setFormData({...formData, sizes: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]" placeholder="Ex: P, M, G" />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <input
+                    type="text"
+                    list="size-options"
+                    value={sizeInput}
+                    onChange={(event) => setSizeInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        addSize(sizeInput);
+                      }
+                    }}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]"
+                    placeholder="Selecione ou digite um tamanho"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addSize(sizeInput)}
+                    className="px-5 py-3 rounded-xl bg-[#a15278] text-white font-bold hover:brightness-110 transition-all"
+                  >
+                    Adicionar tamanho
+                  </button>
+                </div>
+                <datalist id="size-options">
+                  {sizeOptions.map((size) => (
+                    <option key={size} value={size} />
+                  ))}
+                </datalist>
+                {formData.sizes.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.sizes.map((size) => (
+                      <span
+                        key={size}
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-xs font-semibold text-gray-600"
+                      >
+                        {size}
+                        <button
+                          type="button"
+                          onClick={() => removeSize(size)}
+                          className="text-gray-400 hover:text-gray-600"
+                          aria-label={`Remover tamanho ${size}`}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-400">Adicione pelo menos um tamanho.</p>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Imagens do Produto</label>
