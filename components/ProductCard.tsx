@@ -19,6 +19,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800';
   const images = availableImages.length ? availableImages : [coverImage];
   const [hoverIndex, setHoverIndex] = React.useState(0);
+  const [isTouchDevice, setIsTouchDevice] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return;
+    }
+
+    const coarsePointer = window.matchMedia('(pointer: coarse)');
+    const noHover = window.matchMedia('(hover: none)');
+    const updateTouch = () => setIsTouchDevice(coarsePointer.matches || noHover.matches);
+
+    updateTouch();
+    coarsePointer.addEventListener('change', updateTouch);
+    noHover.addEventListener('change', updateTouch);
+
+    return () => {
+      coarsePointer.removeEventListener('change', updateTouch);
+      noHover.removeEventListener('change', updateTouch);
+    };
+  }, []);
 
   const handleMouseMove = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -86,6 +106,31 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               </a>
             </div>
           </div>
+
+          {isTouchDevice && images.length > 1 && (
+            <div className="flex justify-end mt-2">
+              <div className="flex items-center gap-1">
+                {images.map((image, index) => (
+                  <button
+                    key={`${product.id}-thumb-${index}`}
+                    type="button"
+                    onClick={() => setHoverIndex(index)}
+                    className={`h-6 w-6 rounded-sm border transition-all ${
+                      hoverIndex === index
+                        ? 'border-[#a15278] ring-1 ring-[#a15278]'
+                        : 'border-gray-200'
+                    }`}
+                    aria-label={`Mostrar imagem ${index + 1}`}
+                  >
+                    <span
+                      className="block h-full w-full rounded-[2px] bg-cover bg-center"
+                      style={{ backgroundImage: `url(${image})` }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* Details Bar */}
           <div className="bg-white py-5 px-3">
