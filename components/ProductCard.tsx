@@ -20,6 +20,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const images = availableImages.length ? availableImages : [coverImage];
   const [hoverIndex, setHoverIndex] = React.useState(0);
   const [isHovering, setIsHovering] = React.useState(false);
+  const thumbsRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (images.length <= 1 || isHovering) {
@@ -36,6 +37,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleMouseMove = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       if (images.length <= 1) {
+        return;
+      }
+
+      if (thumbsRef.current?.contains(event.target as Node)) {
         return;
       }
 
@@ -62,7 +67,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <div className="group animate-in zoom-in duration-300">
-      <div className="bg-transparent overflow-hidden rounded-sm transition-all duration-300 group-hover:translate-y-[-8px]">
+      <div className="bg-transparent overflow-hidden rounded-sm transition-all duration-300">
         {/* Code Badge */}
         <div className="bg-[#a15278] text-white w-16 py-1 text-center text-sm font-black sport-font mb-1 shadow-md">
           {product.code}
@@ -100,7 +105,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               </a>
             </div>
             {images.length > 1 && (
-              <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-white/80 px-1.5 py-1 shadow-md backdrop-blur">
+              <div
+                ref={thumbsRef}
+                className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-white/80 px-1.5 py-1 shadow-md backdrop-blur"
+              >
                 {images.map((image, index) => (
                   <button
                     key={`${product.id}-thumb-${index}`}
