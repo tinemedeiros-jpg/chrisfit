@@ -17,7 +17,35 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const coverImage =
     availableImages[0] ??
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800';
-  const hoverImage = availableImages[1] ?? coverImage;
+  const images = availableImages.length ? availableImages : [coverImage];
+  const [hoverIndex, setHoverIndex] = React.useState(0);
+
+  const handleMouseMove = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (images.length <= 1) {
+        return;
+      }
+
+      const rect = event.currentTarget.getBoundingClientRect();
+      const relativeX = Math.min(
+        rect.width,
+        Math.max(0, event.clientX - rect.left)
+      );
+      const nextIndex = Math.min(
+        images.length - 1,
+        Math.floor((relativeX / rect.width) * images.length)
+      );
+
+      if (nextIndex !== hoverIndex) {
+        setHoverIndex(nextIndex);
+      }
+    },
+    [hoverIndex, images.length]
+  );
+
+  const handleMouseLeave = React.useCallback(() => {
+    setHoverIndex(0);
+  }, []);
 
   return (
     <div className="group animate-in zoom-in duration-300">
@@ -30,19 +58,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Image and Details Card */}
         <div className="bg-white p-1 pb-1 shadow-xl relative">
           {/* Image Container */}
-          <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
-            <img 
-              src={coverImage} 
-              alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:opacity-0"
-              loading="lazy"
-            />
-            <img 
-              src={hoverImage} 
-              alt={`${product.name} - hover`}
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-700 opacity-0 group-hover:scale-110 group-hover:opacity-100"
-              loading="lazy"
-            />
+          <div
+            className="aspect-[3/4] overflow-hidden bg-gray-100 relative"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+          >
+            {images.map((image, index) => (
+              <img
+                key={`${product.id}-${image}-${index}`}
+                src={image}
+                alt={`${product.name} - ${index + 1}`}
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${
+                  hoverIndex === index ? 'opacity-100' : 'opacity-0'
+                }`}
+                loading="lazy"
+              />
+            ))}
             {/* Hover Overlay Button */}
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                <a 
