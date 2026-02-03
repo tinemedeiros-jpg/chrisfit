@@ -15,7 +15,7 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
-const ADMIN_VERSION = '2024-09-14.3';
+const ADMIN_VERSION = '2024-09-14.4';
 
 const sanitizePriceInput = (value: string) => {
   const normalized = value.replace(/\./g, ',').replace(/[^\d,]/g, '');
@@ -501,7 +501,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   </td>
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
-                  <td className="px-8 py-4 text-[#a15278] font-black">R$ {product.price.toFixed(2)}</td>
+                  <td className="px-8 py-4 text-[#a15278] font-black">
+                    R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
                   <td className="px-8 py-4 text-sm text-gray-400">
                     {product.observation ? product.observation : '—'}

@@ -20,6 +20,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const images = availableImages.length ? availableImages : [coverImage];
   const [hoverIndex, setHoverIndex] = React.useState(0);
   const [isTouchDevice, setIsTouchDevice] = React.useState(false);
+  const [isHovering, setIsHovering] = React.useState(false);
 
   React.useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) {
@@ -39,6 +40,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       noHover.removeEventListener('change', updateTouch);
     };
   }, []);
+
+  React.useEffect(() => {
+    if (images.length <= 1 || isHovering) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setHoverIndex((current) => (current + 1) % images.length);
+    }, 8000);
+
+    return () => window.clearInterval(interval);
+  }, [images.length, isHovering]);
 
   const handleMouseMove = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -64,7 +77,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   );
 
   const handleMouseLeave = React.useCallback(() => {
-    setHoverIndex(0);
+    setIsHovering(false);
   }, []);
 
   return (
@@ -82,6 +95,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             className="aspect-[3/4] overflow-hidden bg-gray-100 relative"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
+            onMouseEnter={() => setIsHovering(true)}
           >
             {images.map((image, index) => (
               <img
