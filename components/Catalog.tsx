@@ -272,31 +272,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             </div>
           </div>
         </div>
-
-        {isLoading ? (
-          <div className="bg-white/70 rounded-3xl py-24 text-center border border-[#cfefff]">
-            <p className="text-[#2aa7df] font-bold sport-font italic">Carregando catálogo...</p>
-          </div>
-        ) : error ? (
-          <div className="bg-white/70 rounded-3xl py-24 text-center border border-red-200">
-            <p className="text-red-500 font-bold sport-font italic">Não foi possível carregar os produtos.</p>
-            <p className="text-xs text-gray-400 mt-2">{error}</p>
-          </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="catalog-grid">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white/30 backdrop-blur-sm rounded-3xl py-32 text-center border-2 border-dashed border-[#cfefff]">
-            <div className="max-w-xs mx-auto text-[#2aa7df]/60">
-              <Search size={48} className="mx-auto mb-4 opacity-30" />
-              <p className="text-xl font-bold sport-font italic">Item não encontrado</p>
-            </div>
-          </div>
-        )}
-      </section>
+      )}
     </div>
   );
 };
