@@ -24,6 +24,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
   const thumbsRef = React.useRef<HTMLDivElement | null>(null);
   const hasPromo = product.isPromo && product.promoPrice && product.promoPrice > 0;
   const displayPrice = hasPromo ? product.promoPrice ?? product.price : product.price;
+  const hideButtonText = images.length >= 4;
   const handlePreview = React.useCallback(() => {
     onPreview(product, images[hoverIndex]);
   }, [hoverIndex, images, onPreview, product]);
@@ -132,44 +133,51 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                 loading="lazy"
               />
             ))}
-            <div className="absolute inset-0 bg-[#0f1c2e]/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                className="bg-[#22c55e] text-white px-6 py-3 rounded-full font-bold flex items-center space-x-2 shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <MessageCircle size={20} fill="white" />
-                <span className="sport-font text-sm">Quero este</span>
-              </a>
-            </div>
           </div>
 
-          {images.length > 1 && (
-            <div ref={thumbsRef} className="mt-4 flex items-center gap-2">
-              {images.map((image, index) => (
-                <button
-                  key={`${product.id}-thumb-${index}`}
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setHoverIndex(index);
-                  }}
-                  className={`h-10 w-10 rounded-xl border transition-all ${
-                    hoverIndex === index
-                      ? 'border-[#2aa7df] ring-2 ring-[#2aa7df]/40'
-                      : 'border-[#e5f3fb]'
-                  }`}
-                  aria-label={`Mostrar imagem ${index + 1}`}
-                >
-                  <span
-                    className="block h-full w-full rounded-[10px] bg-cover bg-center"
-                    style={{ backgroundImage: `url(${image})` }}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+          <div
+            className={`mt-4 flex items-center gap-3 ${
+              images.length > 1 ? 'justify-between' : 'justify-end'
+            }`}
+          >
+            {images.length > 1 ? (
+              <div ref={thumbsRef} className="flex items-center gap-2">
+                {images.map((image, index) => (
+                  <button
+                    key={`${product.id}-thumb-${index}`}
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setHoverIndex(index);
+                    }}
+                    className={`h-10 w-10 rounded-xl border transition-all ${
+                      hoverIndex === index
+                        ? 'border-[#2aa7df] ring-2 ring-[#2aa7df]/40'
+                        : 'border-[#e5f3fb]'
+                    }`}
+                    aria-label={`Mostrar imagem ${index + 1}`}
+                  >
+                    <span
+                      className="block h-full w-full rounded-[10px] bg-cover bg-center"
+                      style={{ backgroundImage: `url(${image})` }}
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div />
+            )}
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              className="bg-[#22c55e] text-white px-5 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-xl transition-transform hover:-translate-y-0.5"
+              onClick={(event) => event.stopPropagation()}
+              aria-label="Quero este"
+            >
+              <MessageCircle size={18} fill="white" />
+              {!hideButtonText && <span className="sport-font text-sm">Quero este</span>}
+            </a>
+          </div>
 
           {product.observation && (
             <p className="mt-4 text-xs text-[#4b6075] leading-relaxed">
