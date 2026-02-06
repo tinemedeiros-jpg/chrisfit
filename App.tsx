@@ -12,7 +12,7 @@ const MAX_IMAGES = 5;
 
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
-    window.location.pathname.startsWith('/admin') ? 'admin' : 'catalog'
+    window.location.hash.startsWith('#/admin') ? 'admin' : 'catalog'
   );
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,9 +75,12 @@ const App: React.FC = () => {
   }, [fetchProducts]);
 
   useEffect(() => {
-    if (window.location.pathname.startsWith('/admin')) {
-      setViewMode('admin');
-    }
+    const syncViewMode = () => {
+      setViewMode(window.location.hash.startsWith('#/admin') ? 'admin' : 'catalog');
+    };
+    syncViewMode();
+    window.addEventListener('hashchange', syncViewMode);
+    return () => window.removeEventListener('hashchange', syncViewMode);
   }, []);
 
   const uploadImages = async (productId: string, files: Array<{ file: File; position: number }>) => {
