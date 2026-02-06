@@ -206,7 +206,7 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-10">
         {viewMode === 'catalog' ? (
           <Catalog products={products} isLoading={isLoading} error={error} />
         ) : (
@@ -223,12 +223,12 @@ const App: React.FC = () => {
       </main>
 
       {/* Navigation bar moved to the bottom-left */}
-      <nav className="fixed bottom-8 left-4 md:left-8 bg-[#1a1a1a] shadow-2xl rounded-2xl p-2 flex items-center border border-white/10 z-50">
+      <nav className="fixed bottom-8 left-4 md:left-8 bg-[#0b1b2b] shadow-2xl rounded-2xl p-2 flex items-center border border-white/10 z-50">
         <button 
           onClick={() => setViewMode('catalog')}
           className={`px-6 md:px-8 py-3 rounded-xl transition-all flex items-center space-x-2 ${
             viewMode === 'catalog' 
-            ? 'bg-[#a15278] text-white shadow-lg scale-105' 
+            ? 'bg-[#2aa7df] text-white shadow-lg scale-105' 
             : 'text-gray-400 hover:text-white hover:bg-white/5'
           }`}
         >
@@ -240,7 +240,7 @@ const App: React.FC = () => {
           onClick={() => setViewMode('admin')}
           className={`px-6 md:px-8 py-3 rounded-xl transition-all flex items-center space-x-2 ${
             viewMode === 'admin' 
-            ? 'bg-[#a15278] text-white shadow-lg scale-105' 
+            ? 'bg-[#2aa7df] text-white shadow-lg scale-105' 
             : 'text-gray-400 hover:text-white hover:bg-white/5'
           }`}
         >
