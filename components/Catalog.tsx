@@ -30,6 +30,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   );
   const hasFeatured = featuredProducts.length > 0;
   const currentFeatured = hasFeatured ? featuredProducts[featuredIndex % featuredProducts.length] : null;
+  const featuredImage = currentFeatured?.images?.find((image): image is string => Boolean(image));
 
   useEffect(() => {
     if (featuredIndex >= featuredProducts.length) {
@@ -129,31 +130,28 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
                 <div className="flex justify-center lg:justify-end">
                   <div className="bg-white/15 rounded-[28px] p-6 backdrop-blur-sm max-w-sm w-full">
-                    {(() => {
-                      const featuredImage = currentFeatured.images.find((image): image is string => Boolean(image));
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (featuredImage) openModal(currentFeatured, featuredImage);
-                          }}
-                          className="aspect-[4/3] bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center w-full"
-                        >
-                          {featuredImage ? (
-                            <img
-                              src={featuredImage}
-                              alt={currentFeatured.name}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="text-[#1e90c8] font-semibold text-lg">
-                              Adicione fotos para destacar
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })()}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (featuredImage && currentFeatured) {
+                          openModal(currentFeatured, featuredImage);
+                        }
+                      }}
+                      className="aspect-[4/3] bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center w-full"
+                    >
+                      {featuredImage ? (
+                        <img
+                          src={featuredImage}
+                          alt={currentFeatured.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="text-[#1e90c8] font-semibold text-lg">
+                          Adicione fotos para destacar
+                        </div>
+                      )}
+                    </button>
                     {currentFeatured.images?.length ? (
                       <div className="mt-4 flex gap-3 justify-center">
                         {currentFeatured.images
