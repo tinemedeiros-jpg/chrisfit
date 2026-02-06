@@ -4,6 +4,9 @@ export interface Product {
   code: string;
   name: string;
   price: number;
+  promoPrice?: number | null;
+  isPromo?: boolean;
+  isFeatured?: boolean;
   sizes: string[];
   images: Array<string | null>;
   observation?: string | null;
@@ -17,6 +20,9 @@ export interface ProductUpsertPayload {
   code: string;
   name: string;
   price: number;
+  promoPrice?: number | null;
+  isPromo?: boolean;
+  isFeatured?: boolean;
   sizes: string[];
   observation?: string;
   existingImages: Array<string | null>;

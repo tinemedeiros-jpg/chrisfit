@@ -23,9 +23,6 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-start">
           <div className="space-y-4">
             <h2 className="brand-font text-5xl text-white">Chris Fit</h2>
-            <p className="text-sm text-white/60 max-w-sm sport-font tracking-widest italic leading-relaxed">
-              Catálogo esportivo para clientes e revendedoras. Monte seu orçamento direto no WhatsApp.
-            </p>
             <div className="flex gap-3 text-xs uppercase tracking-[0.3em] text-white/50">
               <span>Moda</span>
               <span>•</span>
