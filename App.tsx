@@ -25,7 +25,7 @@ const App: React.FC = () => {
     const { data, error: fetchError } = await supabase
       .from('products')
       .select(
-        'id, code, name, price, is_promo, is_featured, sizes, observation, created_at, product_images ( url, position )'
+        'id, code, name, price, promo_price, is_promo, is_featured, sizes, observation, created_at, product_images ( url, position )'
       )
       .order('created_at', { ascending: false });
 
@@ -49,7 +49,12 @@ const App: React.FC = () => {
         code: product.code ?? '',
         name: product.name ?? '',
         price: typeof product.price === 'number' ? product.price : Number(product.price ?? 0),
-        promoPrice: null,
+        promoPrice:
+          typeof product.promo_price === 'number'
+            ? product.promo_price
+            : product.promo_price
+              ? Number(product.promo_price)
+              : null,
         isPromo: Boolean(product.is_promo),
         isFeatured: Boolean(product.is_featured),
         sizes: Array.isArray(product.sizes) ? product.sizes : [],
@@ -164,6 +169,7 @@ const App: React.FC = () => {
         code: payload.code,
         name: payload.name,
         price: payload.price,
+        promo_price: payload.isPromo ? payload.promoPrice ?? null : null,
         is_promo: payload.isPromo ?? false,
         is_featured: payload.isFeatured ?? false,
         sizes: payload.sizes,
@@ -196,6 +202,7 @@ const App: React.FC = () => {
         code: payload.code,
         name: payload.name,
         price: payload.price,
+        promo_price: payload.isPromo ? payload.promoPrice ?? null : null,
         is_promo: payload.isPromo ?? false,
         is_featured: payload.isFeatured ?? false,
         sizes: payload.sizes,
