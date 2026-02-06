@@ -50,6 +50,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
   const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
   
@@ -285,6 +286,37 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     }
   };
 
+  const handleStatusToggle = async (product: Product, field: 'isFeatured' | 'isPromo') => {
+    if (statusUpdatingId) return;
+    const nextIsFeatured = field === 'isFeatured' ? !product.isFeatured : product.isFeatured;
+    const nextIsPromo = field === 'isPromo' ? !product.isPromo : product.isPromo;
+    if (field === 'isPromo' && !product.isPromo && (!product.promoPrice || product.promoPrice <= 0)) {
+      alert('Defina o preço promocional na edição antes de ativar a promoção.');
+      return;
+    }
+    setStatusUpdatingId(product.id);
+    const payload: ProductUpsertPayload = {
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      price: product.price,
+      promoPrice: nextIsPromo ? product.promoPrice ?? null : null,
+      isPromo: nextIsPromo,
+      isFeatured: nextIsFeatured,
+      sizes: product.sizes,
+      observation: product.observation ?? '',
+      existingImages: normalizeImageSlots(product.images),
+      newImages: Array(MAX_IMAGES).fill(null)
+    };
+    try {
+      await onUpdate(payload);
+    } catch (submitError) {
+      alert(submitError instanceof Error ? submitError.message : 'Erro ao atualizar status.');
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
@@ -359,18 +391,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             <span>{editingId ? 'Editar Produto' : 'Cadastrar Novo Item'}</span>
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div className="space-y-2 md:col-span-3">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Código</label>
               <input required type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
                 className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: 01" />
             </div>
-            <div className="md:col-span-2 space-y-2">
+            <div className="md:col-span-6 space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Nome do Produto</label>
               <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                 className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: Conjunto Fitness Premium" />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-3">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Preço (R$)</label>
               <input
                 required
@@ -383,7 +415,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 placeholder="0,00"
               />
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 md:col-span-4">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Destaque & Promoção</label>
               <div className="flex flex-col gap-3">
                 <label className="flex items-center gap-3 text-sm text-gray-600 font-medium">
@@ -426,10 +458,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 )}
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-8">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Tamanhos (P, M, G...)</label>
               <div className="flex flex-col gap-3">
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex flex-col lg:flex-row gap-3">
                   <input
                     type="text"
                     list="size-options"
@@ -481,9 +513,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 )}
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-7">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Imagens do Produto</label>
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {Array.from({ length: MAX_IMAGES }).map((_, index) => (
                   <label key={`image-input-${index}`} className="block text-[11px] text-gray-400">
                     Imagem {index + 1}
@@ -526,11 +558,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               </div>
               <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
             </div>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
-            <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8] min-h-[100px]" placeholder="Ex: Confirmar cores disponíveis..." />
+            <div className="space-y-2 md:col-span-5">
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
+              <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8] min-h-[140px]" placeholder="Ex: Confirmar cores disponíveis..." />
+            </div>
           </div>
           
           <div className="flex space-x-4">
@@ -581,7 +613,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-8 py-4 text-xs text-gray-500">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 mb-3">
                       {product.isFeatured && (
                         <span className="px-2 py-1 rounded-full bg-[#1e90c8]/10 text-[#1e90c8] font-semibold">
                           Destaque
@@ -593,6 +625,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         </span>
                       )}
                       {!product.isFeatured && !product.isPromo && <span>—</span>}
+                    </div>
+                    <div className="flex flex-col gap-2 text-[11px] text-gray-500">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={product.isFeatured}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleStatusToggle(product, 'isFeatured')}
+                          className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                        />
+                        Destaque
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={product.isPromo}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleStatusToggle(product, 'isPromo')}
+                          className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                        />
+                        Promoção
+                      </label>
                     </div>
                   </td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
