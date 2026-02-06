@@ -31,6 +31,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const hasFeatured = featuredProducts.length > 0;
   const currentFeatured = hasFeatured ? featuredProducts[featuredIndex % featuredProducts.length] : null;
   const featuredImage = currentFeatured?.images?.find((image): image is string => Boolean(image));
+  const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
 
   useEffect(() => {
     if (featuredIndex >= featuredProducts.length) {
@@ -221,27 +222,50 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             aria-hidden="true"
           />
           <div className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden z-10">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/90 flex items-center justify-center shadow"
-              aria-label="Fechar"
-            >
-              <X size={18} />
-            </button>
+            <div className="absolute top-0 left-0 right-0 h-14 bg-[#2aa7df] flex items-center justify-between px-6 text-white z-10">
+              <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
+                {activeModal.product.code}
+              </span>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition"
+                aria-label="Fechar"
+              >
+                <X size={16} />
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="bg-[#f3f9fd] flex items-center justify-center">
+              <div className="bg-[#f3f9fd] flex flex-col items-center justify-center z-20">
                 <img
                   src={activeModal.image}
                   alt={activeModal.product.name}
                   className="w-full h-full object-contain max-h-[520px]"
                 />
+                {modalImages.length > 1 && (
+                  <div className="w-full px-4 pb-4">
+                    <div className="flex items-center justify-center gap-2 rounded-2xl bg-white/80 p-3 shadow-sm">
+                      {modalImages.map((image, index) => (
+                        <button
+                          key={`${activeModal.product.id}-modal-thumb-${index}`}
+                          type="button"
+                          onClick={() => setActiveModal({ product: activeModal.product, image })}
+                          className={`h-14 w-14 rounded-xl overflow-hidden border transition ${
+                            image === activeModal.image
+                              ? 'border-[#2aa7df] ring-2 ring-[#2aa7df]/40'
+                              : 'border-white/70 hover:border-[#2aa7df]/60'
+                          }`}
+                          aria-label={`Foto ${index + 1}`}
+                        >
+                          <img src={image} alt="" className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="p-6 flex flex-col gap-4">
+              <div className="p-6 pt-20 flex flex-col gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-[#2aa7df] font-semibold">
-                    {activeModal.product.code}
-                  </p>
                   <h3 className="text-2xl font-semibold text-[#0f1c2e]">{activeModal.product.name}</h3>
                 </div>
                 <div className="text-[#0f1c2e]">
