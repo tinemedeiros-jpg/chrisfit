@@ -1,134 +1,277 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
-import { Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface CatalogProps {
   products: Product[];
   isLoading: boolean;
   error: string | null;
+  searchTerm: string;
 }
 
-const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error }) => {
-  const [search, setSearch] = useState('');
+const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm }) => {
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [activeModal, setActiveModal] = useState<{ product: Product; image: string } | null>(null);
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.code.includes(search)
+  const filteredProducts = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.code.includes(searchTerm)
+      ),
+    [products, searchTerm]
   );
-  const featuredProduct = products[0];
+  const featuredProducts = useMemo(
+    () => products.filter((product) => product.isFeatured),
+    [products]
+  );
+  const hasFeatured = featuredProducts.length > 0;
+  const currentFeatured = hasFeatured ? featuredProducts[featuredIndex % featuredProducts.length] : null;
+
+  useEffect(() => {
+    if (featuredIndex >= featuredProducts.length) {
+      setFeaturedIndex(0);
+    }
+  }, [featuredIndex, featuredProducts.length]);
+
+  const openModal = (product: Product, image: string) => {
+    setActiveModal({ product, image });
+  };
+
+  const closeModal = () => setActiveModal(null);
+
+  const formatCurrency = (value: number) =>
+    `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+  const getWhatsAppUrl = (product: Product) => {
+    const whatsappNumber = '5511963554043';
+    const message = encodeURIComponent(
+      `Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`
+    );
+    return `https://wa.me/${whatsappNumber}?text=${message}`;
+  };
+
+  const renderPrice = (product: Product) => {
+    const hasPromo = product.isPromo && product.promoPrice && product.promoPrice > 0;
+    if (!hasPromo) {
+      return <span className="text-3xl font-bold">{formatCurrency(product.price)}</span>;
+    }
+    return (
+      <div className="flex flex-col">
+        <span className="text-xs line-through text-white/70">{formatCurrency(product.price)}</span>
+        <span className="text-3xl font-bold">{formatCurrency(product.promoPrice ?? product.price)}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="animate-in fade-in duration-700">
       <section className="mb-14" id="destaques">
         <div className="rounded-[32px] bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white shadow-2xl overflow-hidden relative">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute -left-10 top-10 text-[140px] font-black tracking-tight text-white/40">
-              CHRIS
-            </div>
-            <div className="absolute left-1/3 top-24 text-[160px] font-black tracking-tight text-white/30">
-              FIT
-            </div>
-          </div>
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center px-8 md:px-14 py-12">
-            <div>
-              <p className="uppercase tracking-[0.4em] text-xs opacity-70 mb-4">
-                destaque da semana
-              </p>
-              <h2 className="text-4xl md:text-5xl font-semibold leading-tight mb-4">
-                {featuredProduct ? featuredProduct.name : 'Coleção Chris Fit'}
-              </h2>
-              <p className="text-white/80 max-w-lg mb-6">
-                {featuredProduct?.observation ??
-                  'Peças pensadas para performance e estilo, com conforto para o dia inteiro e pronta entrega no WhatsApp.'}
-              </p>
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="text-3xl font-bold">
-                  {featuredProduct
-                    ? `R$ ${featuredProduct.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                    : 'Consulte valores'}
+          <div className="relative z-10 px-8 md:px-14 py-10">
+            <div className="flex items-center justify-between mb-6">
+              <p className="uppercase tracking-[0.4em] text-xs opacity-70">destaques</p>
+              {hasFeatured && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFeaturedIndex((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)
+                    }
+                    className="h-10 w-10 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/20 transition"
+                    aria-label="Anterior"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFeaturedIndex((prev) => (prev + 1) % featuredProducts.length)
+                    }
+                    className="h-10 w-10 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/20 transition"
+                    aria-label="Próximo"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
-                {featuredProduct?.sizes?.length ? (
-                  <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.2em]">
-                    {featuredProduct.sizes.map((size) => (
-                      <span
-                        key={`${featuredProduct.id}-size-${size}`}
-                        className="rounded-full border border-white/40 px-3 py-1"
-                      >
-                        {size}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              <div className="mt-8 flex items-center gap-4">
-                <button className="bg-white text-[#2199d1] font-bold px-6 py-3 rounded-full shadow-lg hover:brightness-95 transition">
-                  Comprar
-                </button>
-                <button className="bg-white/20 border border-white/40 px-6 py-3 rounded-full uppercase tracking-[0.3em] text-xs font-semibold">
-                  Ver detalhes
-                </button>
-              </div>
+              )}
             </div>
 
-            <div className="flex justify-center lg:justify-end">
-              <div className="bg-white/15 rounded-[28px] p-6 backdrop-blur-sm max-w-sm w-full">
-                <div className="aspect-[4/3] bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center">
-                  {featuredProduct?.images?.[0] ? (
-                    <img
-                      src={featuredProduct.images[0]}
-                      alt={featuredProduct.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="text-[#1e90c8] font-semibold text-lg">
-                      Adicione fotos para destacar
-                    </div>
-                  )}
-                </div>
-                {featuredProduct?.images?.length ? (
-                  <div className="mt-4 flex gap-3 justify-center">
-                    {featuredProduct.images
-                      .filter((image): image is string => Boolean(image))
-                      .slice(0, 4)
-                      .map((image, index) => (
-                        <div
-                          key={`${featuredProduct.id}-thumb-${index}`}
-                          className="h-12 w-12 rounded-xl overflow-hidden border border-white/40"
-                        >
-                          <img src={image} alt="" className="h-full w-full object-cover" />
-                        </div>
-                      ))}
+            {currentFeatured ? (
+              <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
+                <div>
+                  <h2 className="text-4xl md:text-5xl font-semibold leading-tight mb-4">
+                    {currentFeatured.name}
+                  </h2>
+                  <p className="text-white/80 max-w-lg mb-6">
+                    {currentFeatured.observation ??
+                      'Peças pensadas para performance e estilo, com conforto para o dia inteiro e pronta entrega no WhatsApp.'}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4">
+                    {renderPrice(currentFeatured)}
+                    {currentFeatured.sizes.length ? (
+                      <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.2em]">
+                        {currentFeatured.sizes.map((size) => (
+                          <span
+                            key={`${currentFeatured.id}-size-${size}`}
+                            className="rounded-full border border-white/40 px-3 py-1"
+                          >
+                            {size}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                </div>
+
+                <div className="flex justify-center lg:justify-end">
+                  <div className="bg-white/15 rounded-[28px] p-6 backdrop-blur-sm max-w-sm w-full">
+                    {(() => {
+                      const featuredImage = currentFeatured.images.find((image): image is string => Boolean(image));
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (featuredImage) openModal(currentFeatured, featuredImage);
+                          }}
+                          className="aspect-[4/3] bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center w-full"
+                        >
+                          {featuredImage ? (
+                            <img
+                              src={featuredImage}
+                              alt={currentFeatured.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="text-[#1e90c8] font-semibold text-lg">
+                              Adicione fotos para destacar
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })()}
+                    {currentFeatured.images?.length ? (
+                      <div className="mt-4 flex gap-3 justify-center">
+                        {currentFeatured.images
+                          .filter((image): image is string => Boolean(image))
+                          .slice(0, 4)
+                          .map((image, index) => (
+                            <button
+                              key={`${currentFeatured.id}-thumb-${index}`}
+                              type="button"
+                              onClick={() => openModal(currentFeatured, image)}
+                              className="h-12 w-12 rounded-xl overflow-hidden border border-white/40"
+                            >
+                              <img src={image} alt="" className="h-full w-full object-cover" />
+                            </button>
+                          ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-white/80 text-sm">
+                Marque itens como destaque no admin para exibir aqui.
+              </div>
+            )}
           </div>
         </div>
       </section>
 
       <section className="mb-10" id="catalogo">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-8">
-          <div>
-            <p className="uppercase tracking-[0.4em] text-xs text-[#2aa7df] font-semibold">
-              catálogo completo
-            </p>
-            <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
-          </div>
+        <div className="mb-8">
+          <p className="uppercase tracking-[0.4em] text-xs text-[#2aa7df] font-semibold">
+            catálogo completo
+          </p>
+          <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
+        </div>
 
-          <div className="max-w-xl w-full relative group">
-            <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-[#2aa7df]/70 group-focus-within:text-[#1e90c8] transition-colors">
-              <Search size={22} />
+        {isLoading ? (
+          <div className="bg-white/70 rounded-3xl py-24 text-center border border-[#cfefff]">
+            <p className="text-[#2aa7df] font-bold sport-font italic">Carregando catálogo...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white/70 rounded-3xl py-24 text-center border border-red-200">
+            <p className="text-red-500 font-bold sport-font italic">Não foi possível carregar os produtos.</p>
+            <p className="text-xs text-gray-400 mt-2">{error}</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
+          <div className="catalog-grid">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} onPreview={openModal} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white/30 backdrop-blur-sm rounded-3xl py-32 text-center border-2 border-dashed border-[#cfefff]">
+            <div className="max-w-xs mx-auto text-[#2aa7df]/60">
+              <p className="text-xl font-bold sport-font italic">Item não encontrado</p>
             </div>
-            <input
-              type="text"
-              placeholder="Buscar no catálogo (nome ou código)..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white border border-[#e5f3fb] focus:border-[#2aa7df]/50 outline-none rounded-2xl py-4 pl-14 pr-6 shadow-lg transition-all text-[#0f1c2e] font-medium"
-            />
+          </div>
+        )}
+      </section>
+
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog">
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={closeModal}
+            aria-hidden="true"
+          />
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden z-10">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/90 flex items-center justify-center shadow"
+              aria-label="Fechar"
+            >
+              <X size={18} />
+            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <div className="bg-[#f3f9fd] flex items-center justify-center">
+                <img
+                  src={activeModal.image}
+                  alt={activeModal.product.name}
+                  className="w-full h-full object-contain max-h-[520px]"
+                />
+              </div>
+              <div className="p-6 flex flex-col gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-[#2aa7df] font-semibold">
+                    {activeModal.product.code}
+                  </p>
+                  <h3 className="text-2xl font-semibold text-[#0f1c2e]">{activeModal.product.name}</h3>
+                </div>
+                <div className="text-[#0f1c2e]">
+                  {activeModal.product.isPromo && activeModal.product.promoPrice ? (
+                    <div className="flex flex-col">
+                      <span className="text-xs line-through text-gray-400">
+                        {formatCurrency(activeModal.product.price)}
+                      </span>
+                      <span className="text-2xl font-bold">
+                        {formatCurrency(activeModal.product.promoPrice)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-2xl font-bold">{formatCurrency(activeModal.product.price)}</span>
+                  )}
+                </div>
+                {activeModal.product.observation && (
+                  <p className="text-sm text-gray-500">{activeModal.product.observation}</p>
+                )}
+                <a
+                  href={getWhatsAppUrl(activeModal.product)}
+                  target="_blank"
+                  className="inline-flex items-center justify-center gap-2 bg-[#22c55e] text-white px-6 py-3 rounded-full font-bold shadow-lg"
+                >
+                  Pedir este item
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 
