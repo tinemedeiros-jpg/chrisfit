@@ -13,55 +13,62 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-[#1a1a1a] text-white py-16 mt-20 relative overflow-hidden">
-      {/* Decorative track lines in footer background */}
-      <div className="absolute top-0 right-0 w-full h-full opacity-5 pointer-events-none">
-        <div className="absolute top-10 left-0 w-full h-1 bg-[#a15278] rotate-[-5deg]"></div>
-        <div className="absolute top-20 left-0 w-full h-1 bg-[#a15278] rotate-[-5deg]"></div>
+    <footer className="bg-[#0b1b2b] text-white py-16 mt-20 relative overflow-hidden" id="contato">
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        <div className="absolute left-0 top-10 h-1 w-full bg-[#2aa7df] rotate-[-3deg]" />
+        <div className="absolute left-0 top-24 h-1 w-full bg-[#2aa7df] rotate-[-3deg]" />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-center">
-          
-          {/* Brand Info */}
-          <div className="text-center md:text-left">
-            <h2 className="brand-font text-5xl mb-4 text-[#a15278]">Chris Fit</h2>
-            <p className="opacity-50 text-sm max-w-xs mx-auto md:mx-0 sport-font tracking-widest italic mb-6 leading-relaxed">
-              Consultora especializada em moda fitness para alta performance e estilo.
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-start">
+          <div className="space-y-4">
+            <h2 className="brand-font text-5xl text-white">Chris Fit</h2>
+            <div className="flex gap-3 text-xs uppercase tracking-[0.3em] text-white/50">
+              <span>Moda</span>
+              <span>•</span>
+              <span>Performance</span>
+              <span>•</span>
+              <span>Entrega rápida</span>
+            </div>
           </div>
 
-          {/* Enhanced PIX Info */}
-          <div className="bg-[#a15278]/10 border border-[#a15278]/30 p-8 rounded-3xl backdrop-blur-md">
+          <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md">
             <div className="flex items-center justify-center space-x-3 text-[#22c55e] mb-4">
               <CreditCard size={24} />
               <span className="font-bold sport-font tracking-wider text-lg">Pagamento PIX</span>
             </div>
             <div className="text-center">
               <p className="text-xs uppercase tracking-widest opacity-40 mb-2 font-bold">Chave Celular</p>
-              <div 
+              <div
                 onClick={copyPix}
-                className="bg-black/40 p-4 rounded-2xl flex items-center justify-between cursor-pointer border border-white/5 hover:border-[#a15278]/50 transition-all group"
+                className="bg-black/40 p-4 rounded-2xl flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#2aa7df]/50 transition-all group"
               >
                 <span className="text-xl font-mono tracking-widest text-white">(11) 9.6355-4043</span>
-                {copied ? <Check size={20} className="text-[#22c55e]" /> : <Copy size={20} className="opacity-30 group-hover:opacity-100 transition-opacity" />}
+                {copied ? (
+                  <Check size={20} className="text-[#22c55e]" />
+                ) : (
+                  <Copy size={20} className="opacity-30 group-hover:opacity-100 transition-opacity" />
+                )}
               </div>
-              <p className="text-[10px] opacity-30 mt-3 uppercase font-bold tracking-[0.2em]">Clique no número para copiar</p>
+              <p className="text-[10px] opacity-40 mt-3 uppercase font-bold tracking-[0.2em]">
+                Clique no número para copiar
+              </p>
             </div>
           </div>
 
-          {/* Action Section - Centered WhatsApp Button */}
-          <div className="flex justify-center">
-            <a 
-              href="https://wa.me/5511963554043" 
+          <div className="flex flex-col items-center md:items-end gap-6">
+            <a
+              href="https://wa.me/5511963554043"
               target="_blank"
               className="inline-flex items-center space-x-3 bg-[#22c55e] text-white px-10 py-5 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl hover:shadow-[#22c55e]/20"
             >
               <Phone size={22} fill="white" />
               <span className="sport-font tracking-wide text-lg">Enviar Mensagem</span>
             </a>
+            <div className="text-xs uppercase tracking-[0.3em] text-white/40 text-center md:text-right">
+              atendimento de segunda a sábado
+            </div>
           </div>
-
         </div>
       </div>
     </footer>

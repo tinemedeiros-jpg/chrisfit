@@ -15,7 +15,7 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
-const ADMIN_VERSION = '2024-09-14.4';
+const ADMIN_VERSION = '2024-09-14.6';
 
 const sanitizePriceInput = (value: string) => {
   const normalized = value.replace(/\./g, ',').replace(/[^\d,]/g, '');
@@ -57,6 +57,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     code: '',
     name: '',
     price: '',
+    promoPrice: '',
+    isPromo: false,
+    isFeatured: false,
     sizes: [] as string[],
     observation: ''
   });
@@ -117,6 +120,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }),
+      promoPrice: product.promoPrice
+        ? product.promoPrice.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })
+        : '',
+      isPromo: Boolean(product.isPromo),
+      isFeatured: Boolean(product.isFeatured),
       sizes: product.sizes,
       observation: product.observation || ''
     });
@@ -129,7 +140,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const cancelEdit = () => {
     setEditingId(null);
-    setFormData({ code: '', name: '', price: '', sizes: [], observation: '' });
+    setFormData({
+      code: '',
+      name: '',
+      price: '',
+      promoPrice: '',
+      isPromo: false,
+      isFeatured: false,
+      sizes: [],
+      observation: ''
+    });
     setExistingImages([]);
     setNewImages(Array(MAX_IMAGES).fill(null));
     setShowAddForm(false);
@@ -181,6 +201,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setFormData((prev) => ({ ...prev, price: formatPriceDisplay(prev.price) }));
   };
 
+  const handlePromoPriceBlur = () => {
+    setFormData((prev) => ({ ...prev, promoPrice: formatPriceDisplay(prev.promoPrice) }));
+  };
+
   const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
@@ -227,6 +251,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       alert('Informe um preço válido.');
       return;
     }
+    const parsedPromoPrice = formData.isPromo ? parsePriceToNumber(formData.promoPrice) : null;
+    if (formData.isPromo && (!Number.isFinite(parsedPromoPrice ?? NaN) || !formData.promoPrice)) {
+      alert('Informe um preço promocional válido.');
+      return;
+    }
     setIsSubmitting(true);
 
     const payload: ProductUpsertPayload = {
@@ -234,6 +263,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       code: formData.code,
       name: formData.name,
       price: parsedPrice,
+      promoPrice: formData.isPromo ? parsedPromoPrice : null,
+      isPromo: formData.isPromo,
+      isFeatured: formData.isFeatured,
       sizes: formData.sizes,
       observation: formData.observation,
       existingImages: normalizeImageSlots(existingImages),
@@ -350,6 +382,49 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]"
                 placeholder="0,00"
               />
+            </div>
+            <div className="space-y-3">
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Destaque & Promoção</label>
+              <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-3 text-sm text-gray-600 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={formData.isFeatured}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, isFeatured: event.target.checked }))}
+                    className="h-4 w-4 rounded border-gray-300 text-[#a15278] focus:ring-[#a15278]"
+                  />
+                  Marcar como destaque
+                </label>
+                <label className="flex items-center gap-3 text-sm text-gray-600 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPromo}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        isPromo: event.target.checked,
+                        promoPrice: event.target.checked ? prev.promoPrice : ''
+                      }))
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-[#a15278] focus:ring-[#a15278]"
+                  />
+                  Marcar como promoção
+                </label>
+                {formData.isPromo && (
+                  <input
+                    required
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.promoPrice}
+                    onChange={(event) =>
+                      setFormData((prev) => ({ ...prev, promoPrice: sanitizePriceInput(event.target.value) }))
+                    }
+                    onBlur={handlePromoPriceBlur}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]"
+                    placeholder="Preço promocional"
+                  />
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Tamanhos (P, M, G...)</label>
@@ -481,6 +556,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 <th className="px-8 py-6">Cód.</th>
                 <th className="px-8 py-6">Nome</th>
                 <th className="px-8 py-6">Preço</th>
+                <th className="px-8 py-6">Status</th>
                 <th className="px-8 py-6">Tamanhos</th>
                 <th className="px-8 py-6">Observações</th>
                 <th className="px-8 py-6">Imagens</th>
@@ -503,6 +579,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
                   <td className="px-8 py-4 text-[#a15278] font-black">
                     R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="px-8 py-4 text-xs text-gray-500">
+                    <div className="flex flex-wrap gap-2">
+                      {product.isFeatured && (
+                        <span className="px-2 py-1 rounded-full bg-[#a15278]/10 text-[#a15278] font-semibold">
+                          Destaque
+                        </span>
+                      )}
+                      {product.isPromo && (
+                        <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 font-semibold">
+                          Promoção
+                        </span>
+                      )}
+                      {!product.isFeatured && !product.isPromo && <span>—</span>}
+                    </div>
                   </td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
                   <td className="px-8 py-4 text-sm text-gray-400">

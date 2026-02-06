@@ -5,24 +5,28 @@ import Header from './components/Header';
 import Catalog from './components/Catalog';
 import AdminPanel from './components/AdminPanel';
 import Footer from './components/Footer';
-import { ShoppingBag, Settings } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 
 const BUCKET_NAME = 'product-images';
 const MAX_IMAGES = 5;
 
 const App: React.FC = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('catalog');
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    window.location.pathname.startsWith('/admin') ? 'admin' : 'catalog'
+  );
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     const { data, error: fetchError } = await supabase
       .from('products')
-      .select('id, code, name, price, sizes, observation, created_at, product_images ( url, position )')
+      .select(
+        'id, code, name, price, promo_price, is_promo, is_featured, sizes, observation, created_at, product_images ( url, position )'
+      )
       .order('created_at', { ascending: false });
 
     if (fetchError) {
@@ -40,11 +44,21 @@ const App: React.FC = () => {
         }
       });
 
+      const promoPriceValue =
+        typeof product.promo_price === 'number'
+          ? product.promo_price
+          : product.promo_price
+            ? Number(product.promo_price)
+            : null;
+
       return {
         id: product.id,
         code: product.code ?? '',
         name: product.name ?? '',
         price: typeof product.price === 'number' ? product.price : Number(product.price ?? 0),
+        promoPrice: promoPriceValue,
+        isPromo: Boolean(product.is_promo),
+        isFeatured: Boolean(product.is_featured),
         sizes: Array.isArray(product.sizes) ? product.sizes : [],
         images,
         observation: product.observation ?? null,
@@ -59,6 +73,12 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  useEffect(() => {
+    if (window.location.pathname.startsWith('/admin')) {
+      setViewMode('admin');
+    }
+  }, []);
 
   const uploadImages = async (productId: string, files: Array<{ file: File; position: number }>) => {
     const uploadedEntries: Array<{ url: string; position: number }> = [];
@@ -148,6 +168,9 @@ const App: React.FC = () => {
         code: payload.code,
         name: payload.name,
         price: payload.price,
+        promo_price: payload.promoPrice ?? null,
+        is_promo: payload.isPromo ?? false,
+        is_featured: payload.isFeatured ?? false,
         sizes: payload.sizes,
         observation: payload.observation ?? null
       })
@@ -178,6 +201,9 @@ const App: React.FC = () => {
         code: payload.code,
         name: payload.name,
         price: payload.price,
+        promo_price: payload.promoPrice ?? null,
+        is_promo: payload.isPromo ?? false,
+        is_featured: payload.isFeatured ?? false,
         sizes: payload.sizes,
         observation: payload.observation ?? null
       })
@@ -204,11 +230,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header searchTerm={searchTerm} onSearchChange={setSearchTerm} />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-10">
         {viewMode === 'catalog' ? (
-          <Catalog products={products} isLoading={isLoading} error={error} />
+          <Catalog products={products} isLoading={isLoading} error={error} searchTerm={searchTerm} />
         ) : (
           <AdminPanel 
             products={products} 
@@ -221,33 +247,6 @@ const App: React.FC = () => {
           />
         )}
       </main>
-
-      {/* Navigation bar moved to the bottom-left */}
-      <nav className="fixed bottom-8 left-4 md:left-8 bg-[#1a1a1a] shadow-2xl rounded-2xl p-2 flex items-center border border-white/10 z-50">
-        <button 
-          onClick={() => setViewMode('catalog')}
-          className={`px-6 md:px-8 py-3 rounded-xl transition-all flex items-center space-x-2 ${
-            viewMode === 'catalog' 
-            ? 'bg-[#a15278] text-white shadow-lg scale-105' 
-            : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <ShoppingBag size={20} />
-          <span className="text-xs font-bold uppercase tracking-widest sport-font">Catálogo</span>
-        </button>
-        <div className="w-px h-6 bg-white/10 mx-2"></div>
-        <button 
-          onClick={() => setViewMode('admin')}
-          className={`px-6 md:px-8 py-3 rounded-xl transition-all flex items-center space-x-2 ${
-            viewMode === 'admin' 
-            ? 'bg-[#a15278] text-white shadow-lg scale-105' 
-            : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Settings size={20} />
-          <span className="text-xs font-bold uppercase tracking-widest sport-font">Admin</span>
-        </button>
-      </nav>
 
       <Footer />
     </div>
