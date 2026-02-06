@@ -288,9 +288,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
-        <div className="bg-white p-10 rounded-3xl shadow-2xl border border-[#a15278]/10 w-full max-w-md text-center">
-          <div className="bg-[#a15278]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <LogIn className="text-[#a15278]" size={32} />
+        <div className="bg-white p-10 rounded-3xl shadow-2xl border border-[#1e90c8]/10 w-full max-w-md text-center">
+          <div className="bg-[#1e90c8]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <LogIn className="text-[#1e90c8]" size={32} />
           </div>
           <h2 className="text-3xl font-bold text-gray-800 mb-2 sport-font italic">Acesso Restrito</h2>
           <p className="text-gray-500 text-sm mb-8">Entre com seu usuário do Supabase para gerenciar.</p>
@@ -300,7 +300,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               placeholder="Seu email..."
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#a15278] transition-all text-center"
+              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#1e90c8] transition-all text-center"
               autoFocus
             />
             <input 
@@ -308,12 +308,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               placeholder="Sua senha..."
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#a15278] transition-all text-center"
+              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#1e90c8] transition-all text-center"
             />
             {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button 
               type="submit"
-              className="w-full bg-[#a15278] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2"
+              className="w-full bg-[#1e90c8] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2"
             >
               <span>Entrar no Dashboard</span>
             </button>
@@ -327,7 +327,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     <div className="animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-4xl font-black text-[#a15278] sport-font italic">Dashboard</h2>
+          <h2 className="text-4xl font-black text-[#1e90c8] sport-font italic">Dashboard</h2>
           <p className="text-gray-500 text-sm font-medium">Gerenciamento de Produtos</p>
           <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 mt-2">Versão {ADMIN_VERSION}</p>
         </div>
@@ -342,7 +342,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
           <button 
             onClick={() => showAddForm ? cancelEdit() : setShowAddForm(true)}
             className={`px-6 py-3 rounded-full flex items-center space-x-2 shadow-lg transition-all ${
-              showAddForm ? 'bg-gray-200 text-gray-600' : 'bg-[#a15278] text-white hover:bg-[#8e4669]'
+              showAddForm ? 'bg-gray-200 text-gray-600' : 'bg-[#1e90c8] text-white hover:bg-[#187db0]'
             }`}
           >
             {showAddForm ? <X size={20} /> : <Plus size={20} />}
@@ -352,8 +352,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-2xl mb-12 border border-[#a15278]/10 space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-[#a15278]"></div>
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-2xl mb-12 border border-[#1e90c8]/10 space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-2 h-full bg-[#1e90c8]"></div>
           <h3 className="text-xl font-bold sport-font italic text-gray-800 mb-4 flex items-center space-x-2">
             {editingId ? <Edit2 size={20} /> : <Plus size={20} />}
             <span>{editingId ? 'Editar Produto' : 'Cadastrar Novo Item'}</span>
@@ -363,12 +363,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             <div className="space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Código</label>
               <input required type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]" placeholder="Ex: 01" />
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: 01" />
             </div>
             <div className="md:col-span-2 space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Nome do Produto</label>
               <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]" placeholder="Ex: Conjunto Fitness Premium" />
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: Conjunto Fitness Premium" />
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Preço (R$)</label>
@@ -379,7 +379,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 value={formData.price}
                 onChange={handlePriceChange}
                 onBlur={handlePriceBlur}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]"
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]"
                 placeholder="0,00"
               />
             </div>
@@ -391,7 +391,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     type="checkbox"
                     checked={formData.isFeatured}
                     onChange={(event) => setFormData((prev) => ({ ...prev, isFeatured: event.target.checked }))}
-                    className="h-4 w-4 rounded border-gray-300 text-[#a15278] focus:ring-[#a15278]"
+                    className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
                   />
                   Marcar como destaque
                 </label>
@@ -406,7 +406,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         promoPrice: event.target.checked ? prev.promoPrice : ''
                       }))
                     }
-                    className="h-4 w-4 rounded border-gray-300 text-[#a15278] focus:ring-[#a15278]"
+                    className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
                   />
                   Marcar como promoção
                 </label>
@@ -420,7 +420,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       setFormData((prev) => ({ ...prev, promoPrice: sanitizePriceInput(event.target.value) }))
                     }
                     onBlur={handlePromoPriceBlur}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]"
                     placeholder="Preço promocional"
                   />
                 )}
@@ -441,13 +441,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         addSize(sizeInput);
                       }
                     }}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278]"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]"
                     placeholder="Selecione ou digite um tamanho"
                   />
                   <button
                     type="button"
                     onClick={() => addSize(sizeInput)}
-                    className="px-5 py-3 rounded-xl bg-[#a15278] text-white font-bold hover:brightness-110 transition-all"
+                    className="px-5 py-3 rounded-xl bg-[#1e90c8] text-white font-bold hover:brightness-110 transition-all"
                   >
                     Adicionar tamanho
                   </button>
@@ -491,7 +491,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       type="file"
                       accept="image/*"
                       onChange={(event) => handleFileChange(index, event)}
-                      className="mt-1 w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#a15278]"
+                      className="mt-1 w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#1e90c8]"
                     />
                     <div className="mt-2 flex items-center gap-2">
                       {existingImages[index] ? (
@@ -530,11 +530,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
           <div className="space-y-2">
             <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
             <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#a15278] min-h-[100px]" placeholder="Ex: Confirmar cores disponíveis..." />
+              className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8] min-h-[100px]" placeholder="Ex: Confirmar cores disponíveis..." />
           </div>
           
           <div className="flex space-x-4">
-            <button type="submit" disabled={isSubmitting} className="flex-grow bg-[#a15278] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2 disabled:opacity-60">
+            <button type="submit" disabled={isSubmitting} className="flex-grow bg-[#1e90c8] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2 disabled:opacity-60">
               <CheckCircle2 size={20} />
               <span className="sport-font">{isSubmitting ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Adicionar ao Catálogo'}</span>
             </button>
@@ -547,10 +547,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         </form>
       )}
 
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-[#a15278]/10">
+      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-[#1e90c8]/10">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-[#a15278]/5 text-[#a15278] font-bold uppercase text-[10px] tracking-[0.2em]">
+            <thead className="bg-[#1e90c8]/5 text-[#1e90c8] font-bold uppercase text-[10px] tracking-[0.2em]">
               <tr>
                 <th className="px-8 py-6">Visual</th>
                 <th className="px-8 py-6">Cód.</th>
@@ -577,13 +577,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   </td>
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
-                  <td className="px-8 py-4 text-[#a15278] font-black">
+                  <td className="px-8 py-4 text-[#1e90c8] font-black">
                     R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-8 py-4 text-xs text-gray-500">
                     <div className="flex flex-wrap gap-2">
                       {product.isFeatured && (
-                        <span className="px-2 py-1 rounded-full bg-[#a15278]/10 text-[#a15278] font-semibold">
+                        <span className="px-2 py-1 rounded-full bg-[#1e90c8]/10 text-[#1e90c8] font-semibold">
                           Destaque
                         </span>
                       )}

@@ -26,25 +26,6 @@
         text-transform: uppercase;
       }
       
-      /* Background Olympic Track Lines */
-      .track-lines {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 200%;
-        height: 200%;
-        pointer-events: none;
-        z-index: -1;
-        transform: rotate(-15deg) translateY(-10%);
-        opacity: 0.08;
-      }
-      .line {
-        height: 2px;
-        background-color: #2aa7df;
-        margin-bottom: 20px;
-        width: 100%;
-      }
-
       /* Standard Grid: Left-to-Right then Down */
       .catalog-grid {
         display: grid;
@@ -65,17 +46,8 @@
       }
     }
     </script>
-  <link rel="stylesheet" href="/index.css">
 </head>
   <body>
-    <!-- Sporty track background lines -->
-    <div class="track-lines">
-      <div class="line"></div>
-      <div class="line"></div>
-      <div class="line" style="height: 4px; opacity: 0.5;"></div>
-      <div class="line"></div>
-      <div class="line"></div>
-    </div>
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

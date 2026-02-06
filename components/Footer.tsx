@@ -13,13 +13,8 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-[#0b1b2b] text-white py-16 mt-20 relative overflow-hidden" id="contato">
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute left-0 top-10 h-1 w-full bg-[#2aa7df] rotate-[-3deg]" />
-        <div className="absolute left-0 top-24 h-1 w-full bg-[#2aa7df] rotate-[-3deg]" />
-      </div>
-
-      <div className="container mx-auto px-4 relative z-10">
+    <footer className="bg-[#0b1b2b] text-white py-16 mt-20" id="contato">
+      <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-start">
           <div className="space-y-4">
             <h2 className="brand-font text-5xl text-white">Chris Fit</h2>
