@@ -1,8 +1,8 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface CatalogProps {
   products: Product[];
@@ -12,7 +12,6 @@ interface CatalogProps {
 }
 
 const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm }) => {
-  const [featuredIndex, setFeaturedIndex] = useState(0);
   const [activeModal, setActiveModal] = useState<{ product: Product; image: string } | null>(null);
 
   const filteredProducts = useMemo(
@@ -29,15 +28,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     [products]
   );
   const hasFeatured = featuredProducts.length > 0;
-  const currentFeatured = hasFeatured ? featuredProducts[featuredIndex % featuredProducts.length] : null;
-  const featuredImage = currentFeatured?.images?.find((image): image is string => Boolean(image));
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
-
-  useEffect(() => {
-    if (featuredIndex >= featuredProducts.length) {
-      setFeaturedIndex(0);
-    }
-  }, [featuredIndex, featuredProducts.length]);
+  const featuredStack = useMemo(() => featuredProducts.slice(0, 5), [featuredProducts]);
 
   const openModal = (product: Product, image: string) => {
     setActiveModal({ product, image });
@@ -56,125 +48,96 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     return `https://wa.me/${whatsappNumber}?text=${message}`;
   };
 
-  const renderPrice = (product: Product) => {
-    const hasPromo = product.isPromo && product.promoPrice && product.promoPrice > 0;
-    if (!hasPromo) {
-      return <span className="text-3xl font-bold">{formatCurrency(product.price)}</span>;
-    }
-    return (
-      <div className="flex flex-col">
-        <span className="text-xs line-through text-white/70">{formatCurrency(product.price)}</span>
-        <span className="text-3xl font-bold">{formatCurrency(product.promoPrice ?? product.price)}</span>
-      </div>
-    );
-  };
-
   return (
     <div className="animate-in fade-in duration-700">
       <section className="mb-14" id="destaques">
-        <div className="rounded-[32px] bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white shadow-2xl overflow-hidden relative">
-          <div className="relative z-10 px-8 md:px-14 py-10">
-            <div className="flex items-center justify-between mb-6">
-              <p className="uppercase tracking-[0.4em] text-xs opacity-70">destaques</p>
-              {hasFeatured && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFeaturedIndex((prev) => (prev - 1 + featuredProducts.length) % featuredProducts.length)
-                    }
-                    className="h-10 w-10 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/20 transition"
-                    aria-label="Anterior"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFeaturedIndex((prev) => (prev + 1) % featuredProducts.length)
-                    }
-                    className="h-10 w-10 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/20 transition"
-                    aria-label="Próximo"
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              )}
-            </div>
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white shadow-2xl overflow-hidden">
+          <div className="relative z-10 px-6 md:px-14 py-12">
+            <p className="uppercase tracking-[0.4em] text-xs opacity-70">destaques</p>
 
-            {currentFeatured ? (
-              <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
-                <div>
-                  <h2 className="text-4xl md:text-5xl font-semibold leading-tight mb-4">
-                    {currentFeatured.name}
+            {hasFeatured ? (
+              <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1.05fr] gap-12 items-start mt-8">
+                <div className="space-y-6">
+                  <h2 className="text-4xl md:text-5xl font-semibold leading-tight">
+                    Seleção em destaque
                   </h2>
-                  <p className="text-white/80 max-w-lg mb-6">
-                    {currentFeatured.observation ??
-                      'Peças pensadas para performance e estilo, com conforto para o dia inteiro e pronta entrega no WhatsApp.'}
+                  <p className="text-white/80 max-w-lg">
+                    Peças escolhidas para performance e estilo. Cada item aparece em camadas,
+                    valorizando o destaque principal do catálogo.
                   </p>
-                  <div className="flex flex-wrap items-center gap-4">
-                    {renderPrice(currentFeatured)}
-                    {currentFeatured.sizes.length ? (
-                      <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.2em]">
-                        {currentFeatured.sizes.map((size) => (
-                          <span
-                            key={`${currentFeatured.id}-size-${size}`}
-                            className="rounded-full border border-white/40 px-3 py-1"
-                          >
-                            {size}
-                          </span>
-                        ))}
+                  <div className="space-y-5">
+                    {featuredStack.map((product, index) => (
+                      <div key={product.id} className="flex items-start gap-4">
+                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <div>
+                          <p className="text-lg font-semibold">{product.name}</p>
+                          <div className="mt-2 text-sm">
+                            {product.isPromo && product.promoPrice ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs line-through text-white/60">
+                                  {formatCurrency(product.price)}
+                                </span>
+                                <span className="text-lg font-semibold">
+                                  {formatCurrency(product.promoPrice)}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-lg font-semibold">{formatCurrency(product.price)}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    ) : null}
+                    ))}
                   </div>
                 </div>
 
-                <div className="flex justify-center lg:justify-end">
-                  <div className="bg-white/15 rounded-[28px] p-6 backdrop-blur-sm max-w-sm w-full">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (featuredImage && currentFeatured) {
-                          openModal(currentFeatured, featuredImage);
-                        }
-                      }}
-                      className="aspect-[4/3] bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center w-full"
-                    >
-                      {featuredImage ? (
-                        <img
-                          src={featuredImage}
-                          alt={currentFeatured.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="text-[#1e90c8] font-semibold text-lg">
-                          Adicione fotos para destacar
-                        </div>
-                      )}
-                    </button>
-                    {currentFeatured.images?.length ? (
-                      <div className="mt-4 flex gap-3 justify-center">
-                        {currentFeatured.images
-                          .filter((image): image is string => Boolean(image))
-                          .slice(0, 4)
-                          .map((image, index) => (
-                            <button
-                              key={`${currentFeatured.id}-thumb-${index}`}
-                              type="button"
-                              onClick={() => openModal(currentFeatured, image)}
-                              className="h-12 w-12 rounded-xl overflow-hidden border border-white/40"
-                            >
-                              <img src={image} alt="" className="h-full w-full object-cover" />
-                            </button>
-                          ))}
-                      </div>
-                    ) : null}
+                <div className="relative min-h-[340px] flex items-start justify-center lg:justify-end">
+                  <div className="relative w-full max-w-xl">
+                    {featuredStack.map((product, index) => {
+                      const featuredImage = product.images?.find((image): image is string => Boolean(image));
+                      return (
+                        <button
+                          key={`${product.id}-stack-${index}`}
+                          type="button"
+                          onClick={() => {
+                            if (featuredImage) {
+                              openModal(product, featuredImage);
+                            }
+                          }}
+                          className="absolute top-0 left-0 w-full bg-white/95 text-[#0f1c2e] shadow-2xl overflow-hidden border border-white/40"
+                          style={{
+                            transform: `translate(${index * 36}px, ${index * 24}px)`,
+                            zIndex: featuredStack.length - index
+                          }}
+                        >
+                          {featuredImage ? (
+                            <img
+                              src={featuredImage}
+                              alt={product.name}
+                              className="w-full h-64 md:h-72 object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="h-64 md:h-72 flex items-center justify-center text-[#1e90c8] font-semibold">
+                              Adicione fotos para destacar
+                            </div>
+                          )}
+                          <div className="px-5 py-4 border-t border-[#d7effa] flex items-center justify-between gap-4">
+                            <span className="font-semibold">{product.name}</span>
+                            <span className="text-sm font-bold text-[#1e90c8]">
+                              {formatCurrency(product.isPromo && product.promoPrice ? product.promoPrice : product.price)}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-white/80 text-sm">
+              <div className="text-white/80 text-sm mt-6">
                 Marque itens como destaque no admin para exibir aqui.
               </div>
             )}
