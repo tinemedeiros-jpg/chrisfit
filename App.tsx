@@ -19,6 +19,13 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const resolveImageUrl = useCallback((url: string | null) => {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(url);
+    return data.publicUrl;
+  }, []);
+
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -40,7 +47,7 @@ const App: React.FC = () => {
       const sortedImages = (product.product_images ?? []).sort((a, b) => a.position - b.position);
       sortedImages.forEach((image) => {
         if (image.position >= 1 && image.position <= MAX_IMAGES) {
-          images[image.position - 1] = image.url;
+          images[image.position - 1] = resolveImageUrl(image.url);
         }
       });
 
@@ -66,7 +73,7 @@ const App: React.FC = () => {
 
     setProducts(mappedProducts);
     setIsLoading(false);
-  }, []);
+  }, [resolveImageUrl]);
 
   useEffect(() => {
     fetchProducts();
