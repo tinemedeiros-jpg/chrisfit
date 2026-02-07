@@ -112,11 +112,15 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </div>
 
-                <div className="relative min-h-[360px] flex items-start justify-center lg:justify-start">
-                  <div className="relative w-full max-w-2xl overflow-visible">
+                <div className="relative min-h-[340px] flex items-start justify-center lg:justify-end">
+                  <div className="relative w-full max-w-2xl overflow-hidden">
                     {featuredLayers.map((product, index) => {
                       const featuredImage = product.images?.find((image): image is string => Boolean(image));
                       const depth = index;
+                      const widthOffset = depth * 90;
+                      const translateX = depth * 40;
+                      const translateY = depth * 24;
+                      const scale = Math.max(0.68, 1 - depth * 0.06);
                       const isActive = index === 0;
                       const widthOffset = depth * 85;
                       const translateX = depth * 55;
