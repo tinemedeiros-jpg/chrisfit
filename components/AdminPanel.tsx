@@ -53,6 +53,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
   const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
+  const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
   
   const [formData, setFormData] = useState({
     code: '',
@@ -134,6 +135,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
     setExistingImages(normalizeImageSlots(product.images));
     setNewImages(Array(MAX_IMAGES).fill(null));
+    setFeaturedImageIndex(
+      getFirstAvailableImageIndex(normalizeImageSlots(product.images), Array(MAX_IMAGES).fill(null))
+    );
     setShowAddForm(true);
     setSizeInput('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -153,6 +157,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
     setExistingImages([]);
     setNewImages(Array(MAX_IMAGES).fill(null));
+    setFeaturedImageIndex(0);
     setShowAddForm(false);
     setIsSubmitting(false);
     setSizeInput('');
@@ -206,6 +211,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setFormData((prev) => ({ ...prev, promoPrice: formatPriceDisplay(prev.promoPrice) }));
   };
 
+  const getFirstAvailableImageIndex = (images: Array<string | null>, nextFiles: Array<File | null>) => {
+    const next = images.findIndex((image, index) => Boolean(image || nextFiles[index]));
+    return next === -1 ? 0 : next;
+  };
+
+  const reorderImagesForFeatured = (
+    images: Array<string | null>,
+    nextFiles: Array<File | null>,
+    highlightIndex: number
+  ) => {
+    if (highlightIndex <= 0 || highlightIndex >= MAX_IMAGES) {
+      return { images, nextFiles };
+    }
+    if (!images[highlightIndex] && !nextFiles[highlightIndex]) {
+      return { images, nextFiles };
+    }
+    const nextImages = [...images];
+    const updatedFiles = [...nextFiles];
+    [nextImages[0], nextImages[highlightIndex]] = [nextImages[highlightIndex], nextImages[0]];
+    [updatedFiles[0], updatedFiles[highlightIndex]] = [updatedFiles[highlightIndex], updatedFiles[0]];
+    return { images: nextImages, nextFiles: updatedFiles };
+  };
+
   const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
@@ -241,6 +269,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
   };
 
+  useEffect(() => {
+    const normalizedImages = normalizeImageSlots(existingImages);
+    const nextIndex = getFirstAvailableImageIndex(normalizedImages, newImages);
+    const hasSelected = Boolean(
+      normalizedImages[featuredImageIndex] || newImages[featuredImageIndex]
+    );
+    if (!hasSelected && nextIndex !== featuredImageIndex) {
+      setFeaturedImageIndex(nextIndex);
+    }
+  }, [existingImages, newImages, featuredImageIndex]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.code || formData.sizes.length === 0) {
@@ -252,25 +291,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       alert('Informe um preço válido.');
       return;
     }
-    const parsedPromoPrice = formData.isPromo ? parsePriceToNumber(formData.promoPrice) : null;
+    const parsedPromoPrice = formData.promoPrice ? parsePriceToNumber(formData.promoPrice) : null;
+    if (formData.promoPrice && !Number.isFinite(parsedPromoPrice ?? NaN)) {
+      alert('Informe um preço promocional válido.');
+      return;
+    }
     if (formData.isPromo && (!Number.isFinite(parsedPromoPrice ?? NaN) || !formData.promoPrice)) {
       alert('Informe um preço promocional válido.');
       return;
     }
     setIsSubmitting(true);
+    const normalizedImages = normalizeImageSlots(existingImages);
+    const { images: reorderedImages, nextFiles: reorderedNewImages } = reorderImagesForFeatured(
+      normalizedImages,
+      newImages,
+      featuredImageIndex
+    );
 
     const payload: ProductUpsertPayload = {
       id: editingId || undefined,
       code: formData.code,
       name: formData.name,
       price: parsedPrice,
-      promoPrice: formData.isPromo ? parsedPromoPrice : null,
+      promoPrice: parsedPromoPrice,
       isPromo: formData.isPromo,
       isFeatured: formData.isFeatured,
       sizes: formData.sizes,
       observation: formData.observation,
-      existingImages: normalizeImageSlots(existingImages),
-      newImages
+      existingImages: reorderedImages,
+      newImages: reorderedNewImages
     };
 
     try {
@@ -288,6 +337,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const handleStatusToggle = async (product: Product, field: 'isFeatured' | 'isPromo') => {
     if (statusUpdatingId) return;
+    if (field === 'isPromo' && !product.isPromo) {
+      return;
+    }
     const nextIsFeatured = field === 'isFeatured' ? !product.isFeatured : product.isFeatured;
     const nextIsPromo = field === 'isPromo' ? !product.isPromo : product.isPromo;
     if (field === 'isPromo' && !product.isPromo && (!product.promoPrice || product.promoPrice <= 0)) {
@@ -300,7 +352,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       code: product.code,
       name: product.name,
       price: product.price,
-      promoPrice: nextIsPromo ? product.promoPrice ?? null : null,
+      promoPrice: product.promoPrice ?? null,
       isPromo: nextIsPromo,
       isFeatured: nextIsFeatured,
       sizes: product.sizes,
@@ -434,8 +486,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     onChange={(event) =>
                       setFormData((prev) => ({
                         ...prev,
-                        isPromo: event.target.checked,
-                        promoPrice: event.target.checked ? prev.promoPrice : ''
+                        isPromo: event.target.checked
                       }))
                     }
                     className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
@@ -525,6 +576,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       onChange={(event) => handleFileChange(index, event)}
                       className="mt-1 w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#1e90c8]"
                     />
+                    <label className="mt-2 inline-flex items-center gap-2 text-[10px] text-gray-500">
+                      <input
+                        type="radio"
+                        name="featured-image"
+                        checked={featuredImageIndex === index}
+                        onChange={() => setFeaturedImageIndex(index)}
+                        className="h-3.5 w-3.5 text-[#1e90c8] focus:ring-[#1e90c8]"
+                      />
+                      Imagem de destaque
+                    </label>
                     <div className="mt-2 flex items-center gap-2">
                       {existingImages[index] ? (
                         <div className="relative">
@@ -626,6 +687,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       )}
                       {!product.isFeatured && !product.isPromo && <span>—</span>}
                     </div>
+                    {product.isPromo && product.promoPrice ? (
+                      <p className="text-[11px] text-green-700 font-semibold">
+                        R$ {product.promoPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    ) : null}
                     <div className="flex flex-col gap-2 text-[11px] text-gray-500">
                       <label className="flex items-center gap-2">
                         <input
@@ -637,16 +703,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         />
                         Destaque
                       </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={product.isPromo}
-                          disabled={statusUpdatingId === product.id}
-                          onChange={() => handleStatusToggle(product, 'isPromo')}
-                          className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
-                        />
-                        Promoção
-                      </label>
+                      {product.isPromo && (
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={product.isPromo}
+                            disabled={statusUpdatingId === product.id}
+                            onChange={() => handleStatusToggle(product, 'isPromo')}
+                            className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                          />
+                          Promoção
+                        </label>
+                      )}
                     </div>
                   </td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
