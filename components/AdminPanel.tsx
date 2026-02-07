@@ -15,7 +15,7 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
-const ADMIN_VERSION = 'v0.2026/02/06_22:33';
+const ADMIN_VERSION = 'v0.20260207_0141';
 
 const sanitizePriceInput = (value: string) => {
   const normalized = value.replace(/\./g, ',').replace(/[^\d,]/g, '');
@@ -372,8 +372,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-500">
-        <div className="bg-white p-10 rounded-3xl shadow-2xl border border-[#1e90c8]/10 w-full max-w-md text-center">
-          <div className="bg-[#1e90c8]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="bg-white p-10 shadow-2xl border border-[#1e90c8]/10 w-full max-w-md text-center">
+          <div className="bg-[#1e90c8]/10 w-20 h-20 flex items-center justify-center mx-auto mb-6">
             <LogIn className="text-[#1e90c8]" size={32} />
           </div>
           <h2 className="text-3xl font-bold text-gray-800 mb-2 sport-font italic">Acesso Restrito</h2>
@@ -384,7 +384,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               placeholder="Seu email..."
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#1e90c8] transition-all text-center"
+              className="w-full bg-gray-50 border-2 border-gray-100 py-4 px-6 outline-none focus:border-[#1e90c8] transition-all text-center"
               autoFocus
             />
             <input 
@@ -392,7 +392,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               placeholder="Sua senha..."
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-6 outline-none focus:border-[#1e90c8] transition-all text-center"
+              className="w-full bg-gray-50 border-2 border-gray-100 py-4 px-6 outline-none focus:border-[#1e90c8] transition-all text-center"
             />
             {authError && <p className="text-xs text-red-500">{authError}</p>}
             <button 
@@ -436,7 +436,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-2xl mb-12 border border-[#1e90c8]/10 space-y-6 relative overflow-hidden">
+        <form onSubmit={handleSubmit} className="bg-white p-8 shadow-2xl mb-12 border border-[#1e90c8]/10 space-y-6 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-2 h-full bg-[#1e90c8]"></div>
           <h3 className="text-xl font-bold sport-font italic text-gray-800 mb-4 flex items-center space-x-2">
             {editingId ? <Edit2 size={20} /> : <Plus size={20} />}
@@ -447,12 +447,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             <div className="space-y-2 md:col-span-3">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Código</label>
               <input required type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: 01" />
+                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: 01" />
             </div>
             <div className="md:col-span-6 space-y-2">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Nome do Produto</label>
               <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: Conjunto Fitness Premium" />
+                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]" placeholder="Ex: Conjunto Fitness Premium" />
             </div>
             <div className="space-y-2 md:col-span-3">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Preço (R$)</label>
@@ -463,7 +463,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 value={formData.price}
                 onChange={handlePriceChange}
                 onBlur={handlePriceBlur}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]"
+                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]"
                 placeholder="0,00"
               />
             </div>
@@ -475,7 +475,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     type="checkbox"
                     checked={formData.isFeatured}
                     onChange={(event) => setFormData((prev) => ({ ...prev, isFeatured: event.target.checked }))}
-                    className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                    className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
                   />
                   Marcar como destaque
                 </label>
@@ -489,7 +489,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         isPromo: event.target.checked
                       }))
                     }
-                    className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                    className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
                   />
                   Marcar como promoção
                 </label>
@@ -503,7 +503,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       setFormData((prev) => ({ ...prev, promoPrice: sanitizePriceInput(event.target.value) }))
                     }
                     onBlur={handlePromoPriceBlur}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]"
+                    className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]"
                     placeholder="Preço promocional"
                   />
                 )}
@@ -524,7 +524,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         addSize(sizeInput);
                       }
                     }}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8]"
+                    className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]"
                     placeholder="Selecione ou digite um tamanho"
                   />
                   <button
@@ -545,7 +545,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     {formData.sizes.map((size) => (
                       <span
                         key={size}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-xs font-semibold text-gray-600"
+                        className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-xs font-semibold text-gray-600"
                       >
                         {size}
                         <button
@@ -574,7 +574,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       type="file"
                       accept="image/*"
                       onChange={(event) => handleFileChange(index, event)}
-                      className="mt-1 w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-[#1e90c8]"
+                      className="mt-1 w-full bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#1e90c8]"
                     />
                     <label className="mt-2 inline-flex items-center gap-2 text-[10px] text-gray-500">
                       <input
@@ -589,11 +589,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     <div className="mt-2 flex items-center gap-2">
                       {existingImages[index] ? (
                         <div className="relative">
-                          <img src={existingImages[index] ?? ''} alt={`Imagem ${index + 1}`} className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+                          <img src={existingImages[index] ?? ''} alt={`Imagem ${index + 1}`} className="w-16 h-16 object-cover border border-gray-200" />
                           <button
                             type="button"
                             onClick={() => removeExistingImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow"
+                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 shadow"
                           >
                             <X size={12} />
                           </button>
@@ -622,7 +622,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             <div className="space-y-2 md:col-span-5">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
               <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-[#1e90c8] min-h-[140px]" placeholder="Ex: Confirmar cores disponíveis..." />
+                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8] min-h-[140px]" placeholder="Ex: Confirmar cores disponíveis..." />
             </div>
           </div>
           
@@ -640,7 +640,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         </form>
       )}
 
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-[#1e90c8]/10">
+      <div className="bg-white shadow-2xl overflow-hidden border border-[#1e90c8]/10">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#1e90c8]/5 text-[#1e90c8] font-bold uppercase text-[10px] tracking-[0.2em]">
@@ -665,7 +665,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         product.images.find((image): image is string => Boolean(image)) ??
                         'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'
                       }
-                      className="w-14 h-14 object-cover rounded-xl shadow-md border-2 border-white"
+                      className="w-14 h-14 object-cover shadow-md border-2 border-white"
                     />
                   </td>
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
@@ -676,12 +676,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   <td className="px-8 py-4 text-xs text-gray-500">
                     <div className="flex flex-wrap gap-2 mb-3">
                       {product.isFeatured && (
-                        <span className="px-2 py-1 rounded-full bg-[#1e90c8]/10 text-[#1e90c8] font-semibold">
+                        <span className="px-2 py-1 bg-[#1e90c8]/10 text-[#1e90c8] font-semibold">
                           Destaque
                         </span>
                       )}
                       {product.isPromo && (
-                        <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 font-semibold">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 font-semibold">
                           Promoção
                         </span>
                       )}
@@ -699,7 +699,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                           checked={product.isFeatured}
                           disabled={statusUpdatingId === product.id}
                           onChange={() => handleStatusToggle(product, 'isFeatured')}
-                          className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                          className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
                         />
                         Destaque
                       </label>
@@ -710,7 +710,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                             checked={product.isPromo}
                             disabled={statusUpdatingId === product.id}
                             onChange={() => handleStatusToggle(product, 'isPromo')}
-                            className="h-4 w-4 rounded border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                            className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
                           />
                           Promoção
                         </label>
@@ -726,7 +726,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       {product.images.map((image, index) => (
                         <div
                           key={`${product.id}-slot-${index}`}
-                          className="w-10 h-10 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 text-[9px] text-gray-300 font-semibold"
+                          className="w-10 h-10 border border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 text-[9px] text-gray-300 font-semibold"
                         >
                           {image ? (
                             <img src={image} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
@@ -773,7 +773,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         )}
         {!isLoading && !error && products.length === 0 && (
           <div className="py-24 text-center">
-            <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="bg-gray-50 w-20 h-20 flex items-center justify-center mx-auto mb-4">
               <Plus className="text-gray-300" size={32} />
             </div>
             <p className="text-gray-400 font-medium">Nenhum produto cadastrado ainda.</p>

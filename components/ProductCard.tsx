@@ -75,7 +75,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
   return (
     <div className="group animate-in zoom-in duration-300">
       <div
-        className="rounded-3xl overflow-hidden shadow-xl bg-white border border-[#e5f3fb] cursor-zoom-in"
+        className="overflow-hidden shadow-xl bg-white border border-[#e5f3fb] cursor-zoom-in"
         onClick={handlePreview}
         role="button"
         tabIndex={0}
@@ -87,7 +87,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
         }}
       >
         <div className="bg-gradient-to-br from-[#2aa7df] via-[#35b0e4] to-[#1d8ec8] p-5 text-white relative">
-          <span className="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-[11px] uppercase tracking-[0.3em] font-semibold">
+          <span className="inline-flex items-center border border-white/50 bg-white/15 px-3 py-1 text-[11px] uppercase tracking-[0.4em] font-semibold">
             {product.code}
           </span>
           <div className="absolute right-5 top-5 text-right">
@@ -96,27 +96,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                 R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
             )}
-            <span className="text-xl font-bold">
+            <span className="text-2xl font-bold">
               R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
           </div>
           <h3 className="mt-6 text-2xl font-semibold leading-tight">{product.name}</h3>
           <div className="mt-2 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.3em] text-white/80">
             {product.sizes.length ? (
-              product.sizes.map((size) => (
-                <span key={`${product.id}-size-${size}`} className="rounded-full border border-white/40 px-2.5 py-1">
-                  {size}
-                </span>
-              ))
+              <span>{product.sizes.join(' • ')}</span>
             ) : (
-              <span className="rounded-full border border-white/40 px-2.5 py-1">Consultar tamanhos</span>
+              <span>Consultar tamanhos</span>
             )}
           </div>
         </div>
 
         <div className="p-4">
           <div
-            className="aspect-[4/5] overflow-hidden bg-[#f3f9fd] rounded-2xl relative"
+            className="aspect-[4/5] overflow-hidden bg-[#f3f9fd] relative"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onMouseEnter={() => setIsHovering(true)}
@@ -150,7 +146,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                       event.stopPropagation();
                       setHoverIndex(index);
                     }}
-                    className={`h-10 w-10 rounded-xl border transition-all ${
+                    className={`h-10 w-10 border transition-all ${
                       hoverIndex === index
                         ? 'border-[#2aa7df] ring-2 ring-[#2aa7df]/40'
                         : 'border-[#e5f3fb]'
@@ -158,7 +154,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                     aria-label={`Mostrar imagem ${index + 1}`}
                   >
                     <span
-                      className="block h-full w-full rounded-[10px] bg-cover bg-center"
+                      className="block h-full w-full bg-cover bg-center"
                       style={{ backgroundImage: `url(${image})` }}
                     />
                   </button>
