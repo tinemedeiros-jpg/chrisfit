@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md">
+          <div className="bg-white/5 border border-white/10 p-8 backdrop-blur-md">
             <div className="flex items-center justify-center space-x-3 text-[#22c55e] mb-4">
               <CreditCard size={24} />
               <span className="font-bold sport-font tracking-wider text-lg">Pagamento PIX</span>
@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
               <p className="text-xs uppercase tracking-widest opacity-40 mb-2 font-bold">Chave Celular</p>
               <div
                 onClick={copyPix}
-                className="bg-black/40 p-4 rounded-2xl flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#2aa7df]/50 transition-all group"
+                className="bg-black/40 p-4 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#2aa7df]/50 transition-all group"
               >
                 <span className="text-xl font-mono tracking-widest text-white">(11) 9.6355-4043</span>
                 {copied ? (

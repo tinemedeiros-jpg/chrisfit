@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
 import { X } from 'lucide-react';
@@ -27,9 +27,24 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     () => products.filter((product) => product.isFeatured),
     [products]
   );
+  const featuredDisplay = useMemo(() => featuredProducts.slice(0, 4), [featuredProducts]);
+  const [activeFeaturedIndex, setActiveFeaturedIndex] = useState(0);
   const hasFeatured = featuredProducts.length > 0;
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
   const featuredStack = useMemo(() => featuredProducts.slice(0, 5), [featuredProducts]);
+  const featuredLayers = useMemo(() => {
+    if (!featuredDisplay.length) return [];
+    return featuredDisplay.map((_, offset) => featuredDisplay[(activeFeaturedIndex + offset) % featuredDisplay.length]);
+  }, [featuredDisplay, activeFeaturedIndex]);
+
+  useEffect(() => {
+    if (featuredDisplay.length <= 1) return undefined;
+    const interval = window.setInterval(() => {
+      setActiveFeaturedIndex((current) => (current + 1) % featuredDisplay.length);
+    }, 10000);
+
+    return () => window.clearInterval(interval);
+  }, [featuredDisplay.length]);
 
   const openModal = (product: Product, image: string) => {
     setActiveModal({ product, image });
@@ -56,47 +71,57 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             <p className="uppercase tracking-[0.4em] text-xs opacity-70">destaques</p>
 
             {hasFeatured ? (
-              <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1.05fr] gap-12 items-start mt-8">
+              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-12 items-start mt-8">
                 <div className="space-y-6">
                   <h2 className="text-4xl md:text-5xl font-semibold leading-tight">
                     Seleção em destaque
                   </h2>
                   <p className="text-white/80 max-w-lg">
-                    Peças escolhidas para performance e estilo. Cada item aparece em camadas,
-                    valorizando o destaque principal do catálogo.
+                    Peças escolhidas para performance e estilo. A vitrine muda automaticamente
+                    a cada 10 segundos para mostrar novas combinações.
                   </p>
-                  <div className="space-y-5">
-                    {featuredStack.map((product, index) => (
-                      <div key={product.id} className="flex items-start gap-4">
-                        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                        <div>
-                          <p className="text-lg font-semibold">{product.name}</p>
-                          <div className="mt-2 text-sm">
-                            {product.isPromo && product.promoPrice ? (
-                              <div className="flex flex-col">
-                                <span className="text-xs line-through text-white/60">
-                                  {formatCurrency(product.price)}
-                                </span>
-                                <span className="text-lg font-semibold">
-                                  {formatCurrency(product.promoPrice)}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-lg font-semibold">{formatCurrency(product.price)}</span>
-                            )}
-                          </div>
+                  {featuredLayers[0] && (
+                    <div className="space-y-4 max-w-md">
+                      <div className="border border-white/40 bg-white/10 px-4 py-3 uppercase tracking-[0.4em] text-[11px] font-semibold">
+                        {featuredLayers[0].code}
+                      </div>
+                      <div>
+                        <p className="text-2xl font-semibold">{featuredLayers[0].name}</p>
+                        <div className="mt-3">
+                          {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs line-through text-white/60">
+                                {formatCurrency(featuredLayers[0].price)}
+                              </span>
+                              <span className="text-3xl font-semibold">
+                                {formatCurrency(featuredLayers[0].promoPrice)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-3xl font-semibold">
+                              {formatCurrency(featuredLayers[0].price)}
+                            </span>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      {featuredLayers[0].sizes.length > 0 && (
+                        <div className="text-xs uppercase tracking-[0.3em] text-white/70">
+                          Tamanhos: {featuredLayers[0].sizes.join(' • ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="relative min-h-[340px] flex items-start justify-center lg:justify-end">
                   <div className="relative w-full max-w-xl">
-                    {featuredStack.map((product, index) => {
+                    {featuredLayers.map((product, index) => {
                       const featuredImage = product.images?.find((image): image is string => Boolean(image));
+                      const depth = index;
+                      const widthOffset = depth * 70;
+                      const translateX = depth * -26;
+                      const translateY = depth * 28;
+                      const isActive = index === 0;
                       return (
                         <button
                           key={`${product.id}-stack-${index}`}
@@ -106,17 +131,22 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                               openModal(product, featuredImage);
                             }
                           }}
-                          className="absolute top-0 left-0 w-full bg-white/95 text-[#0f1c2e] shadow-2xl overflow-hidden border border-white/40"
+                          className={`absolute top-0 left-0 w-full text-[#0f1c2e] shadow-2xl overflow-hidden border border-white/40 transition-all duration-700 ${
+                            isActive ? 'bg-white/95' : 'bg-[#d5d9df]/70'
+                          }`}
                           style={{
-                            transform: `translate(${index * 36}px, ${index * 24}px)`,
-                            zIndex: featuredStack.length - index
+                            width: `calc(100% - ${widthOffset}px)`,
+                            transform: `translate(${translateX}px, ${translateY}px)`,
+                            zIndex: featuredLayers.length - index
                           }}
                         >
                           {featuredImage ? (
                             <img
                               src={featuredImage}
                               alt={product.name}
-                              className="w-full h-64 md:h-72 object-cover"
+                              className={`w-full h-64 md:h-72 object-cover transition-all duration-700 ${
+                                isActive ? 'filter-none' : 'grayscale opacity-60'
+                              }`}
                               loading="lazy"
                             />
                           ) : (
@@ -126,7 +156,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           )}
                           <div className="px-5 py-4 border-t border-[#d7effa] flex items-center justify-between gap-4">
                             <span className="font-semibold">{product.name}</span>
-                            <span className="text-sm font-bold text-[#1e90c8]">
+                            <span className="text-lg font-bold text-[#1e90c8]">
                               {formatCurrency(product.isPromo && product.promoPrice ? product.promoPrice : product.price)}
                             </span>
                           </div>
@@ -154,11 +184,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
         </div>
 
         {isLoading ? (
-          <div className="bg-white/70 rounded-3xl py-24 text-center border border-[#cfefff]">
+          <div className="bg-white/70 py-24 text-center border border-[#cfefff]">
             <p className="text-[#2aa7df] font-bold sport-font italic">Carregando catálogo...</p>
           </div>
         ) : error ? (
-          <div className="bg-white/70 rounded-3xl py-24 text-center border border-red-200">
+          <div className="bg-white/70 py-24 text-center border border-red-200">
             <p className="text-red-500 font-bold sport-font italic">Não foi possível carregar os produtos.</p>
             <p className="text-xs text-gray-400 mt-2">{error}</p>
           </div>
@@ -169,7 +199,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             ))}
           </div>
         ) : (
-          <div className="bg-white/30 backdrop-blur-sm rounded-3xl py-32 text-center border-2 border-dashed border-[#cfefff]">
+          <div className="bg-white/30 backdrop-blur-sm py-32 text-center border-2 border-dashed border-[#cfefff]">
             <div className="max-w-xs mx-auto text-[#2aa7df]/60">
               <p className="text-xl font-bold sport-font italic">Item não encontrado</p>
             </div>
@@ -184,7 +214,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             onClick={closeModal}
             aria-hidden="true"
           />
-          <div className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden z-10">
+        <div className="relative bg-white shadow-2xl max-w-3xl w-full overflow-hidden z-10">
             <div className="absolute top-0 left-0 right-0 h-14 bg-[#2aa7df] flex items-center justify-between px-6 text-white z-10">
               <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
                 {activeModal.product.code}
@@ -207,7 +237,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 />
                 {modalImages.length > 1 && (
                   <div className="w-full px-4 pb-4">
-                    <div className="flex items-center justify-center gap-2 rounded-2xl bg-white/80 p-3 shadow-sm">
+                    <div className="flex items-center justify-center gap-2 bg-white/80 p-3 shadow-sm">
                       {modalImages.map((image, index) => (
                         <button
                           key={`${activeModal.product.id}-modal-thumb-${index}`}
@@ -237,12 +267,12 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       <span className="text-xs line-through text-gray-400">
                         {formatCurrency(activeModal.product.price)}
                       </span>
-                      <span className="text-2xl font-bold">
+                      <span className="text-3xl font-bold">
                         {formatCurrency(activeModal.product.promoPrice)}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-2xl font-bold">{formatCurrency(activeModal.product.price)}</span>
+                    <span className="text-3xl font-bold">{formatCurrency(activeModal.product.price)}</span>
                   )}
                 </div>
                 {activeModal.product.observation && (
