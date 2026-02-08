@@ -45,7 +45,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const activeFeaturedImage = featuredLayers[0]?.images?.find(
     (image): image is string => Boolean(image)
   );
-  const tileClipPath = 'polygon(0 0, 100% 0, 92% 100%, 0 100%)';
+  const tileClipPath = 'polygon(6% 0, 100% 0, 94% 100%, 0 100%)';
 
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
@@ -65,10 +65,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       const containerHeight = container.offsetHeight;
       if (!containerHeight) return;
       const tiles = Math.max(featuredLayers.length - 1, 1);
-      const overlap = Math.min(36, containerHeight * 0.18);
+      const overlap = Math.min(44, containerHeight * 0.24);
       const tileHeight = (containerHeight + (tiles - 1) * overlap) / tiles;
       const step = tileHeight - overlap;
-      const extraWidth = Math.min(90, containerHeight * 0.3);
+      const extraWidth = Math.min(110, containerHeight * 0.34);
 
       setStackLayout({ tileHeight, step, extraWidth });
     };
@@ -112,7 +112,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 onMouseLeave={() => setIsCarouselPaused(false)}
               >
                 <div className="relative flex flex-col overflow-hidden bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] shadow-[0_-5px_20px_rgba(0,0,0,0.18),0_10px_30px_rgba(0,0,0,0.25)] lg:flex-row">
-                  <div className="relative z-10 flex flex-col justify-center px-6 py-8 text-right sm:px-8 lg:w-1/3">
+                  <div className="relative z-20 flex flex-col justify-center px-6 py-8 text-right sm:px-8 lg:w-1/3">
                     <span className="absolute right-6 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
                       destaques
                     </span>
@@ -156,7 +156,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     )}
                   </div>
 
-                  <div className="relative h-72 sm:h-80 md:h-96 lg:h-auto lg:w-1/3 lg:z-10 overflow-visible">
+                  <div className="relative h-72 sm:h-80 md:h-96 lg:h-auto lg:w-1/3 lg:z-10 overflow-visible lg:-mr-6">
                     {featuredLayers[0] && activeFeaturedImage && (
                       <button
                         type="button"
@@ -167,7 +167,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       >
                         <div
                           className="absolute inset-0 overflow-hidden"
-                          style={{ clipPath: tileClipPath }}
+                          style={{ clipPath: tileClipPath, WebkitClipPath: tileClipPath }}
                         >
                           <img
                             src={activeFeaturedImage}
@@ -195,7 +195,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   </div>
 
                   <div
-                    className="relative hidden h-72 sm:h-80 md:h-96 overflow-hidden lg:-ml-10 lg:block lg:w-1/3 lg:z-20"
+                    className="relative hidden h-72 sm:h-80 md:h-96 overflow-hidden lg:-ml-12 lg:block lg:w-1/3 lg:z-30"
                     ref={stackContainerRef}
                   >
                     {featuredLayers
@@ -222,6 +222,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                               height: `${stackLayout.tileHeight}px`,
                               width: `calc(100% + ${stackLayout.extraWidth}px)`,
                               clipPath: tileClipPath,
+                              WebkitClipPath: tileClipPath,
+                              transform: 'translateX(18px)',
                               zIndex: featuredLayers.length - index,
                               filter: 'brightness(0.7)'
                             }}
