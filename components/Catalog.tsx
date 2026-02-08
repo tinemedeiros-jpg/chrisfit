@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
 import { X } from 'lucide-react';
@@ -29,6 +29,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   );
   const featuredDisplay = useMemo(() => featuredProducts.slice(0, 10), [featuredProducts]);
   const [activeFeaturedIndex, setActiveFeaturedIndex] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [carouselSizes, setCarouselSizes] = useState({
+    activeWidth: 0,
+    sliceWidth: 0,
+    showSlices: true
+  });
+  const carouselContainerRef = useRef<HTMLDivElement | null>(null);
   const hasFeatured = featuredProducts.length > 0;
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
   const featuredLayers = useMemo(() => {
@@ -39,10 +46,38 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
     const interval = window.setInterval(() => {
-      setActiveFeaturedIndex((current) => (current + 1) % featuredDisplay.length);
+      setActiveFeaturedIndex((current) =>
+        isCarouselPaused ? current : (current + 1) % featuredDisplay.length
+      );
     }, 10000);
 
     return () => window.clearInterval(interval);
+  }, [featuredDisplay.length, isCarouselPaused]);
+
+  useEffect(() => {
+    const updateCarouselSizes = () => {
+      const container = carouselContainerRef.current;
+      if (!container) return;
+      const containerWidth = container.offsetWidth;
+      if (!containerWidth) return;
+
+      const activeWidth = Math.min(containerWidth * 0.5, 450);
+      const availableSpace = containerWidth - activeWidth;
+      const totalSlices = Math.max(featuredDisplay.length - 1, 1);
+      let sliceWidth = availableSpace / totalSlices;
+      const minSliceWidth = 10;
+      const showSlices = featuredDisplay.length > 1 && sliceWidth >= minSliceWidth;
+
+      if (!showSlices) {
+        sliceWidth = 0;
+      }
+
+      setCarouselSizes({ activeWidth, sliceWidth, showSlices });
+    };
+
+    updateCarouselSizes();
+    window.addEventListener('resize', updateCarouselSizes);
+    return () => window.removeEventListener('resize', updateCarouselSizes);
   }, [featuredDisplay.length]);
 
   const openModal = (product: Product, image: string) => {
@@ -66,103 +101,126 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     <div className="animate-in fade-in duration-700">
       <section className="mb-14" id="destaques">
         <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white shadow-2xl overflow-hidden">
-          <div className="relative z-10 px-6 md:px-14 py-12">
+          <div className="relative z-10 px-6 md:px-14 py-10">
             <p className="uppercase tracking-[0.4em] text-xs opacity-70">destaques</p>
 
             {hasFeatured ? (
-              <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-12 items-start mt-8">
-                <div className="space-y-6">
-                  <h2 className="text-4xl md:text-5xl font-semibold leading-tight">
-                    Seleção em destaque
-                  </h2>
-                  <p className="text-white/80 max-w-lg">
-                    Peças escolhidas para performance e estilo. A vitrine muda automaticamente
-                    a cada 10 segundos para mostrar novas combinações.
-                  </p>
-                  {featuredLayers[0] && (
-                    <div className="space-y-4 max-w-md">
-                      <div className="border border-white/40 bg-white/10 px-4 py-3 uppercase tracking-[0.4em] text-[11px] font-semibold">
-                        {featuredLayers[0].code}
-                      </div>
-                      <div>
-                        <p className="text-2xl font-semibold">{featuredLayers[0].name}</p>
-                        <div className="mt-3">
+              <div
+                className="mt-8"
+                onMouseEnter={() => setIsCarouselPaused(true)}
+                onMouseLeave={() => setIsCarouselPaused(false)}
+              >
+                <div className="flex items-center bg-white/10 shadow-[0_-5px_20px_rgba(0,0,0,0.15),0_5px_20px_rgba(0,0,0,0.15)]">
+                  <div className="relative z-10 flex w-56 shrink-0 flex-col items-end px-6 py-8 text-right sm:w-60 md:w-64">
+                    <span className="absolute right-6 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
+                      destaques
+                    </span>
+                    {featuredLayers[0] && (
+                      <div className="mt-12 flex w-full flex-col items-end gap-4">
+                        <div className="flex h-[60px] flex-col items-end gap-1">
                           {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
-                            <div className="flex flex-col">
-                              <span className="text-xs line-through text-white/60">
+                            <>
+                              <span className="text-sm text-white/60 line-through whitespace-nowrap">
                                 {formatCurrency(featuredLayers[0].price)}
                               </span>
-                              <span className="text-3xl font-semibold">
+                              <span className="text-4xl font-bold leading-none whitespace-nowrap">
                                 {formatCurrency(featuredLayers[0].promoPrice)}
                               </span>
-                            </div>
+                            </>
                           ) : (
-                            <span className="text-3xl font-semibold">
+                            <span className="text-4xl font-bold leading-none whitespace-nowrap">
                               {formatCurrency(featuredLayers[0].price)}
                             </span>
                           )}
                         </div>
-                      </div>
-                      {featuredLayers[0].sizes.length > 0 && (
-                        <div className="text-xs uppercase tracking-[0.3em] text-white/70">
-                          Tamanhos: {featuredLayers[0].sizes.join(' • ')}
+                        <div className="flex h-[70px] w-full items-center justify-end">
+                          <span
+                            className="text-right text-xl font-light tracking-[0.4em] text-white"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {featuredLayers[0].name}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative min-h-[340px] flex items-start justify-center lg:justify-end">
-                  <div className="relative w-full max-w-2xl overflow-hidden">
-                    {featuredLayers.map((product, index) => {
-                      const featuredImage = product.images?.find((image): image is string => Boolean(image));
-                      const depth = index;
-                      const isActive = index === 0;
-                      const widthOffset = depth * 85;
-                      const translateX = depth * 55;
-                      const translateY = depth * 26 + (isActive ? -28 : 0);
-                      const scale = isActive ? 1.04 : Math.max(0.68, 0.98 - depth * 0.06);
-                      return (
-                        <button
-                          key={`${product.id}-stack-${index}`}
-                          type="button"
-                          onClick={() => {
-                            if (featuredImage) {
-                              openModal(product, featuredImage);
-                            }
-                          }}
-                          className={`absolute top-0 left-0 w-full text-[#0f1c2e] shadow-2xl overflow-hidden border border-white/40 transition-all duration-700 ${
-                            isActive ? 'bg-white/95' : 'bg-[#d5d9df]/70'
-                          } ${!isActive ? 'hidden md:block' : ''}`}
-                          style={{
-                            width: `calc(100% - ${widthOffset}px)`,
-                            transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-                            zIndex: featuredLayers.length - index
-                          }}
-                        >
-                          {featuredImage ? (
-                            <img
-                              src={featuredImage}
-                              alt={product.name}
-                              className={`w-full h-64 md:h-72 object-cover transition-all duration-700 ${
-                                isActive ? 'filter-none' : 'grayscale opacity-60'
-                              }`}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="h-64 md:h-72 flex items-center justify-center text-[#1e90c8] font-semibold">
-                              Adicione fotos para destacar
-                            </div>
-                          )}
-                          <div className="px-5 py-4 border-t border-[#d7effa] flex items-center justify-between gap-4">
-                            <span className="font-semibold">{product.name}</span>
-                            <span className="text-lg font-bold text-[#1e90c8]">
-                              {formatCurrency(product.isPromo && product.promoPrice ? product.promoPrice : product.price)}
-                            </span>
+                        {featuredLayers[0].sizes.length > 0 && (
+                          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">
+                            Tamanhos: {featuredLayers[0].sizes.join(' • ')}
                           </div>
-                        </button>
-                      );
-                    })}
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative flex-1 min-w-0 h-72 sm:h-80 md:h-96" ref={carouselContainerRef}>
+                    <div className="relative h-full w-full">
+                      {(() => {
+                        let currentLeft = 0;
+                        return featuredLayers.map((product, index) => {
+                          const featuredImage = product.images?.find(
+                            (image): image is string => Boolean(image)
+                          );
+                          const isActive = index === 0;
+                          const isHidden = !isActive && !carouselSizes.showSlices;
+                          const itemWidth = isActive ? carouselSizes.activeWidth : carouselSizes.sliceWidth;
+                          const left = currentLeft;
+                          currentLeft += itemWidth;
+                          if (!featuredImage) return null;
+
+                          return (
+                            <button
+                              key={`${product.id}-slice-${index}`}
+                              type="button"
+                              onClick={() => {
+                                if (isActive) {
+                                  openModal(product, featuredImage);
+                                } else {
+                                  const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
+                                  if (nextIndex >= 0) {
+                                    setActiveFeaturedIndex(nextIndex);
+                                  }
+                                }
+                              }}
+                              className={`absolute top-0 left-0 h-full transition-all duration-500 ${
+                                isActive ? 'z-10' : 'z-[1]'
+                              } ${isHidden ? 'hidden' : ''}`}
+                              style={{
+                                width: `${itemWidth}px`,
+                                left: `${left}px`,
+                                transform: `skewX(-20deg) ${isActive ? 'translateY(-10%)' : ''}`,
+                                transformOrigin: 'left center',
+                                opacity: isActive ? 1 : 0.7,
+                                filter: isActive ? 'none' : 'brightness(0.75)'
+                              }}
+                            >
+                              <img
+                                src={featuredImage}
+                                alt={product.name}
+                                className="h-full w-full object-cover shadow-[0_5px_25px_rgba(0,0,0,0.3)]"
+                                loading="lazy"
+                              />
+                            </button>
+                          );
+                        });
+                      })()}
+                    </div>
+
+                    <div className="absolute bottom-4 left-6 flex gap-1">
+                      {featuredDisplay.map((product, index) => (
+                        <button
+                          key={`${product.id}-nav-${index}`}
+                          type="button"
+                          onClick={() => setActiveFeaturedIndex(index)}
+                          className={`h-[5px] w-4 skew-x-[-20deg] transition-all ${
+                            index === activeFeaturedIndex ? 'bg-white/80 w-[22px]' : 'bg-white/25 hover:bg-white/40'
+                          }`}
+                          aria-label={`Ir para ${product.name}`}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
