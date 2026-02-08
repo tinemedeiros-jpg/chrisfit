@@ -30,19 +30,21 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const featuredDisplay = useMemo(() => featuredProducts.slice(0, 10), [featuredProducts]);
   const [activeFeaturedIndex, setActiveFeaturedIndex] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
-  const [carouselSizes, setCarouselSizes] = useState({
-    activeWidth: 0,
-    sliceWidth: 0,
-    showSlices: true,
+  const [stackLayout, setStackLayout] = useState({
+    tileHeight: 0,
+    step: 0,
     skewOffset: 0
   });
-  const carouselContainerRef = useRef<HTMLDivElement | null>(null);
+  const stackContainerRef = useRef<HTMLDivElement | null>(null);
   const hasFeatured = featuredProducts.length > 0;
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
   const featuredLayers = useMemo(() => {
     if (!featuredDisplay.length) return [];
     return featuredDisplay.map((_, offset) => featuredDisplay[(activeFeaturedIndex + offset) % featuredDisplay.length]);
   }, [featuredDisplay, activeFeaturedIndex]);
+  const activeFeaturedImage = featuredLayers[0]?.images?.find(
+    (image): image is string => Boolean(image)
+  );
 
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
@@ -56,31 +58,24 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   }, [featuredDisplay.length, isCarouselPaused]);
 
   useEffect(() => {
-    const updateCarouselSizes = () => {
-      const container = carouselContainerRef.current;
+    const updateStackLayout = () => {
+      const container = stackContainerRef.current;
       if (!container) return;
-      const containerWidth = container.offsetWidth;
-      if (!containerWidth) return;
+      const containerHeight = container.offsetHeight;
+      if (!containerHeight) return;
+      const tiles = Math.max(featuredLayers.length - 1, 1);
+      const overlap = Math.min(20, containerHeight * 0.08);
+      const tileHeight = (containerHeight + (tiles - 1) * overlap) / tiles;
+      const step = tileHeight - overlap;
+      const skewOffset = Math.tan((20 * Math.PI) / 180) * tileHeight;
 
-      const activeWidth = Math.min(containerWidth * 0.5, 450);
-      const availableSpace = containerWidth - activeWidth;
-      const totalSlices = Math.max(featuredDisplay.length - 1, 1);
-      let sliceWidth = availableSpace / totalSlices;
-      const minSliceWidth = 10;
-      const showSlices = featuredDisplay.length > 1 && sliceWidth >= minSliceWidth;
-      const skewOffset = Math.tan((20 * Math.PI) / 180) * container.offsetHeight;
-
-      if (!showSlices) {
-        sliceWidth = 0;
-      }
-
-      setCarouselSizes({ activeWidth, sliceWidth, showSlices, skewOffset });
+      setStackLayout({ tileHeight, step, skewOffset });
     };
 
-    updateCarouselSizes();
-    window.addEventListener('resize', updateCarouselSizes);
-    return () => window.removeEventListener('resize', updateCarouselSizes);
-  }, [featuredDisplay.length]);
+    updateStackLayout();
+    window.addEventListener('resize', updateStackLayout);
+    return () => window.removeEventListener('resize', updateStackLayout);
+  }, [featuredLayers.length]);
 
   const openModal = (product: Product, image: string) => {
     setActiveModal({ product, image });
@@ -101,10 +96,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
   return (
     <div className="animate-in fade-in duration-700">
-      <section className="mb-14" id="destaques">
+      <section
+        className="-mt-10 mb-14 bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white"
+        id="destaques"
+      >
         <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] overflow-hidden">
           <div className="relative z-10 px-6 md:px-14 py-10">
-            <p className="uppercase tracking-[0.4em] text-xs text-[#2aa7df] opacity-80">destaques</p>
+            <p className="uppercase tracking-[0.4em] text-xs text-white/80">destaques</p>
 
             {hasFeatured ? (
               <div
@@ -112,8 +110,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 onMouseEnter={() => setIsCarouselPaused(true)}
                 onMouseLeave={() => setIsCarouselPaused(false)}
               >
-                <div className="flex items-center bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white shadow-[0_-5px_20px_rgba(0,0,0,0.15),0_5px_20px_rgba(0,0,0,0.15)]">
-                  <div className="relative z-10 flex w-56 shrink-0 flex-col items-end px-6 py-8 text-right sm:w-60 md:w-64">
+                <div className="grid grid-cols-1 items-stretch bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] shadow-[0_-5px_20px_rgba(0,0,0,0.18),0_6px_25px_rgba(0,0,0,0.2)] lg:grid-cols-3">
+                  <div className="relative z-10 flex flex-col justify-center px-6 py-8 text-right sm:px-8">
                     <span className="absolute right-6 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
                       destaques
                     </span>
@@ -157,61 +155,25 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     )}
                   </div>
 
-                  <div className="relative flex-1 min-w-0 h-72 sm:h-80 md:h-96" ref={carouselContainerRef}>
-                    <div className="relative h-full w-full">
-                      {(() => {
-                        let currentLeft = 0;
-                        return featuredLayers.map((product, index) => {
-                          const featuredImage = product.images?.find(
-                            (image): image is string => Boolean(image)
-                          );
-                          const isActive = index === 0;
-                          const isHidden = !isActive && !carouselSizes.showSlices;
-                          const itemWidth = isActive ? carouselSizes.activeWidth : carouselSizes.sliceWidth;
-                          const isLast = index === featuredLayers.length - 1;
-                          const widthWithSkew = itemWidth + (isLast ? carouselSizes.skewOffset : 0);
-                          const left = currentLeft;
-                          currentLeft += itemWidth;
-                          if (!featuredImage) return null;
-
-                          return (
-                            <button
-                              key={`${product.id}-slice-${index}`}
-                              type="button"
-                              onClick={() => {
-                                if (isActive) {
-                                  openModal(product, featuredImage);
-                                } else {
-                                  const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
-                                  if (nextIndex >= 0) {
-                                    setActiveFeaturedIndex(nextIndex);
-                                  }
-                                }
-                              }}
-                              className={`absolute top-0 left-0 h-full overflow-hidden transition-all duration-500 ${
-                                isActive ? 'z-10' : 'z-[1]'
-                              } ${isHidden ? 'hidden' : ''}`}
-                              style={{
-                                width: `${widthWithSkew}px`,
-                                left: `${left}px`,
-                                transform: `skewX(-20deg) ${isActive ? 'translateY(-10%)' : ''}`,
-                                transformOrigin: 'left center',
-                                opacity: 1,
-                                filter: isActive ? 'none' : 'brightness(0.7)'
-                              }}
-                            >
-                              <img
-                                src={featuredImage}
-                                alt={product.name}
-                                className="h-full w-full object-cover shadow-[0_5px_25px_rgba(0,0,0,0.3)]"
-                                loading="lazy"
-                              />
-                              {!isActive && <span className="absolute inset-0 bg-black/55" />}
-                            </button>
-                          );
-                        });
-                      })()}
-                    </div>
+                  <div className="relative h-72 sm:h-80 md:h-96 overflow-hidden">
+                    {featuredLayers[0] && activeFeaturedImage && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          openModal(featuredLayers[0], activeFeaturedImage);
+                        }}
+                        className="group relative h-full w-full overflow-hidden"
+                      >
+                        <div className="absolute inset-0 skew-x-[-20deg] origin-left">
+                          <img
+                            src={activeFeaturedImage}
+                            alt={featuredLayers[0].name}
+                            className="h-full w-full object-cover shadow-[0_8px_30px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-[1.02]"
+                            loading="lazy"
+                          />
+                        </div>
+                      </button>
+                    )}
 
                     <div className="absolute bottom-4 left-6 flex gap-1">
                       {featuredDisplay.map((product, index) => (
@@ -227,10 +189,52 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       ))}
                     </div>
                   </div>
+
+                  <div className="relative hidden h-72 sm:h-80 md:h-96 overflow-hidden lg:block" ref={stackContainerRef}>
+                    {featuredLayers
+                      .slice(1)
+                      .map((product, index) => {
+                        const featuredImage = product.images?.find(
+                          (image): image is string => Boolean(image)
+                        );
+                        if (!featuredImage) return null;
+                        const topOffset = stackLayout.step * index;
+                        return (
+                          <button
+                            key={`${product.id}-stack-${index}`}
+                            type="button"
+                            onClick={() => {
+                              const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
+                              if (nextIndex >= 0) {
+                                setActiveFeaturedIndex(nextIndex);
+                              }
+                            }}
+                            className="absolute left-0 top-0 w-full overflow-hidden transition-transform duration-500"
+                            style={{
+                              top: `${topOffset}px`,
+                              height: `${stackLayout.tileHeight}px`,
+                              width: `calc(100% + ${stackLayout.skewOffset}px)`,
+                              transform: 'skewX(-20deg)',
+                              transformOrigin: 'left top',
+                              zIndex: featuredLayers.length - index,
+                              filter: 'brightness(0.7)'
+                            }}
+                          >
+                            <img
+                              src={featuredImage}
+                              alt={product.name}
+                              className="h-full w-full object-cover shadow-[0_6px_20px_rgba(0,0,0,0.3)]"
+                              loading="lazy"
+                            />
+                            <span className="absolute inset-0 bg-black/55" />
+                          </button>
+                        );
+                      })}
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="text-[#2aa7df] text-sm mt-6">
+              <div className="text-white/80 text-sm mt-6">
                 Marque itens como destaque no admin para exibir aqui.
               </div>
             )}
