@@ -33,7 +33,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const [carouselSizes, setCarouselSizes] = useState({
     activeWidth: 0,
     sliceWidth: 0,
-    showSlices: true
+    showSlices: true,
+    skewOffset: 0
   });
   const carouselContainerRef = useRef<HTMLDivElement | null>(null);
   const hasFeatured = featuredProducts.length > 0;
@@ -67,12 +68,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       let sliceWidth = availableSpace / totalSlices;
       const minSliceWidth = 10;
       const showSlices = featuredDisplay.length > 1 && sliceWidth >= minSliceWidth;
+      const skewOffset = Math.tan((20 * Math.PI) / 180) * container.offsetHeight;
 
       if (!showSlices) {
         sliceWidth = 0;
       }
 
-      setCarouselSizes({ activeWidth, sliceWidth, showSlices });
+      setCarouselSizes({ activeWidth, sliceWidth, showSlices, skewOffset });
     };
 
     updateCarouselSizes();
@@ -100,9 +102,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   return (
     <div className="animate-in fade-in duration-700">
       <section className="mb-14" id="destaques">
-        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white shadow-2xl overflow-hidden">
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] overflow-hidden">
           <div className="relative z-10 px-6 md:px-14 py-10">
-            <p className="uppercase tracking-[0.4em] text-xs opacity-70">destaques</p>
+            <p className="uppercase tracking-[0.4em] text-xs text-[#2aa7df] opacity-80">destaques</p>
 
             {hasFeatured ? (
               <div
@@ -110,7 +112,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 onMouseEnter={() => setIsCarouselPaused(true)}
                 onMouseLeave={() => setIsCarouselPaused(false)}
               >
-                <div className="flex items-center bg-white/10 shadow-[0_-5px_20px_rgba(0,0,0,0.15),0_5px_20px_rgba(0,0,0,0.15)]">
+                <div className="flex items-center bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] text-white shadow-[0_-5px_20px_rgba(0,0,0,0.15),0_5px_20px_rgba(0,0,0,0.15)]">
                   <div className="relative z-10 flex w-56 shrink-0 flex-col items-end px-6 py-8 text-right sm:w-60 md:w-64">
                     <span className="absolute right-6 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
                       destaques
@@ -166,6 +168,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           const isActive = index === 0;
                           const isHidden = !isActive && !carouselSizes.showSlices;
                           const itemWidth = isActive ? carouselSizes.activeWidth : carouselSizes.sliceWidth;
+                          const isLast = index === featuredLayers.length - 1;
+                          const widthWithSkew = itemWidth + (isLast ? carouselSizes.skewOffset : 0);
                           const left = currentLeft;
                           currentLeft += itemWidth;
                           if (!featuredImage) return null;
@@ -184,16 +188,16 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                                   }
                                 }
                               }}
-                              className={`absolute top-0 left-0 h-full transition-all duration-500 ${
+                              className={`absolute top-0 left-0 h-full overflow-hidden transition-all duration-500 ${
                                 isActive ? 'z-10' : 'z-[1]'
                               } ${isHidden ? 'hidden' : ''}`}
                               style={{
-                                width: `${itemWidth}px`,
+                                width: `${widthWithSkew}px`,
                                 left: `${left}px`,
                                 transform: `skewX(-20deg) ${isActive ? 'translateY(-10%)' : ''}`,
                                 transformOrigin: 'left center',
-                                opacity: isActive ? 1 : 0.7,
-                                filter: isActive ? 'none' : 'brightness(0.75)'
+                                opacity: 1,
+                                filter: isActive ? 'none' : 'brightness(0.7)'
                               }}
                             >
                               <img
@@ -202,6 +206,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                                 className="h-full w-full object-cover shadow-[0_5px_25px_rgba(0,0,0,0.3)]"
                                 loading="lazy"
                               />
+                              {!isActive && <span className="absolute inset-0 bg-black/55" />}
                             </button>
                           );
                         });
@@ -225,7 +230,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 </div>
               </div>
             ) : (
-              <div className="text-white/80 text-sm mt-6">
+              <div className="text-[#2aa7df] text-sm mt-6">
                 Marque itens como destaque no admin para exibir aqui.
               </div>
             )}
