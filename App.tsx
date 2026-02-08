@@ -239,8 +239,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header searchTerm={searchTerm} onSearchChange={setSearchTerm} />
-      
-      <main className="flex-grow container mx-auto px-4 py-10">
+
+      <main className="flex-grow bg-white">
         {viewMode === 'catalog' ? (
           <Catalog products={products} isLoading={isLoading} error={error} searchTerm={searchTerm} />
         ) : (

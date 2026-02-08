@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
 import { X } from 'lucide-react';
@@ -30,12 +30,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const featuredDisplay = useMemo(() => featuredProducts.slice(0, 10), [featuredProducts]);
   const [activeFeaturedIndex, setActiveFeaturedIndex] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
-  const [stackLayout, setStackLayout] = useState({
-    tileHeight: 0,
-    step: 0,
-    extraWidth: 0
-  });
-  const stackContainerRef = useRef<HTMLDivElement | null>(null);
   const hasFeatured = featuredProducts.length > 0;
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
   const featuredLayers = useMemo(() => {
@@ -45,7 +39,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const activeFeaturedImage = featuredLayers[0]?.images?.find(
     (image): image is string => Boolean(image)
   );
-  const tileClipPath = 'polygon(6% 0, 100% 0, 94% 100%, 0 100%)';
+  const tileClipPath = 'polygon(12% 0, 100% 0, 88% 100%, 0 100%)';
 
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
@@ -58,25 +52,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     return () => window.clearInterval(interval);
   }, [featuredDisplay.length, isCarouselPaused]);
 
-  useEffect(() => {
-    const updateStackLayout = () => {
-      const container = stackContainerRef.current;
-      if (!container) return;
-      const containerHeight = container.offsetHeight;
-      if (!containerHeight) return;
-      const tiles = Math.max(featuredLayers.length - 1, 1);
-      const overlap = Math.min(44, containerHeight * 0.24);
-      const tileHeight = (containerHeight + (tiles - 1) * overlap) / tiles;
-      const step = tileHeight - overlap;
-      const extraWidth = Math.min(110, containerHeight * 0.34);
-
-      setStackLayout({ tileHeight, step, extraWidth });
-    };
-
-    updateStackLayout();
-    window.addEventListener('resize', updateStackLayout);
-    return () => window.removeEventListener('resize', updateStackLayout);
-  }, [featuredLayers.length]);
+  const sideImages = featuredLayers
+    .slice(1)
+    .map((product) => ({
+      product,
+      image: product.images?.find((image): image is string => Boolean(image)) ?? null
+    }))
+    .filter((entry) => Boolean(entry.image));
 
   const openModal = (product: Product, image: string) => {
     setActiveModal({ product, image });
@@ -97,89 +79,95 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
   return (
     <div className="animate-in fade-in duration-700">
-      <section
-        className="-mt-10 mb-14 text-white"
-        id="destaques"
-      >
-        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] overflow-hidden bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb]">
-          <div className="relative z-10 px-6 md:px-14 py-10">
+      <section className="text-white" id="destaques">
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#2aa7df]">
+          <div className="relative z-10 px-6 md:px-14 pt-10 pb-8">
             <p className="uppercase tracking-[0.4em] text-xs text-white/80">destaques</p>
+          </div>
 
-            {hasFeatured ? (
-              <div
-                className="mt-8"
-                onMouseEnter={() => setIsCarouselPaused(true)}
-                onMouseLeave={() => setIsCarouselPaused(false)}
-              >
-                <div className="relative flex flex-col overflow-hidden bg-gradient-to-r from-[#2aa7df] via-[#3fb5e8] to-[#42c2eb] shadow-[0_-5px_20px_rgba(0,0,0,0.18),0_10px_30px_rgba(0,0,0,0.25)] lg:flex-row">
-                  <div className="relative z-20 flex flex-col justify-center px-6 py-8 text-right sm:px-8 lg:w-1/3">
-                    <span className="absolute right-6 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
-                      destaques
-                    </span>
-                    {featuredLayers[0] && (
-                      <div className="mt-12 flex w-full flex-col items-end gap-4">
-                        <div className="flex h-[60px] flex-col items-end gap-1">
-                          {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
-                            <>
-                              <span className="text-sm text-white/60 line-through whitespace-nowrap">
-                                {formatCurrency(featuredLayers[0].price)}
-                              </span>
-                              <span className="text-4xl font-bold leading-none whitespace-nowrap">
-                                {formatCurrency(featuredLayers[0].promoPrice)}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-4xl font-bold leading-none whitespace-nowrap">
+          {hasFeatured ? (
+            <div
+              className="relative w-full overflow-visible bg-[#2aa7df] shadow-[0_-10px_25px_rgba(0,0,0,0.2),0_16px_30px_rgba(0,0,0,0.25)]"
+              onMouseEnter={() => setIsCarouselPaused(true)}
+              onMouseLeave={() => setIsCarouselPaused(false)}
+            >
+              <div className="relative z-10 flex flex-col lg:h-[360px] lg:flex-row">
+                <div
+                  className="relative z-20 flex flex-col justify-center px-6 py-10 text-right sm:px-10 lg:w-1/3 lg:py-0"
+                  style={{ clipPath: tileClipPath, WebkitClipPath: tileClipPath }}
+                >
+                  <span className="absolute right-8 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
+                    destaques
+                  </span>
+                  {featuredLayers[0] && (
+                    <div className="mt-12 flex w-full flex-col items-end gap-4">
+                      <div className="flex h-[60px] flex-col items-end gap-1">
+                        {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
+                          <>
+                            <span className="text-sm text-white/60 line-through whitespace-nowrap">
                               {formatCurrency(featuredLayers[0].price)}
                             </span>
-                          )}
-                        </div>
-                        <div className="flex h-[70px] w-full items-center justify-end">
-                          <span
-                            className="text-right text-xl font-light tracking-[0.4em] text-white"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden'
-                            }}
-                          >
-                            {featuredLayers[0].name}
+                            <span className="text-4xl font-bold leading-none whitespace-nowrap">
+                              {formatCurrency(featuredLayers[0].promoPrice)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-4xl font-bold leading-none whitespace-nowrap">
+                            {formatCurrency(featuredLayers[0].price)}
                           </span>
-                        </div>
-                        {featuredLayers[0].sizes.length > 0 && (
-                          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">
-                            Tamanhos: {featuredLayers[0].sizes.join(' • ')}
-                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
+                      <div className="flex h-[70px] w-full items-center justify-end">
+                        <span
+                          className="text-right text-xl font-light tracking-[0.4em] text-white"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {featuredLayers[0].name}
+                        </span>
+                      </div>
+                      {featuredLayers[0].sizes.length > 0 && (
+                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">
+                          Tamanhos: {featuredLayers[0].sizes.join(' • ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-                  <div className="relative h-72 sm:h-80 md:h-96 lg:h-auto lg:w-1/3 lg:z-10 overflow-visible lg:-mr-6">
+                <div className="relative h-72 sm:h-80 md:h-96 lg:h-full lg:w-1/3 overflow-visible px-6 sm:px-10">
+                  <div className="relative flex h-full w-full flex-col justify-end">
                     {featuredLayers[0] && activeFeaturedImage && (
                       <button
                         type="button"
                         onClick={() => {
                           openModal(featuredLayers[0], activeFeaturedImage);
                         }}
-                        className="group relative h-full w-full"
+                        className="group absolute left-0 right-0 top-0 mx-auto w-full"
+                        style={{
+                          height: 'calc(100% - 64px)',
+                          transform: 'translateY(-40px)'
+                        }}
                       >
                         <div
-                          className="absolute inset-0 overflow-hidden"
+                          className="relative h-full w-full overflow-hidden"
                           style={{ clipPath: tileClipPath, WebkitClipPath: tileClipPath }}
                         >
                           <img
                             src={activeFeaturedImage}
                             alt={featuredLayers[0].name}
-                            className="h-full w-full object-cover shadow-[0_8px_30px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-[1.02]"
+                            className="h-full w-full object-cover shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-[1.02]"
                             loading="lazy"
                           />
                         </div>
                       </button>
                     )}
 
-                    <div className="absolute bottom-4 left-6 flex gap-1">
+                    <div className="relative z-20 flex items-center justify-center gap-2 pb-6">
                       {featuredDisplay.map((product, index) => (
                         <button
                           key={`${product.id}-nav-${index}`}
@@ -193,64 +181,51 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       ))}
                     </div>
                   </div>
+                </div>
 
-                  <div
-                    className="relative hidden h-72 sm:h-80 md:h-96 overflow-hidden lg:-ml-12 lg:block lg:w-1/3 lg:z-30"
-                    ref={stackContainerRef}
-                  >
-                    {featuredLayers
-                      .slice(1)
-                      .map((product, index) => {
-                        const featuredImage = product.images?.find(
-                          (image): image is string => Boolean(image)
-                        );
-                        if (!featuredImage) return null;
-                        const topOffset = stackLayout.step * index;
-                        return (
-                          <button
-                            key={`${product.id}-stack-${index}`}
-                            type="button"
-                            onClick={() => {
-                              const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
-                              if (nextIndex >= 0) {
-                                setActiveFeaturedIndex(nextIndex);
-                              }
-                            }}
-                            className="absolute left-0 top-0 overflow-hidden transition-transform duration-500"
-                            style={{
-                              top: `${topOffset}px`,
-                              height: `${stackLayout.tileHeight}px`,
-                              width: `calc(100% + ${stackLayout.extraWidth}px)`,
-                              clipPath: tileClipPath,
-                              WebkitClipPath: tileClipPath,
-                              transform: 'translateX(18px)',
-                              zIndex: featuredLayers.length - index,
-                              filter: 'brightness(0.7)'
-                            }}
-                          >
-                            <img
-                              src={featuredImage}
-                              alt={product.name}
-                              className="h-full w-full object-cover shadow-[0_6px_20px_rgba(0,0,0,0.3)]"
-                              loading="lazy"
-                            />
-                            <span className="absolute inset-0 bg-black/55" />
-                          </button>
-                        );
-                      })}
-                  </div>
+                <div className="relative hidden h-72 sm:h-80 md:h-96 lg:flex lg:w-1/3 lg:h-full lg:flex-col">
+                  {sideImages.length > 0 ? (
+                    sideImages.map(({ product, image }, index) => (
+                      <button
+                        key={`${product.id}-stack-${index}`}
+                        type="button"
+                        onClick={() => {
+                          const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
+                          if (nextIndex >= 0) {
+                            setActiveFeaturedIndex(nextIndex);
+                          }
+                        }}
+                        className="relative flex-1 overflow-hidden"
+                        style={{ clipPath: tileClipPath, WebkitClipPath: tileClipPath }}
+                      >
+                        {image && (
+                          <img
+                            src={image}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        )}
+                        <span className="absolute inset-0 bg-black/45" />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-white/70">
+                      Sem outras imagens
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="text-white/80 text-sm mt-6">
-                Marque itens como destaque no admin para exibir aqui.
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="px-6 pb-10 text-white/80 text-sm">
+              Marque itens como destaque no admin para exibir aqui.
+            </div>
+          )}
         </div>
       </section>
 
-      <section className="mb-10" id="catalogo">
+      <section className="container mx-auto mb-10 px-4 py-10" id="catalogo">
         <div className="mb-8">
           <p className="uppercase tracking-[0.4em] text-xs text-[#2aa7df] font-semibold">
             catálogo completo
