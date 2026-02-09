@@ -39,7 +39,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const activeFeaturedImage = featuredLayers[0]?.images?.find(
     (image): image is string => Boolean(image)
   );
-  const tileClipPath = 'polygon(12% 0, 100% 0, 88% 100%, 0 100%)';
+  // 20° skew → tan(20°) ≈ 0.364; for a 360px-tall strip the horizontal shift is ~131px
+  // We express clip-paths in % so they scale with each column's width.
+  // Left col   : polygon( skew 0, 100% 0, (100%-skew) 100%, 0 100% )
+  // Centre col : same shape
+  // Right col  : same shape, but each sub-tile uses the same skew
+  const SKEW_DEG = 20;
+  const stripHeight = 360; // px – desktop strip height
+  const overflowUp  = 80;  // px – how much the active image pokes above the strip
 
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
@@ -79,102 +86,221 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
   return (
     <div className="animate-in fade-in duration-700">
+      {/* ===== BLUE TOP (seamless with header) ===== */}
       <section className="text-white" id="destaques">
+        {/* Full-width blue background that merges with the header */}
         <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#2aa7df]">
-          <div className="relative z-10 px-6 md:px-14 pt-10 pb-8">
+          {/* "DESTAQUES" label inside the blue area, above the strip */}
+          <div className="relative z-10 px-6 md:px-14 pt-10 pb-4">
             <p className="uppercase tracking-[0.4em] text-xs text-white/80">destaques</p>
           </div>
 
           {hasFeatured ? (
-            <div
-              className="relative w-full overflow-visible bg-[#2aa7df] shadow-[0_-10px_25px_rgba(0,0,0,0.2),0_16px_30px_rgba(0,0,0,0.25)]"
-              onMouseEnter={() => setIsCarouselPaused(true)}
-              onMouseLeave={() => setIsCarouselPaused(false)}
-            >
-              <div className="relative z-10 flex flex-col lg:h-[360px] lg:flex-row">
+            <>
+              {/* ── Relief strip ── */}
+              <div
+                className="relative w-full bg-[#2aa7df]"
+                style={{
+                  boxShadow: 'inset 0 8px 18px rgba(0,0,0,0.25), 0 16px 30px rgba(0,0,0,0.25)',
+                  overflow: 'visible'
+                }}
+                onMouseEnter={() => setIsCarouselPaused(true)}
+                onMouseLeave={() => setIsCarouselPaused(false)}
+              >
+                {/* Desktop layout */}
                 <div
-                  className="relative z-20 flex flex-col justify-center px-6 py-10 text-right sm:px-10 lg:w-1/3 lg:py-0"
-                  style={{ clipPath: tileClipPath, WebkitClipPath: tileClipPath }}
+                  className="relative z-10 hidden lg:flex"
+                  style={{ height: `${stripHeight}px` }}
                 >
-                  <span className="absolute right-8 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
-                    destaques
-                  </span>
-                  {featuredLayers[0] && (
-                    <div className="mt-12 flex w-full flex-col items-end gap-4">
-                      <div className="flex h-[60px] flex-col items-end gap-1">
-                        {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
-                          <>
-                            <span className="text-sm text-white/60 line-through whitespace-nowrap">
+                  {/* ─── LEFT 1/3 — text block ─── */}
+                  <div
+                    className="relative w-1/3 flex flex-col justify-center px-8 text-right overflow-hidden"
+                    style={{
+                      clipPath: `polygon(${Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 0, 100% 0, ${100 - Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 100%, 0 100%)`,
+                    }}
+                  >
+                    <span className="absolute right-8 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
+                      destaques
+                    </span>
+                    {featuredLayers[0] && (
+                      <div className="mt-8 flex w-full flex-col items-end gap-4 pr-4">
+                        <div className="flex h-[60px] flex-col items-end gap-1">
+                          {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
+                            <>
+                              <span className="text-sm text-white/60 line-through whitespace-nowrap">
+                                {formatCurrency(featuredLayers[0].price)}
+                              </span>
+                              <span className="text-4xl font-bold leading-none whitespace-nowrap">
+                                {formatCurrency(featuredLayers[0].promoPrice)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-4xl font-bold leading-none whitespace-nowrap">
                               {formatCurrency(featuredLayers[0].price)}
                             </span>
-                            <span className="text-4xl font-bold leading-none whitespace-nowrap">
-                              {formatCurrency(featuredLayers[0].promoPrice)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-4xl font-bold leading-none whitespace-nowrap">
-                            {formatCurrency(featuredLayers[0].price)}
+                          )}
+                        </div>
+                        <div className="flex h-[70px] w-full items-center justify-end">
+                          <span
+                            className="text-right text-xl font-light tracking-[0.4em] text-white"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {featuredLayers[0].name}
                           </span>
+                        </div>
+                        {featuredLayers[0].sizes.length > 0 && (
+                          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">
+                            Tamanhos: {featuredLayers[0].sizes.join(' • ')}
+                          </div>
                         )}
                       </div>
-                      <div className="flex h-[70px] w-full items-center justify-end">
-                        <span
-                          className="text-right text-xl font-light tracking-[0.4em] text-white"
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          {featuredLayers[0].name}
-                        </span>
-                      </div>
-                      {featuredLayers[0].sizes.length > 0 && (
-                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">
-                          Tamanhos: {featuredLayers[0].sizes.join(' • ')}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                <div className="relative h-72 sm:h-80 md:h-96 lg:h-full lg:w-1/3 overflow-visible px-6 sm:px-10">
-                  <div className="relative flex h-full w-full flex-col justify-end">
+                  {/* ─── CENTRE 1/3 — active image (overflows UP) + dots below ─── */}
+                  <div className="relative w-1/3 overflow-visible">
+                    {/* Active image – pushed up so it "leaks" above the strip */}
                     {featuredLayers[0] && activeFeaturedImage && (
                       <button
                         type="button"
-                        onClick={() => {
-                          openModal(featuredLayers[0], activeFeaturedImage);
-                        }}
-                        className="group absolute left-0 right-0 top-0 mx-auto w-full"
+                        onClick={() => openModal(featuredLayers[0], activeFeaturedImage)}
+                        className="group absolute inset-x-0"
                         style={{
-                          height: 'calc(100% - 64px)',
-                          transform: 'translateY(-40px)'
+                          top: `-${overflowUp}px`,
+                          height: `${stripHeight}px`,
                         }}
                       >
                         <div
                           className="relative h-full w-full overflow-hidden"
-                          style={{ clipPath: tileClipPath, WebkitClipPath: tileClipPath }}
+                          style={{
+                            clipPath: `polygon(${Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 0, 100% 0, ${100 - Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 100%, 0 100%)`,
+                          }}
                         >
                           <img
                             src={activeFeaturedImage}
                             alt={featuredLayers[0].name}
-                            className="h-full w-full object-cover shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition-transform duration-500 group-hover:scale-[1.02]"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                             loading="lazy"
                           />
                         </div>
                       </button>
                     )}
 
-                    <div className="relative z-20 flex items-center justify-center gap-2 pb-6">
+                    {/* Carousel dots – sit at the bottom of the strip, in the gap left by the image shifting up */}
+                    <div
+                      className="absolute bottom-0 inset-x-0 z-20 flex items-center justify-center gap-2"
+                      style={{ height: `${overflowUp}px` }}
+                    >
                       {featuredDisplay.map((product, index) => (
                         <button
                           key={`${product.id}-nav-${index}`}
                           type="button"
                           onClick={() => setActiveFeaturedIndex(index)}
-                          className={`h-[5px] w-4 skew-x-[-20deg] transition-all ${
-                            index === activeFeaturedIndex ? 'bg-white/80 w-[22px]' : 'bg-white/25 hover:bg-white/40'
+                          className={`h-[5px] skew-x-[-20deg] transition-all ${
+                            index === activeFeaturedIndex
+                              ? 'bg-white/80 w-[22px]'
+                              : 'w-4 bg-white/25 hover:bg-white/40'
+                          }`}
+                          aria-label={`Ir para ${product.name}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ─── RIGHT 1/3 — stacked side images ─── */}
+                  <div className="relative w-1/3 flex flex-col overflow-hidden">
+                    {sideImages.length > 0 ? (
+                      sideImages.map(({ product, image }, index) => {
+                        const n = sideImages.length;
+                        const tileH = stripHeight / n;
+                        // Each sub-tile is a parallelogram with the same 20° skew
+                        const clip = `polygon(${Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 0, 100% 0, ${100 - Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 100%, 0 100%)`;
+                        return (
+                          <button
+                            key={`${product.id}-stack-${index}`}
+                            type="button"
+                            onClick={() => {
+                              const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
+                              if (nextIndex >= 0) setActiveFeaturedIndex(nextIndex);
+                            }}
+                            className="relative overflow-hidden"
+                            style={{
+                              height: `${tileH}px`,
+                              clipPath: clip,
+                            }}
+                          >
+                            {image && (
+                              <img
+                                src={image}
+                                alt={product.name}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                            <span className="absolute inset-0 bg-black/40 hover:bg-black/30 transition-colors" />
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-white/70">
+                        Sem outras imagens
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mobile / tablet layout (simplified – no parallelogram, just the image + dots) */}
+                <div className="relative flex flex-col lg:hidden">
+                  <div className="relative h-72 sm:h-80 md:h-96 overflow-visible px-4">
+                    {featuredLayers[0] && activeFeaturedImage && (
+                      <button
+                        type="button"
+                        onClick={() => openModal(featuredLayers[0], activeFeaturedImage)}
+                        className="group w-full h-full"
+                      >
+                        <img
+                          src={activeFeaturedImage}
+                          alt={featuredLayers[0].name}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                          style={{ clipPath: `polygon(6% 0, 100% 0, 94% 100%, 0 100%)` }}
+                          loading="lazy"
+                        />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Mobile info + dots */}
+                  <div className="px-6 py-6 flex flex-col gap-4">
+                    {featuredLayers[0] && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-2xl font-bold">
+                          {featuredLayers[0].isPromo && featuredLayers[0].promoPrice
+                            ? formatCurrency(featuredLayers[0].promoPrice)
+                            : formatCurrency(featuredLayers[0].price)}
+                        </span>
+                        <span className="text-lg font-light tracking-wider">{featuredLayers[0].name}</span>
+                        {featuredLayers[0].sizes.length > 0 && (
+                          <span className="text-xs text-white/80 uppercase tracking-widest">
+                            Tamanhos: {featuredLayers[0].sizes.join(' • ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      {featuredDisplay.map((product, index) => (
+                        <button
+                          key={`${product.id}-nav-m-${index}`}
+                          type="button"
+                          onClick={() => setActiveFeaturedIndex(index)}
+                          className={`h-[5px] skew-x-[-20deg] transition-all ${
+                            index === activeFeaturedIndex
+                              ? 'bg-white/80 w-[22px]'
+                              : 'w-4 bg-white/25 hover:bg-white/40'
                           }`}
                           aria-label={`Ir para ${product.name}`}
                         />
@@ -182,41 +308,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     </div>
                   </div>
                 </div>
-
-                <div className="relative hidden h-72 sm:h-80 md:h-96 lg:flex lg:w-1/3 lg:h-full lg:flex-col">
-                  {sideImages.length > 0 ? (
-                    sideImages.map(({ product, image }, index) => (
-                      <button
-                        key={`${product.id}-stack-${index}`}
-                        type="button"
-                        onClick={() => {
-                          const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
-                          if (nextIndex >= 0) {
-                            setActiveFeaturedIndex(nextIndex);
-                          }
-                        }}
-                        className="relative flex-1 overflow-hidden"
-                        style={{ clipPath: tileClipPath, WebkitClipPath: tileClipPath }}
-                      >
-                        {image && (
-                          <img
-                            src={image}
-                            alt={product.name}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        )}
-                        <span className="absolute inset-0 bg-black/45" />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-white/70">
-                      Sem outras imagens
-                    </div>
-                  )}
-                </div>
               </div>
-            </div>
+            </>
           ) : (
             <div className="px-6 pb-10 text-white/80 text-sm">
               Marque itens como destaque no admin para exibir aqui.
