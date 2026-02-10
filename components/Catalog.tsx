@@ -166,50 +166,38 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </div>
 
-                {/* COLUNA 3: FILA DE IMAGENS (próximas + ativa no final) */}
+                {/* COLUNA 3: FILA DE IMAGENS (rotaciona baseado no índice ativo) */}
                 <div className="w-1/3 flex overflow-hidden">
-                  <div
-                    className="flex h-full transition-transform duration-500 ease-in-out"
-                    style={{
-                      width: `${featuredDisplay.length > 1 ? (featuredDisplay.length - 1) * 100 : 100}%`
-                    }}
-                  >
+                  <div className="flex h-full w-full">
                     {featuredDisplay.length > 1 &&
-                      // Cria array circular: [próximas imagens] + [imagem ativa no final]
-                      [...featuredDisplay.slice(1), featuredDisplay[0]]
-                        .map((product, index) => {
-                          const image = product.images?.find((img): img is string => Boolean(img));
-                          if (!image) return null;
+                      // Usa featuredLayers que já rotaciona: [ativa, próxima1, próxima2, ...]
+                      // Mostra apenas slice(1) que são as próximas (sem a ativa)
+                      featuredLayers.slice(1).map((product, index) => {
+                        const image = product.images?.find((img): img is string => Boolean(img));
+                        if (!image) return null;
 
-                          const isActive = product.id === featuredDisplay[activeFeaturedIndex].id;
-
-                          return (
-                            <button
-                              key={`queue-${product.id}-${index}`}
-                              type="button"
-                              onClick={() => {
-                                const targetIndex = featuredDisplay.findIndex((p) => p.id === product.id);
-                                if (targetIndex >= 0) {
-                                  setActiveFeaturedIndex(targetIndex);
-                                }
-                              }}
-                              className="flex-shrink-0 h-full relative transition-all duration-500"
-                              style={{
-                                width: `${100 / (featuredDisplay.length - 1)}%`
-                              }}
-                            >
-                              <img
-                                src={image}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                              {/* 50% opacidade apenas para as não-ativas */}
-                              <div className={`absolute inset-0 transition-opacity duration-500 ${
-                                isActive ? 'bg-black/50' : 'bg-black/50'
-                              }`} />
-                            </button>
-                          );
-                        })}
+                        return (
+                          <button
+                            key={`queue-${product.id}-${activeFeaturedIndex}-${index}`}
+                            type="button"
+                            onClick={() => {
+                              const targetIndex = featuredDisplay.findIndex((p) => p.id === product.id);
+                              if (targetIndex >= 0) {
+                                setActiveFeaturedIndex(targetIndex);
+                              }
+                            }}
+                            className="flex-1 h-full relative transition-all duration-500"
+                          >
+                            <img
+                              src={image}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-all duration-500"
+                            />
+                            {/* 50% opacidade */}
+                            <div className="absolute inset-0 bg-black/50 transition-opacity duration-500" />
+                          </button>
+                        );
+                      })}
                   </div>
                 </div>
               </div>
