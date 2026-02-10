@@ -84,9 +84,12 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
   return (
     <div className="animate-in fade-in duration-700">
+      {/* ===== BLUE TOP (seamless with header) ===== */}
       <section className="text-white" id="destaques">
+        {/* Full-width blue background that merges with the header */}
         <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#2aa7df]">
-          <div className="relative z-10 px-6 md:px-14 pt-10 pb-8">
+          {/* "DESTAQUES" label inside the blue area, above the strip */}
+          <div className="relative z-10 px-6 md:px-14 pt-10 pb-4">
             <p className="uppercase tracking-[0.4em] text-xs text-white/80">destaques</p>
           </div>
 
@@ -105,48 +108,55 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     WebkitClipPath: `polygon(0 0, 100% 0, calc(100% - ${skewOffset}) 100%, 0 100%)`
                   }}
                 >
-                  <span className="absolute right-8 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
-                    destaques
-                  </span>
-                  {featuredLayers[0] && (
-                    <div className="mt-12 flex w-full flex-col items-end gap-4">
-                      <div className="flex h-[60px] flex-col items-end gap-1">
-                        {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
-                          <>
-                            <span className="text-sm text-white/60 line-through whitespace-nowrap">
+                  {/* ─── LEFT 1/3 — text block ─── */}
+                  <div
+                    className="relative w-1/3 flex flex-col justify-center px-8 text-right overflow-hidden"
+                    style={{
+                      clipPath: `polygon(${Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 0, 100% 0, ${100 - Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 100%, 0 100%)`,
+                    }}
+                  >
+                    <span className="absolute right-8 top-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/90">
+                      destaques
+                    </span>
+                    {featuredLayers[0] && (
+                      <div className="mt-8 flex w-full flex-col items-end gap-4 pr-4">
+                        <div className="flex h-[60px] flex-col items-end gap-1">
+                          {featuredLayers[0].isPromo && featuredLayers[0].promoPrice ? (
+                            <>
+                              <span className="text-sm text-white/60 line-through whitespace-nowrap">
+                                {formatCurrency(featuredLayers[0].price)}
+                              </span>
+                              <span className="text-4xl font-bold leading-none whitespace-nowrap">
+                                {formatCurrency(featuredLayers[0].promoPrice)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-4xl font-bold leading-none whitespace-nowrap">
                               {formatCurrency(featuredLayers[0].price)}
                             </span>
-                            <span className="text-4xl font-bold leading-none whitespace-nowrap">
-                              {formatCurrency(featuredLayers[0].promoPrice)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-4xl font-bold leading-none whitespace-nowrap">
-                            {formatCurrency(featuredLayers[0].price)}
+                          )}
+                        </div>
+                        <div className="flex h-[70px] w-full items-center justify-end">
+                          <span
+                            className="text-right text-xl font-light tracking-[0.4em] text-white"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {featuredLayers[0].name}
                           </span>
+                        </div>
+                        {featuredLayers[0].sizes.length > 0 && (
+                          <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">
+                            Tamanhos: {featuredLayers[0].sizes.join(' • ')}
+                          </div>
                         )}
                       </div>
-                      <div className="flex h-[70px] w-full items-center justify-end">
-                        <span
-                          className="text-right text-xl font-light tracking-[0.4em] text-white"
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                          }}
-                        >
-                          {featuredLayers[0].name}
-                        </span>
-                      </div>
-                      {featuredLayers[0].sizes.length > 0 && (
-                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90 whitespace-nowrap">
-                          Tamanhos: {featuredLayers[0].sizes.join(' • ')}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
                 {/* Coluna central - imagem ativa (maior, vaza para cima, z-index alto) */}
                 <div className="relative h-72 sm:h-80 md:h-96 lg:h-full lg:w-1/3 px-6 sm:px-10">
@@ -196,6 +206,47 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       ))}
                     </div>
                   </div>
+
+                  {/* ─── RIGHT 1/3 — stacked side images ─── */}
+                  <div className="relative w-1/3 flex flex-col overflow-hidden">
+                    {sideImages.length > 0 ? (
+                      sideImages.map(({ product, image }, index) => {
+                        const n = sideImages.length;
+                        const tileH = stripHeight / n;
+                        // Each sub-tile is a parallelogram with the same 20° skew
+                        const clip = `polygon(${Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 0, 100% 0, ${100 - Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 100%, 0 100%)`;
+                        return (
+                          <button
+                            key={`${product.id}-stack-${index}`}
+                            type="button"
+                            onClick={() => {
+                              const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
+                              if (nextIndex >= 0) setActiveFeaturedIndex(nextIndex);
+                            }}
+                            className="relative overflow-hidden"
+                            style={{
+                              height: `${tileH}px`,
+                              clipPath: clip,
+                            }}
+                          >
+                            {image && (
+                              <img
+                                src={image}
+                                alt={product.name}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                            <span className="absolute inset-0 bg-black/40 hover:bg-black/30 transition-colors" />
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-white/70">
+                        Sem outras imagens
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Coluna direita - imagens empilhadas (paralelogramo, topo vaza para fora) */}
@@ -203,7 +254,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   {sideImages.length > 0 ? (
                     sideImages.map(({ product, image }, index) => (
                       <button
-                        key={`${product.id}-stack-${index}`}
                         type="button"
                         onClick={() => {
                           const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
@@ -217,25 +267,53 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           WebkitClipPath: `polygon(${skewOffset} 0, 100% 0, calc(100% - ${skewOffset}) 100%, 0 100%)`
                         }}
                       >
-                        {image && (
-                          <img
-                            src={image}
-                            alt={product.name}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        )}
-                        <span className="absolute inset-0 bg-black/45" />
+                        <img
+                          src={activeFeaturedImage}
+                          alt={featuredLayers[0].name}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                          style={{ clipPath: `polygon(6% 0, 100% 0, 94% 100%, 0 100%)` }}
+                          loading="lazy"
+                        />
                       </button>
-                    ))
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-white/70">
-                      Sem outras imagens
+                    )}
+                  </div>
+
+                  {/* Mobile info + dots */}
+                  <div className="px-6 py-6 flex flex-col gap-4">
+                    {featuredLayers[0] && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-2xl font-bold">
+                          {featuredLayers[0].isPromo && featuredLayers[0].promoPrice
+                            ? formatCurrency(featuredLayers[0].promoPrice)
+                            : formatCurrency(featuredLayers[0].price)}
+                        </span>
+                        <span className="text-lg font-light tracking-wider">{featuredLayers[0].name}</span>
+                        {featuredLayers[0].sizes.length > 0 && (
+                          <span className="text-xs text-white/80 uppercase tracking-widest">
+                            Tamanhos: {featuredLayers[0].sizes.join(' • ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      {featuredDisplay.map((product, index) => (
+                        <button
+                          key={`${product.id}-nav-m-${index}`}
+                          type="button"
+                          onClick={() => setActiveFeaturedIndex(index)}
+                          className={`h-[5px] skew-x-[-20deg] transition-all ${
+                            index === activeFeaturedIndex
+                              ? 'bg-white/80 w-[22px]'
+                              : 'w-4 bg-white/25 hover:bg-white/40'
+                          }`}
+                          aria-label={`Ir para ${product.name}`}
+                        />
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
           ) : (
             <div className="px-6 pb-10 text-white/80 text-sm">
               Marque itens como destaque no admin para exibir aqui.
