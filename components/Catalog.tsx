@@ -31,6 +31,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const [activeFeaturedIndex, setActiveFeaturedIndex] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [displayIndex, setDisplayIndex] = useState(0); // Índice da imagem base (atualiza após animação)
   const hasFeatured = featuredProducts.length > 0;
 
   // Detecta mudança no índice e anima
@@ -41,12 +42,21 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
     const timeout = setTimeout(() => {
       setIsAnimating(false);
+      setDisplayIndex(activeFeaturedIndex); // Atualiza a base APÓS animação
     }, 500);
 
     return () => clearTimeout(timeout);
   }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length]);
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
+
+  // featuredLayers usa displayIndex (não activeFeaturedIndex) para a base
   const featuredLayers = useMemo(() => {
+    if (!featuredDisplay.length) return [];
+    return featuredDisplay.map((_, offset) => featuredDisplay[(displayIndex + offset) % featuredDisplay.length]);
+  }, [featuredDisplay, displayIndex]);
+
+  // nextLayers usa activeFeaturedIndex para a próxima que vai entrar
+  const nextLayers = useMemo(() => {
     if (!featuredDisplay.length) return [];
     return featuredDisplay.map((_, offset) => featuredDisplay[(activeFeaturedIndex + offset) % featuredDisplay.length]);
   }, [featuredDisplay, activeFeaturedIndex]);
@@ -153,7 +163,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
                 {/* COLUNA 2: IMAGEM ATIVA - próxima desliza por cima */}
                 <div className="w-1/3 relative overflow-hidden">
-                  {/* Imagem atual - PARADA */}
+                  {/* Imagem atual - PARADA (usa displayIndex, muda só após animação) */}
                   {featuredLayers[0] && (
                     <button
                       type="button"
@@ -172,13 +182,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     </button>
                   )}
 
-                  {/* Próxima imagem - DESLIZA por cima */}
-                  {featuredLayers[1] && (
+                  {/* Próxima imagem - DESLIZA por cima (usa activeFeaturedIndex) */}
+                  {nextLayers[0] && (
                     <button
                       type="button"
                       onClick={() => {
-                        const img = featuredLayers[1].images?.find((i): i is string => Boolean(i));
-                        if (img) openModal(featuredLayers[1], img);
+                        const img = nextLayers[0].images?.find((i): i is string => Boolean(i));
+                        if (img) openModal(nextLayers[0], img);
                       }}
                       className="absolute inset-0 w-full h-full"
                       style={{
@@ -188,8 +198,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       }}
                     >
                       <img
-                        src={featuredLayers[1].images?.find((i): i is string => Boolean(i)) ?? ''}
-                        alt={featuredLayers[1].name}
+                        src={nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
+                        alt={nextLayers[0].name}
                         className="w-full h-full object-cover"
                       />
                     </button>
@@ -200,14 +210,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 <div className="w-1/3 flex">
                   {featuredLayers.slice(1).map((product, idx) => {
                     const image = product.images?.find((img): img is string => Boolean(img));
-                    const nextProduct = featuredLayers[idx + 2];
+                    const nextProduct = nextLayers[idx + 1]; // Usa nextLayers para próximas
                     const nextImage = nextProduct?.images?.find((img): img is string => Boolean(img));
 
                     if (!image) return null;
 
                     return (
                       <div key={`queue-${product.id}`} className="flex-1 h-full relative overflow-hidden">
-                        {/* Imagem atual - PARADA */}
+                        {/* Imagem atual - PARADA (usa featuredLayers/displayIndex) */}
                         <button
                           type="button"
                           onClick={() => {
@@ -227,7 +237,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           <div className="absolute inset-0 bg-black/50" />
                         </button>
 
-                        {/* Próxima imagem - DESLIZA por cima */}
+                        {/* Próxima imagem - DESLIZA por cima (usa nextLayers/activeFeaturedIndex) */}
                         {nextImage && (
                           <button
                             type="button"
