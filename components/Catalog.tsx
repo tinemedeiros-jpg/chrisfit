@@ -177,8 +177,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                         <div
                           className="relative h-full w-full overflow-hidden"
                           style={{
-                            clipPath: `polygon(${skewOffset} 0, calc(100% - ${skewOffset}) 0, calc(100% - calc(${skewOffset} * 2)) 100%, ${skewOffset} 100%)`,
-                            WebkitClipPath: `polygon(${skewOffset} 0, calc(100% - ${skewOffset}) 0, calc(100% - calc(${skewOffset} * 2)) 100%, ${skewOffset} 100%)`
+                            clipPath: `polygon(${skewOffset} 0, calc(100% - ${skewOffset}) 0, calc(100% - ${skewOffset} - ${skewOffset}) 100%, ${skewOffset} 100%)`,
+                            WebkitClipPath: `polygon(${skewOffset} 0, calc(100% - ${skewOffset}) 0, calc(100% - ${skewOffset} - ${skewOffset}) 100%, ${skewOffset} 100%)`
                           }}
                         >
                           <img
