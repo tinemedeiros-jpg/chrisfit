@@ -39,7 +39,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const activeFeaturedImage = featuredLayers[0]?.images?.find(
     (image): image is string => Boolean(image)
   );
-  const tileClipPath = 'polygon(12% 0, 100% 0, 88% 100%, 0 100%)';
+
+  // Geometria para 15° de inclinação
+  // Para altura de 360px: offset = 360 * tan(15°) ≈ 96px
+  // Em porcentagem da largura da coluna (~467px em tela 1400px): 96/467 ≈ 20.5%
+  // Usando 12% como valor visual mais suave baseado na referência
+  const skewOffset = '12%';
+  const SKEW_DEG = 15;
+  const stripHeight = 360;
 
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
