@@ -180,10 +180,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                         const img = featuredLayers[1].images?.find((i): i is string => Boolean(i));
                         if (img) openModal(featuredLayers[1], img);
                       }}
-                      className="absolute inset-0 w-full h-full transition-transform duration-500 ease-in-out"
+                      className="absolute inset-0 w-full h-full"
                       style={{
                         zIndex: 2,
-                        transform: isAnimating ? 'translateX(0)' : 'translateX(100%)'
+                        transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+                        transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
                       }}
                     >
                       <img
@@ -236,10 +237,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                                 setActiveFeaturedIndex(targetIndex);
                               }
                             }}
-                            className="absolute inset-0 w-full h-full transition-transform duration-500 ease-in-out"
+                            className="absolute inset-0 w-full h-full"
                             style={{
                               zIndex: 2,
-                              transform: isAnimating ? 'translateX(0)' : 'translateX(100%)'
+                              transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+                              transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
                             }}
                           >
                             <img
