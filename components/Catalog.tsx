@@ -39,14 +39,12 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const activeFeaturedImage = featuredLayers[0]?.images?.find(
     (image): image is string => Boolean(image)
   );
-  // 20° skew → tan(20°) ≈ 0.364; for a 360px-tall strip the horizontal shift is ~131px
-  // We express clip-paths in % so they scale with each column's width.
-  // Left col   : polygon( skew 0, 100% 0, (100%-skew) 100%, 0 100% )
-  // Centre col : same shape
-  // Right col  : same shape, but each sub-tile uses the same skew
-  const SKEW_DEG = 20;
-  const stripHeight = 360; // px – desktop strip height
-  const overflowUp  = 80;  // px – how much the active image pokes above the strip
+
+  // Geometria para 15° de inclinação
+  // Para altura de 360px: offset = 360 * tan(15°) ≈ 96px
+  // Em porcentagem da largura da coluna (~467px em tela 1400px): 96/467 ≈ 20.5%
+  // Usando 12% como valor visual mais suave baseado na referência
+  const skewOffset = '12%';
 
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
@@ -96,21 +94,19 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
           </div>
 
           {hasFeatured ? (
-            <>
-              {/* ── Relief strip ── */}
-              <div
-                className="relative w-full bg-[#2aa7df]"
-                style={{
-                  boxShadow: 'inset 0 8px 18px rgba(0,0,0,0.25), 0 16px 30px rgba(0,0,0,0.25)',
-                  overflow: 'visible'
-                }}
-                onMouseEnter={() => setIsCarouselPaused(true)}
-                onMouseLeave={() => setIsCarouselPaused(false)}
-              >
-                {/* Desktop layout */}
+            <div
+              className="relative w-full bg-[#2aa7df] shadow-[0_-10px_25px_rgba(0,0,0,0.2),0_16px_30px_rgba(0,0,0,0.25)]"
+              onMouseEnter={() => setIsCarouselPaused(true)}
+              onMouseLeave={() => setIsCarouselPaused(false)}
+            >
+              <div className="relative flex flex-col lg:h-[360px] lg:flex-row">
+                {/* Coluna esquerda - texto (paralelogramo que sangra até a borda esquerda) */}
                 <div
-                  className="relative z-10 hidden lg:flex"
-                  style={{ height: `${stripHeight}px` }}
+                  className="relative flex flex-col justify-center px-6 py-10 text-right sm:px-10 lg:w-1/3 lg:py-0 z-10"
+                  style={{
+                    clipPath: `polygon(0 0, 100% 0, calc(100% - ${skewOffset}) 100%, 0 100%)`,
+                    WebkitClipPath: `polygon(0 0, 100% 0, calc(100% - ${skewOffset}) 100%, 0 100%)`
+                  }}
                 >
                   {/* ─── LEFT 1/3 — text block ─── */}
                   <div
@@ -162,49 +158,48 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     )}
                   </div>
 
-                  {/* ─── CENTRE 1/3 — active image (overflows UP) + dots below ─── */}
-                  <div className="relative w-1/3 overflow-visible">
-                    {/* Active image – pushed up so it "leaks" above the strip */}
+                {/* Coluna central - imagem ativa (maior, vaza para cima, z-index alto) */}
+                <div className="relative h-72 sm:h-80 md:h-96 lg:h-full lg:w-1/3 px-6 sm:px-10">
+                  <div className="relative flex h-full w-full flex-col justify-end">
                     {featuredLayers[0] && activeFeaturedImage && (
                       <button
                         type="button"
-                        onClick={() => openModal(featuredLayers[0], activeFeaturedImage)}
-                        className="group absolute inset-x-0"
+                        onClick={() => {
+                          openModal(featuredLayers[0], activeFeaturedImage);
+                        }}
+                        className="group absolute left-0 right-0 mx-auto z-30"
                         style={{
-                          top: `-${overflowUp}px`,
-                          height: `${stripHeight}px`,
+                          top: '-80px',
+                          width: '110%',
+                          height: '480px'
                         }}
                       >
                         <div
                           className="relative h-full w-full overflow-hidden"
                           style={{
-                            clipPath: `polygon(${Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 0, 100% 0, ${100 - Math.round(Math.tan(SKEW_DEG * Math.PI / 180) * 100)}% 100%, 0 100%)`,
+                            clipPath: `polygon(${skewOffset} 0, calc(100% - ${skewOffset}) 0, calc(100% - calc(${skewOffset} * 2)) 100%, ${skewOffset} 100%)`,
+                            WebkitClipPath: `polygon(${skewOffset} 0, calc(100% - ${skewOffset}) 0, calc(100% - calc(${skewOffset} * 2)) 100%, ${skewOffset} 100%)`
                           }}
                         >
                           <img
                             src={activeFeaturedImage}
                             alt={featuredLayers[0].name}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                            className="h-full w-full object-cover shadow-[0_10px_40px_rgba(0,0,0,0.4)] transition-transform duration-500 group-hover:scale-[1.02]"
                             loading="lazy"
                           />
                         </div>
                       </button>
                     )}
 
-                    {/* Carousel dots – sit at the bottom of the strip, in the gap left by the image shifting up */}
-                    <div
-                      className="absolute bottom-0 inset-x-0 z-20 flex items-center justify-center gap-2"
-                      style={{ height: `${overflowUp}px` }}
-                    >
+                    {/* Dots do carrossel - dentro da faixa, abaixo da imagem ativa */}
+                    <div className="relative z-20 flex items-center justify-center gap-2 pb-6">
                       {featuredDisplay.map((product, index) => (
                         <button
                           key={`${product.id}-nav-${index}`}
                           type="button"
                           onClick={() => setActiveFeaturedIndex(index)}
-                          className={`h-[5px] skew-x-[-20deg] transition-all ${
-                            index === activeFeaturedIndex
-                              ? 'bg-white/80 w-[22px]'
-                              : 'w-4 bg-white/25 hover:bg-white/40'
+                          className={`h-[5px] w-4 skew-x-[-15deg] transition-all ${
+                            index === activeFeaturedIndex ? 'bg-white/80 w-[22px]' : 'bg-white/25 hover:bg-white/40'
                           }`}
                           aria-label={`Ir para ${product.name}`}
                         />
@@ -254,14 +249,23 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   </div>
                 </div>
 
-                {/* Mobile / tablet layout (simplified – no parallelogram, just the image + dots) */}
-                <div className="relative flex flex-col lg:hidden">
-                  <div className="relative h-72 sm:h-80 md:h-96 overflow-visible px-4">
-                    {featuredLayers[0] && activeFeaturedImage && (
+                {/* Coluna direita - imagens empilhadas (paralelogramo, topo vaza para fora) */}
+                <div className="relative hidden h-72 sm:h-80 md:h-96 lg:flex lg:w-1/3 lg:h-full lg:flex-col z-10">
+                  {sideImages.length > 0 ? (
+                    sideImages.map(({ product, image }, index) => (
                       <button
                         type="button"
-                        onClick={() => openModal(featuredLayers[0], activeFeaturedImage)}
-                        className="group w-full h-full"
+                        onClick={() => {
+                          const nextIndex = featuredDisplay.findIndex((item) => item.id === product.id);
+                          if (nextIndex >= 0) {
+                            setActiveFeaturedIndex(nextIndex);
+                          }
+                        }}
+                        className="relative flex-1 overflow-hidden"
+                        style={{
+                          clipPath: `polygon(${skewOffset} 0, 100% 0, calc(100% - ${skewOffset}) 100%, 0 100%)`,
+                          WebkitClipPath: `polygon(${skewOffset} 0, 100% 0, calc(100% - ${skewOffset}) 100%, 0 100%)`
+                        }}
                       >
                         <img
                           src={activeFeaturedImage}
