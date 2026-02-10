@@ -155,51 +155,34 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </div>
 
-                {/* COLUNA 3: FILA HORIZONTAL - slides para esquerda */}
-                <div className="w-1/3 overflow-hidden">
-                  <div
-                    className="flex h-full transition-transform duration-500 ease-out"
-                    style={{
-                      width: `${featuredDisplay.length * 100}%`,
-                      transform: `translateX(-${activeFeaturedIndex * (100 / featuredDisplay.length)}%)`
-                    }}
-                  >
-                    {/* Renderiza TODOS os produtos + duplica o primeiro no final para loop infinito */}
-                    {[...featuredDisplay, ...featuredDisplay.slice(0, 1)].map((product, absoluteIndex) => {
-                      const image = product.images?.find((img): img is string => Boolean(img));
-                      if (!image) return null;
+                {/* COLUNA 3: PRÓXIMAS IMAGENS (sem a ativa) */}
+                <div className="w-1/3 flex">
+                  {featuredLayers.slice(1).map((product) => {
+                    const image = product.images?.find((img): img is string => Boolean(img));
+                    if (!image) return null;
 
-                      const isActiveInCenter = absoluteIndex === activeFeaturedIndex;
-
-                      return (
-                        <div
-                          key={`queue-${product.id}-${absoluteIndex}`}
-                          className="flex-shrink-0 h-full"
-                          style={{
-                            width: `${100 / (featuredDisplay.length + 1)}%`,
-                            opacity: isActiveInCenter ? 0 : 1
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const targetIndex = absoluteIndex % featuredDisplay.length;
-                              setActiveFeaturedIndex(targetIndex);
-                            }}
-                            className="w-full h-full relative"
-                          >
-                            <img
-                              src={image}
-                              alt={product.name}
-                              className="w-full h-full object-cover"
-                            />
-                            {/* 50% opacidade */}
-                            <div className="absolute inset-0 bg-black/50" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                    return (
+                      <button
+                        key={`queue-${product.id}`}
+                        type="button"
+                        onClick={() => {
+                          const targetIndex = featuredDisplay.findIndex((p) => p.id === product.id);
+                          if (targetIndex >= 0) {
+                            setActiveFeaturedIndex(targetIndex);
+                          }
+                        }}
+                        className="flex-1 h-full relative"
+                      >
+                        <img
+                          src={image}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* 50% opacidade */}
+                        <div className="absolute inset-0 bg-black/50" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
