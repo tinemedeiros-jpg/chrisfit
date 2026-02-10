@@ -159,7 +159,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     className="flex flex-shrink-0 h-full"
                     style={{
                       width: '200%',
-                      transform: isAnimating ? 'translateX(-50%)' : 'translateX(0)',
+                      transform: isAnimating ? 'translate(-50%, 0)' : 'translate(0, 0)',
                       transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
                     }}
                   >
@@ -215,7 +215,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           className="flex h-full"
                           style={{
                             width: '200%',
-                            transform: isAnimating ? 'translateX(-50%)' : 'translateX(0)',
+                            transform: isAnimating ? 'translate(-50%, 0)' : 'translate(0, 0)',
                             transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
                           }}
                         >
