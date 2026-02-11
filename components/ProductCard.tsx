@@ -2,6 +2,7 @@
 import React from 'react';
 import { Product } from '../types';
 import { MessageCircle } from 'lucide-react';
+import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -118,17 +119,32 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
             onMouseEnter={() => setIsHovering(true)}
             onClick={handlePreview}
           >
-            {images.map((image, index) => (
-              <img
-                key={`${product.id}-${image}-${index}`}
-                src={image}
-                alt={`${product.name} - ${index + 1}`}
-                className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${
-                  hoverIndex === index ? 'opacity-100' : 'opacity-0'
-                }`}
-                loading="lazy"
-              />
-            ))}
+            {images.map((image, index) => {
+              const isVideo = isVideoUrl(image);
+              return isVideo ? (
+                <video
+                  key={`${product.id}-${image}-${index}`}
+                  src={image}
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${
+                    hoverIndex === index ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  key={`${product.id}-${image}-${index}`}
+                  src={image}
+                  alt={`${product.name} - ${index + 1}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${
+                    hoverIndex === index ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  loading="lazy"
+                />
+              );
+            })}
           </div>
 
           <div

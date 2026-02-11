@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
 import { X, Search } from 'lucide-react';
+import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 
 interface CatalogProps {
   products: Product[];
@@ -142,48 +143,78 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   boxShadow: '-2px -4px 15px rgba(0,0,0,0.25), 4px 8px 35px rgba(0,0,0,0.4)'
                 }}
               >
-                {/* Imagem atual - PARADA (usa displayIndex) */}
-                {featuredLayers[0] && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
-                      if (img) openModal(featuredLayers[0], img);
-                    }}
-                    className="absolute inset-0 w-full h-full"
-                    style={{ zIndex: 1 }}
-                  >
-                    <img
-                      src={featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
-                      alt={featuredLayers[0].name}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                )}
+                {/* Imagem/Vídeo atual - PARADA (usa displayIndex) */}
+                {featuredLayers[0] && (() => {
+                  const media = featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                  const isVideo = isVideoUrl(media);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
+                        if (img) openModal(featuredLayers[0], img);
+                      }}
+                      className="absolute inset-0 w-full h-full"
+                      style={{ zIndex: 1 }}
+                    >
+                      {isVideo ? (
+                        <video
+                          src={media}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          src={media}
+                          alt={featuredLayers[0].name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </button>
+                  );
+                })()}
 
-                {/* Próxima imagem - DESLIZA por cima (usa activeFeaturedIndex) */}
-                {nextLayers[0] && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const img = nextLayers[0].images?.find((i): i is string => Boolean(i));
-                      if (img) openModal(nextLayers[0], img);
-                    }}
-                    className="absolute inset-0 w-full h-full"
-                    style={{
-                      zIndex: 2,
-                      transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
-                      transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
-                      transitionDelay: isAnimating ? '0ms' : '0ms'
-                    }}
-                  >
-                    <img
-                      src={nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
-                      alt={nextLayers[0].name}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                )}
+                {/* Próxima imagem/vídeo - DESLIZA por cima (usa activeFeaturedIndex) */}
+                {nextLayers[0] && (() => {
+                  const media = nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                  const isVideo = isVideoUrl(media);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const img = nextLayers[0].images?.find((i): i is string => Boolean(i));
+                        if (img) openModal(nextLayers[0], img);
+                      }}
+                      className="absolute inset-0 w-full h-full"
+                      style={{
+                        zIndex: 2,
+                        transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+                        transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
+                        transitionDelay: isAnimating ? '0ms' : '0ms'
+                      }}
+                    >
+                      {isVideo ? (
+                        <video
+                          src={media}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          src={media}
+                          alt={nextLayers[0].name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </button>
+                  );
+                })()}
               </div>
 
               {/* 4 COLUNAS: 40% | 20% | 20% | 20% */}
@@ -243,50 +274,80 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   </div>
                 </div>
 
-                {/* COLUNA 2: IMAGEM ATIVA - 20% */}
+                {/* COLUNA 2: IMAGEM/VÍDEO ATIVA - 20% */}
                 <div className="w-[20%] relative overflow-hidden">
-                  {/* Imagem atual - PARADA (usa displayIndex, muda só após animação) */}
-                  {featuredLayers[0] && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
-                        if (img) openModal(featuredLayers[0], img);
-                      }}
-                      className="absolute inset-0 w-full h-full"
-                      style={{ zIndex: 1 }}
-                    >
-                      <img
-                        src={featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
-                        alt={featuredLayers[0].name}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  )}
+                  {/* Mídia atual - PARADA (usa displayIndex, muda só após animação) */}
+                  {featuredLayers[0] && (() => {
+                    const media = featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                    const isVideo = isVideoUrl(media);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
+                          if (img) openModal(featuredLayers[0], img);
+                        }}
+                        className="absolute inset-0 w-full h-full"
+                        style={{ zIndex: 1 }}
+                      >
+                        {isVideo ? (
+                          <video
+                            src={media}
+                            className="w-full h-full object-cover"
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={media}
+                            alt={featuredLayers[0].name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </button>
+                    );
+                  })()}
 
-                  {/* Próxima imagem - DESLIZA por cima (usa activeFeaturedIndex) */}
-                  {nextLayers[0] && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const img = nextLayers[0].images?.find((i): i is string => Boolean(i));
-                        if (img) openModal(nextLayers[0], img);
-                      }}
-                      className="absolute inset-0 w-full h-full"
-                      style={{
-                        zIndex: 2,
-                        transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
-                        transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
-                        transitionDelay: isAnimating ? '0ms' : '0ms'
-                      }}
-                    >
-                      <img
-                        src={nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
-                        alt={nextLayers[0].name}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  )}
+                  {/* Próxima mídia - DESLIZA por cima (usa activeFeaturedIndex) */}
+                  {nextLayers[0] && (() => {
+                    const media = nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                    const isVideo = isVideoUrl(media);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const img = nextLayers[0].images?.find((i): i is string => Boolean(i));
+                          if (img) openModal(nextLayers[0], img);
+                        }}
+                        className="absolute inset-0 w-full h-full"
+                        style={{
+                          zIndex: 2,
+                          transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+                          transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
+                          transitionDelay: isAnimating ? '0ms' : '0ms'
+                        }}
+                      >
+                        {isVideo ? (
+                          <video
+                            src={media}
+                            className="w-full h-full object-cover"
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={media}
+                            alt={nextLayers[0].name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 {/* COLUNA 3: FILA DE IMAGENS - 20% */}
@@ -300,7 +361,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
                     return (
                       <div key={`queue-${product.id}`} className="flex-1 h-full relative overflow-hidden">
-                        {/* Imagem atual - PARADA (usa featuredLayers/displayIndex) */}
+                        {/* Mídia atual - PARADA (usa featuredLayers/displayIndex) */}
                         <button
                           type="button"
                           onClick={() => {
@@ -312,15 +373,26 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           className="absolute inset-0 w-full h-full"
                           style={{ zIndex: 1 }}
                         >
-                          <img
-                            src={image}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {isVideoUrl(image) ? (
+                            <video
+                              src={image}
+                              className="w-full h-full object-cover"
+                              muted
+                              loop
+                              playsInline
+                              preload="metadata"
+                            />
+                          ) : (
+                            <img
+                              src={image}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                           <div className="absolute inset-0 bg-black/50" />
                         </button>
 
-                        {/* Próxima imagem - DESLIZA por cima (usa nextLayers/activeFeaturedIndex) */}
+                        {/* Próxima mídia - DESLIZA por cima (usa nextLayers/activeFeaturedIndex) */}
                         {nextImage && (
                           <button
                             type="button"
@@ -338,11 +410,22 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                               transitionDelay: isAnimating ? `${(idx + 1) * 50}ms` : '0ms'
                             }}
                           >
-                            <img
-                              src={nextImage}
-                              alt={nextProduct.name}
-                              className="w-full h-full object-cover"
-                            />
+                            {isVideoUrl(nextImage) ? (
+                              <video
+                                src={nextImage}
+                                className="w-full h-full object-cover"
+                                muted
+                                loop
+                                playsInline
+                                preload="metadata"
+                              />
+                            ) : (
+                              <img
+                                src={nextImage}
+                                alt={nextProduct.name}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
                             <div className="absolute inset-0 bg-black/50" />
                           </button>
                         )}
@@ -460,29 +543,45 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2">
               <div className="bg-[#FFF5F9] flex flex-col items-center justify-center z-20">
-                <img
-                  src={activeModal.image}
-                  alt={activeModal.product.name}
-                  className="w-full h-full object-contain max-h-[520px]"
-                />
+                {isVideoUrl(activeModal.image) ? (
+                  <video
+                    src={activeModal.image}
+                    controls
+                    className="w-full h-full object-contain max-h-[520px]"
+                    preload="metadata"
+                  />
+                ) : (
+                  <img
+                    src={activeModal.image}
+                    alt={activeModal.product.name}
+                    className="w-full h-full object-contain max-h-[520px]"
+                  />
+                )}
                 {modalImages.length > 1 && (
                   <div className="w-full px-4 pb-4">
                     <div className="flex items-center justify-center gap-2 bg-white/80 p-3 shadow-sm">
-                      {modalImages.map((image, index) => (
-                        <button
-                          key={`${activeModal.product.id}-modal-thumb-${index}`}
-                          type="button"
-                          onClick={() => setActiveModal({ product: activeModal.product, image })}
-                          className={`h-14 w-14 rounded-xl overflow-hidden border transition ${
-                            image === activeModal.image
-                              ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
-                              : 'border-white/70 hover:border-[#D05B92]/60'
-                          }`}
-                          aria-label={`Foto ${index + 1}`}
-                        >
-                          <img src={image} alt="" className="h-full w-full object-cover" />
-                        </button>
-                      ))}
+                      {modalImages.map((image, index) => {
+                        const isThumbVideo = isVideoUrl(image);
+                        return (
+                          <button
+                            key={`${activeModal.product.id}-modal-thumb-${index}`}
+                            type="button"
+                            onClick={() => setActiveModal({ product: activeModal.product, image })}
+                            className={`h-14 w-14 rounded-xl overflow-hidden border transition ${
+                              image === activeModal.image
+                                ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
+                                : 'border-white/70 hover:border-[#D05B92]/60'
+                            }`}
+                            aria-label={`${isThumbVideo ? 'Vídeo' : 'Foto'} ${index + 1}`}
+                          >
+                            {isThumbVideo ? (
+                              <video src={image} className="h-full w-full object-cover" preload="metadata" muted />
+                            ) : (
+                              <img src={image} alt="" className="h-full w-full object-cover" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
