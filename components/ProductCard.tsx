@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Product } from '../types';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Play } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 
 interface ProductCardProps {
@@ -23,6 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
   const [hoverIndex, setHoverIndex] = React.useState(0);
   const [isHovering, setIsHovering] = React.useState(false);
   const thumbsRef = React.useRef<HTMLDivElement | null>(null);
+  const videoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
   const hasPromo = product.isPromo && product.promoPrice && product.promoPrice > 0;
   const displayPrice = hasPromo ? product.promoPrice ?? product.price : product.price;
   const hideButtonText = images.length >= 4;
@@ -41,6 +42,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
 
     return () => window.clearInterval(interval);
   }, [images.length, isHovering]);
+
+  // Controla play/pause dos vídeos quando o índice ativo muda
+  React.useEffect(() => {
+    videoRefs.current.forEach((video, index) => {
+      if (video) {
+        if (index === hoverIndex) {
+          video.play().catch(() => {
+            // Ignora erros de autoplay
+          });
+        } else {
+          video.pause();
+        }
+      }
+    });
+  }, [hoverIndex]);
 
   const handleMouseMove = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -124,6 +140,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
               return isVideo ? (
                 <video
                   key={`${product.id}-${image}-${index}`}
+                  ref={(el) => {
+                    videoRefs.current[index] = el;
+                  }}
                   src={image}
                   className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${
                     hoverIndex === index ? 'opacity-100' : 'opacity-0'
@@ -131,6 +150,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                   muted
                   loop
                   playsInline
+                  autoPlay={index === hoverIndex}
                   preload="metadata"
                 />
               ) : (
@@ -154,27 +174,35 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
           >
             {images.length > 1 ? (
               <div ref={thumbsRef} className="flex items-center gap-2">
-                {images.map((image, index) => (
-                  <button
-                    key={`${product.id}-thumb-${index}`}
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setHoverIndex(index);
-                    }}
-                    className={`h-10 w-10 border transition-all ${
-                      hoverIndex === index
-                        ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
-                        : 'border-[#e5f3fb]'
-                    }`}
-                    aria-label={`Mostrar imagem ${index + 1}`}
-                  >
-                    <span
-                      className="block h-full w-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${image})` }}
-                    />
-                  </button>
-                ))}
+                {images.map((image, index) => {
+                  const isThumbVideo = isVideoUrl(image);
+                  return (
+                    <button
+                      key={`${product.id}-thumb-${index}`}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setHoverIndex(index);
+                      }}
+                      className={`h-10 w-10 border transition-all relative ${
+                        hoverIndex === index
+                          ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
+                          : 'border-[#e5f3fb]'
+                      }`}
+                      aria-label={`Mostrar ${isThumbVideo ? 'vídeo' : 'imagem'} ${index + 1}`}
+                    >
+                      <span
+                        className="block h-full w-full bg-cover bg-center"
+                        style={{ backgroundImage: `url(${image})` }}
+                      />
+                      {isThumbVideo && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <Play size={16} fill="white" className="text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div />
