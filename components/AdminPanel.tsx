@@ -1,9 +1,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Product, ProductUpsertPayload } from '../types';
-import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut } from 'lucide-react';
+import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { isVideoFile, validateVideoDuration } from '../lib/mediaUtils';
+import { isVideoFile, validateVideoDuration, isVideoUrl } from '../lib/mediaUtils';
 
 interface AdminPanelProps {
   products: Product[];
@@ -601,6 +601,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       {existingImages[index] ? (
                         <div className="relative">
                           <img src={existingImages[index] ?? ''} alt={`Imagem ${index + 1}`} className="w-16 h-16 object-cover border border-gray-200" />
+                          {isVideoUrl(existingImages[index]) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                              <Play size={20} fill="white" className="text-white" />
+                            </div>
+                          )}
                           <button
                             type="button"
                             onClick={() => removeExistingImage(index)}
@@ -671,13 +676,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               {products.map(product => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-8 py-4">
-                    <img
-                      src={
-                        product.images.find((image): image is string => Boolean(image)) ??
-                        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'
-                      }
-                      className="w-14 h-14 object-cover shadow-md border-2 border-white"
-                    />
+                    <div className="relative w-14 h-14">
+                      <img
+                        src={
+                          product.images.find((image): image is string => Boolean(image)) ??
+                          'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'
+                        }
+                        className="w-14 h-14 object-cover shadow-md border-2 border-white"
+                      />
+                      {isVideoUrl(product.images.find((image): image is string => Boolean(image)) ?? null) && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <Play size={18} fill="white" className="text-white" />
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
@@ -737,10 +749,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       {product.images.map((image, index) => (
                         <div
                           key={`${product.id}-slot-${index}`}
-                          className="w-10 h-10 border border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 text-[9px] text-gray-300 font-semibold"
+                          className="w-10 h-10 border border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 text-[9px] text-gray-300 font-semibold relative"
                         >
                           {image ? (
-                            <img src={image} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
+                            <>
+                              <img src={image} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
+                              {isVideoUrl(image) && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                  <Play size={14} fill="white" className="text-white" />
+                                </div>
+                              )}
+                            </>
                           ) : (
                             index + 1
                           )}
