@@ -135,7 +135,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 className="absolute bottom-0 overflow-hidden"
                 style={{
                   left: '50%',
-                  transform: 'translateX(-50%) translateY(6px) rotate(4deg)',
+                  transform: 'translateX(-50%) translateY(9px) rotate(4deg)',
                   width: '234px',
                   height: '416px',
                   zIndex: 1100,
@@ -205,30 +205,36 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                             <span className="text-sm text-white/60 line-through">
                               {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
                             </span>
-                            <span className="text-4xl font-bold leading-none">
-                              {formatCurrency(featuredDisplay[activeFeaturedIndex].promoPrice)}
-                            </span>
+                            <div className="font-bold leading-none">
+                              <span className="text-2xl">R$ </span>
+                              <span className="text-6xl">
+                                {featuredDisplay[activeFeaturedIndex].promoPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
                           </>
                         ) : (
-                          <span className="text-4xl font-bold leading-none">
-                            {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
-                          </span>
+                          <div className="font-bold leading-none">
+                            <span className="text-2xl">R$ </span>
+                            <span className="text-6xl">
+                              {featuredDisplay[activeFeaturedIndex].price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
                         )}
                       </div>
                     )}
                   </div>
 
-                  {/* LINHA 3: Nome - 45% */}
-                  <div className="h-[45%] flex items-center justify-end text-right">
+                  {/* LINHA 3: Nome - dinâmica, cresce conforme conteúdo */}
+                  <div className="flex-grow flex items-start justify-end text-right pt-4">
                     {featuredDisplay[activeFeaturedIndex] && (
-                      <span className="text-xl font-light tracking-[0.4em] text-white">
+                      <h3 className="text-2xl font-semibold leading-tight text-white">
                         {featuredDisplay[activeFeaturedIndex].name}
-                      </span>
+                      </h3>
                     )}
                   </div>
 
-                  {/* LINHA 4: Tamanhos - 15% */}
-                  <div className="h-[15%] flex items-center justify-end text-right">
+                  {/* LINHA 4: Tamanhos - próxima ao nome */}
+                  <div className="pb-4 flex items-end justify-end text-right">
                     {featuredDisplay[activeFeaturedIndex] && featuredDisplay[activeFeaturedIndex].sizes.length > 0 && (
                       <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90">
                         {featuredDisplay[activeFeaturedIndex].sizes.join(' . ')}
