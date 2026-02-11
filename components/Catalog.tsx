@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
 import { X, Search } from 'lucide-react';
@@ -36,6 +36,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const [displayIndex, setDisplayIndex] = useState(0); // Índice da imagem base (atualiza após animação)
   const [hasStartedCarousel, setHasStartedCarousel] = useState(false); // Controla se já começou o carrossel
   const hasFeatured = featuredProducts.length > 0;
+
+  // Refs para controlar vídeos no carousel
+  const floatingVideoRef = React.useRef<HTMLVideoElement | null>(null);
+  const mainVideoRef = React.useRef<HTMLVideoElement | null>(null);
+  const queueVideoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
 
   // Detecta mudança no índice e anima (mas não na primeira vez)
   useEffect(() => {
@@ -91,6 +96,17 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
     return () => window.clearInterval(interval);
   }, [featuredDisplay.length, isCarouselPaused]);
+
+  // Controla play/pause dos vídeos no carousel featured
+  useEffect(() => {
+    // Play nos vídeos ativos (displayIndex)
+    if (floatingVideoRef.current && isVideoUrl(featuredLayers[0]?.images?.find((i): i is string => Boolean(i)) ?? null)) {
+      floatingVideoRef.current.play().catch(() => {});
+    }
+    if (mainVideoRef.current && isVideoUrl(featuredLayers[0]?.images?.find((i): i is string => Boolean(i)) ?? null)) {
+      mainVideoRef.current.play().catch(() => {});
+    }
+  }, [displayIndex, featuredLayers]);
 
   const sideImages = featuredLayers
     .slice(1)
@@ -159,11 +175,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     >
                       {isVideo ? (
                         <video
+                          ref={floatingVideoRef}
                           src={media}
                           className="w-full h-full object-cover"
                           muted
                           loop
                           playsInline
+                          autoPlay
                           preload="metadata"
                         />
                       ) : (
@@ -292,11 +310,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       >
                         {isVideo ? (
                           <video
+                            ref={mainVideoRef}
                             src={media}
                             className="w-full h-full object-cover"
                             muted
                             loop
                             playsInline
+                            autoPlay
                             preload="metadata"
                           />
                         ) : (
@@ -380,6 +400,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                               muted
                               loop
                               playsInline
+                              autoPlay
                               preload="metadata"
                             />
                           ) : (

@@ -23,6 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
   const [hoverIndex, setHoverIndex] = React.useState(0);
   const [isHovering, setIsHovering] = React.useState(false);
   const thumbsRef = React.useRef<HTMLDivElement | null>(null);
+  const videoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
   const hasPromo = product.isPromo && product.promoPrice && product.promoPrice > 0;
   const displayPrice = hasPromo ? product.promoPrice ?? product.price : product.price;
   const hideButtonText = images.length >= 4;
@@ -41,6 +42,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
 
     return () => window.clearInterval(interval);
   }, [images.length, isHovering]);
+
+  // Controla play/pause dos vídeos quando o índice ativo muda
+  React.useEffect(() => {
+    videoRefs.current.forEach((video, index) => {
+      if (video) {
+        if (index === hoverIndex) {
+          video.play().catch(() => {
+            // Ignora erros de autoplay
+          });
+        } else {
+          video.pause();
+        }
+      }
+    });
+  }, [hoverIndex]);
 
   const handleMouseMove = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -124,6 +140,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
               return isVideo ? (
                 <video
                   key={`${product.id}-${image}-${index}`}
+                  ref={(el) => {
+                    videoRefs.current[index] = el;
+                  }}
                   src={image}
                   className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${
                     hoverIndex === index ? 'opacity-100' : 'opacity-0'
@@ -131,6 +150,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                   muted
                   loop
                   playsInline
+                  autoPlay={index === hoverIndex}
                   preload="metadata"
                 />
               ) : (
