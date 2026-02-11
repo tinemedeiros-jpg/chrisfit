@@ -2,16 +2,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 
 interface CatalogProps {
   products: Product[];
   isLoading: boolean;
   error: string | null;
   searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
-const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm }) => {
+const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm, onSearchChange }) => {
   const [activeModal, setActiveModal] = useState<{ product: Product; image: string } | null>(null);
 
   const filteredProducts = useMemo(
@@ -319,11 +320,26 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       </section>
 
       <section className="container mx-auto mb-10 px-4 py-10" id="catalogo">
-        <div className="mb-8">
-          <p className="uppercase tracking-[0.4em] text-xs text-[#D05B92] font-semibold">
-            catálogo completo
-          </p>
-          <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
+        <div className="mb-8 flex items-center justify-between gap-6">
+          <div>
+            <p className="uppercase tracking-[0.4em] text-xs text-[#D05B92] font-semibold">
+              catálogo completo
+            </p>
+            <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
+          </div>
+
+          <div className="w-full max-w-md relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#D05B92]/70 group-focus-within:text-[#D05B92] transition-colors">
+              <Search size={20} />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar no catálogo..."
+              value={searchTerm}
+              onChange={(event) => onSearchChange(event.target.value)}
+              className="w-full bg-white border border-[#D05B92]/30 focus:border-[#D05B92] outline-none rounded-full py-3 pl-12 pr-4 placeholder:text-gray-400 text-[#0f1c2e] shadow-sm transition-all"
+            />
+          </div>
         </div>
 
         {isLoading ? (
