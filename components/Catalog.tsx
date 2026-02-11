@@ -32,11 +32,12 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayIndex, setDisplayIndex] = useState(0); // Índice da imagem base (atualiza após animação)
+  const [hasStartedCarousel, setHasStartedCarousel] = useState(false); // Controla se já começou o carrossel
   const hasFeatured = featuredProducts.length > 0;
 
-  // Detecta mudança no índice e anima
+  // Detecta mudança no índice e anima (mas não na primeira vez)
   useEffect(() => {
-    if (!hasFeatured || featuredDisplay.length <= 1) return;
+    if (!hasFeatured || featuredDisplay.length <= 1 || !hasStartedCarousel) return;
 
     setIsAnimating(true);
 
@@ -51,7 +52,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     }, totalTime);
 
     return () => clearTimeout(timeout);
-  }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length]);
+  }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length, hasStartedCarousel]);
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
 
   // featuredLayers usa displayIndex (não activeFeaturedIndex) para a base
@@ -80,6 +81,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
     const interval = window.setInterval(() => {
+      setHasStartedCarousel(true); // Marca que o carrossel começou
       setActiveFeaturedIndex((current) =>
         isCarouselPaused ? current : (current + 1) % featuredDisplay.length
       );
