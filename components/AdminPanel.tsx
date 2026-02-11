@@ -55,6 +55,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
   const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
+
+  // Função para calcular o próximo código disponível
+  const getNextAvailableCode = () => {
+    if (products.length === 0) return '0001';
+
+    const codes = products
+      .map(p => p.code)
+      .map(code => parseInt(code, 10))
+      .filter(num => !isNaN(num));
+
+    if (codes.length === 0) return '0001';
+
+    const maxCode = Math.max(...codes);
+    const nextCode = maxCode + 1;
+    return String(nextCode).padStart(4, '0');
+  };
   
   const [formData, setFormData] = useState({
     code: '',
@@ -63,6 +79,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     promoPrice: '',
     isPromo: false,
     isFeatured: false,
+    isActive: true,
     sizes: [] as string[],
     observation: ''
   });
@@ -81,6 +98,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  // Auto-preenche código ao abrir form de novo produto
+  useEffect(() => {
+    if (showAddForm && !editingId && !formData.code) {
+      setFormData(prev => ({
+        ...prev,
+        code: getNextAvailableCode()
+      }));
+    }
+  }, [showAddForm, editingId]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +158,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         : '',
       isPromo: Boolean(product.isPromo),
       isFeatured: Boolean(product.isFeatured),
+      isActive: product.isActive !== false,
       sizes: product.sizes,
       observation: product.observation || ''
     });
@@ -153,6 +181,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       promoPrice: '',
       isPromo: false,
       isFeatured: false,
+      isActive: true,
       sizes: [],
       observation: ''
     });
@@ -327,6 +356,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       promoPrice: parsedPromoPrice,
       isPromo: formData.isPromo,
       isFeatured: formData.isFeatured,
+      isActive: formData.isActive,
       sizes: formData.sizes,
       observation: formData.observation,
       existingImages: reorderedImages,
@@ -348,6 +378,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const handleStatusToggle = async (product: Product, field: 'isFeatured' | 'isPromo') => {
     if (statusUpdatingId) return;
+    // Não permite alterar status se o produto estiver desabilitado
+    if (product.isActive === false) {
+      return;
+    }
     if (field === 'isPromo' && !product.isPromo) {
       return;
     }
@@ -366,6 +400,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       promoPrice: product.promoPrice ?? null,
       isPromo: nextIsPromo,
       isFeatured: nextIsFeatured,
+      isActive: product.isActive,
       sizes: product.sizes,
       observation: product.observation ?? '',
       existingImages: normalizeImageSlots(product.images),
@@ -375,6 +410,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       await onUpdate(payload);
     } catch (submitError) {
       alert(submitError instanceof Error ? submitError.message : 'Erro ao atualizar status.');
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
+  const handleActiveToggle = async (product: Product) => {
+    if (statusUpdatingId) return;
+    setStatusUpdatingId(product.id);
+    const payload: ProductUpsertPayload = {
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      price: product.price,
+      promoPrice: product.promoPrice ?? null,
+      isPromo: product.isPromo,
+      isFeatured: product.isFeatured,
+      isActive: !product.isActive,
+      sizes: product.sizes,
+      observation: product.observation ?? '',
+      existingImages: normalizeImageSlots(product.images),
+      newImages: Array(MAX_IMAGES).fill(null)
+    };
+
+    try {
+      await onUpdate(payload);
+    } catch (updateError) {
+      alert(updateError instanceof Error ? updateError.message : 'Erro ao atualizar.');
     } finally {
       setStatusUpdatingId(null);
     }
@@ -698,6 +760,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   </td>
                   <td className="px-8 py-4 text-xs text-gray-500">
                     <div className="flex flex-wrap gap-2 mb-3">
+                      {product.isActive === false && (
+                        <span className="px-2 py-1 bg-red-100 text-red-700 font-semibold">
+                          Desabilitado
+                        </span>
+                      )}
                       {product.isFeatured && (
                         <span className="px-2 py-1 bg-[#1e90c8]/10 text-[#1e90c8] font-semibold">
                           Destaque
@@ -708,7 +775,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                           Promoção
                         </span>
                       )}
-                      {!product.isFeatured && !product.isPromo && <span>—</span>}
+                      {product.isActive !== false && !product.isFeatured && !product.isPromo && <span>—</span>}
                     </div>
                     {product.isPromo && product.promoPrice ? (
                       <p className="text-[11px] text-green-700 font-semibold">
@@ -720,24 +787,34 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         <input
                           type="checkbox"
                           checked={product.isFeatured}
-                          disabled={statusUpdatingId === product.id}
+                          disabled={statusUpdatingId === product.id || product.isActive === false}
                           onChange={() => handleStatusToggle(product, 'isFeatured')}
-                          className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                          className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8] disabled:opacity-50"
                         />
-                        Destaque
+                        <span className={product.isActive === false ? 'opacity-50' : ''}>Destaque</span>
                       </label>
                       {product.isPromo && (
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
                             checked={product.isPromo}
-                            disabled={statusUpdatingId === product.id}
+                            disabled={statusUpdatingId === product.id || product.isActive === false}
                             onChange={() => handleStatusToggle(product, 'isPromo')}
-                            className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                            className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8] disabled:opacity-50"
                           />
-                          Promoção
+                          <span className={product.isActive === false ? 'opacity-50' : ''}>Promoção</span>
                         </label>
                       )}
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={product.isActive !== false}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleActiveToggle(product)}
+                          className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        Ativo
+                      </label>
                     </div>
                   </td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
@@ -769,14 +846,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   </td>
                   <td className="px-8 py-4 text-right">
                     <div className="flex justify-end space-x-2">
-                      <button 
+                      <button
                         onClick={() => startEdit(product)}
-                        className="p-3 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                        title="Editar item"
+                        disabled={product.isActive === false}
+                        className={`p-3 rounded-xl transition-all ${
+                          product.isActive === false
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-blue-400 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                        title={product.isActive === false ? "Item desabilitado" : "Editar item"}
                       >
                         <Edit2 size={18} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => onDelete(product.id)}
                         className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                         title="Excluir item"

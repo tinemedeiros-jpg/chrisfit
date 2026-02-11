@@ -20,13 +20,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     () =>
       products.filter(
         (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.code.includes(searchTerm)
+          product.isActive !== false &&
+          (product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.code.includes(searchTerm))
       ),
     [products, searchTerm]
   );
   const featuredProducts = useMemo(
-    () => products.filter((product) => product.isFeatured),
+    () => products.filter((product) => product.isFeatured && product.isActive !== false),
     [products]
   );
   const featuredDisplay = useMemo(() => featuredProducts.slice(0, 10), [featuredProducts]);
