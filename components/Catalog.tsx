@@ -136,7 +136,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 className="absolute bottom-0 overflow-hidden"
                 style={{
                   left: '50%',
-                  transform: 'translateX(-50%) translateY(12px) rotate(4deg)',
+                  transform: 'translateX(-50%) translateY(20px) rotate(4deg)',
                   width: '246px',
                   height: '437px',
                   zIndex: 1100,
