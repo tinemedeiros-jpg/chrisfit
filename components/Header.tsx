@@ -10,7 +10,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
   return (
     <header
-      className="relative overflow-hidden bg-[#2aa7df] text-white"
+      className="relative overflow-hidden bg-[#FFD6E8] text-white"
       style={{
         boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
       }}

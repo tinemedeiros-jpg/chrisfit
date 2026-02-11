@@ -112,10 +112,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     <div className="animate-in fade-in duration-700">
       {/* SEÇÃO DE DESTAQUES - ESTRUTURA SIMPLES */}
       <section className="text-white" id="destaques">
-        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#2aa7df]">
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#FFD6E8]">
           {hasFeatured ? (
             <div
-              className="relative w-full h-[360px] bg-[#2aa7df]"
+              className="relative w-full h-[360px] bg-[#FFD6E8]"
               style={{
                 boxShadow: '0 16px 30px rgba(0,0,0,0.25)'
               }}
@@ -299,15 +299,15 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
       <section className="container mx-auto mb-10 px-4 py-10" id="catalogo">
         <div className="mb-8">
-          <p className="uppercase tracking-[0.4em] text-xs text-[#2aa7df] font-semibold">
+          <p className="uppercase tracking-[0.4em] text-xs text-[#FFD6E8] font-semibold">
             catálogo completo
           </p>
           <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
         </div>
 
         {isLoading ? (
-          <div className="bg-white/70 py-24 text-center border border-[#cfefff]">
-            <p className="text-[#2aa7df] font-bold sport-font italic">Carregando catálogo...</p>
+          <div className="bg-white/70 py-24 text-center border border-[#FFE8F5]">
+            <p className="text-[#FFD6E8] font-bold sport-font italic">Carregando catálogo...</p>
           </div>
         ) : error ? (
           <div className="bg-white/70 py-24 text-center border border-red-200">
@@ -321,8 +321,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             ))}
           </div>
         ) : (
-          <div className="bg-white/30 backdrop-blur-sm py-32 text-center border-2 border-dashed border-[#cfefff]">
-            <div className="max-w-xs mx-auto text-[#2aa7df]/60">
+          <div className="bg-white/30 backdrop-blur-sm py-32 text-center border-2 border-dashed border-[#FFE8F5]">
+            <div className="max-w-xs mx-auto text-[#FFD6E8]/60">
               <p className="text-xl font-bold sport-font italic">Item não encontrado</p>
             </div>
           </div>
@@ -337,7 +337,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             aria-hidden="true"
           />
         <div className="relative bg-white shadow-2xl max-w-3xl w-full overflow-hidden z-10">
-            <div className="absolute top-0 left-0 right-0 h-14 bg-[#2aa7df] flex items-center justify-between px-6 text-white z-10">
+            <div className="absolute top-0 left-0 right-0 h-14 bg-[#FFD6E8] flex items-center justify-between px-6 text-white z-10">
               <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
                 {activeModal.product.code}
               </span>
@@ -351,7 +351,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="bg-[#f3f9fd] flex flex-col items-center justify-center z-20">
+              <div className="bg-[#FFF5F9] flex flex-col items-center justify-center z-20">
                 <img
                   src={activeModal.image}
                   alt={activeModal.product.name}
@@ -367,8 +367,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           onClick={() => setActiveModal({ product: activeModal.product, image })}
                           className={`h-14 w-14 rounded-xl overflow-hidden border transition ${
                             image === activeModal.image
-                              ? 'border-[#2aa7df] ring-2 ring-[#2aa7df]/40'
-                              : 'border-white/70 hover:border-[#2aa7df]/60'
+                              ? 'border-[#FFD6E8] ring-2 ring-[#FFD6E8]/40'
+                              : 'border-white/70 hover:border-[#FFD6E8]/60'
                           }`}
                           aria-label={`Foto ${index + 1}`}
                         >

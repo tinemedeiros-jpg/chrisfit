@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
               <p className="text-xs uppercase tracking-widest opacity-40 mb-2 font-bold">Chave Celular</p>
               <div
                 onClick={copyPix}
-                className="bg-black/40 p-4 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#2aa7df]/50 transition-all group"
+                className="bg-black/40 p-4 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#FFD6E8]/50 transition-all group"
               >
                 <span className="text-xl font-mono tracking-widest text-white">(11) 9.6355-4043</span>
                 {copied ? (

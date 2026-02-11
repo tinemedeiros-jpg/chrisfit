@@ -86,7 +86,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
           }
         }}
       >
-        <div className="bg-gradient-to-br from-[#2aa7df] via-[#35b0e4] to-[#1d8ec8] p-5 text-white relative">
+        <div className="bg-gradient-to-br from-[#FFD6E8] via-[#FFE0EF] to-[#FFC1E0] p-5 text-white relative">
           <span className="inline-flex items-center border border-white/50 bg-white/15 px-3 py-1 text-[11px] uppercase tracking-[0.4em] font-semibold">
             {product.code}
           </span>
@@ -148,7 +148,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                     }}
                     className={`h-10 w-10 border transition-all ${
                       hoverIndex === index
-                        ? 'border-[#2aa7df] ring-2 ring-[#2aa7df]/40'
+                        ? 'border-[#FFD6E8] ring-2 ring-[#FFD6E8]/40'
                         : 'border-[#e5f3fb]'
                     }`}
                     aria-label={`Mostrar imagem ${index + 1}`}
