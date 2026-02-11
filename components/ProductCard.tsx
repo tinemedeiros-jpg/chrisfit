@@ -95,7 +95,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
   return (
     <div className="group animate-in zoom-in duration-300">
       <div
-        className="relative overflow-hidden shadow-2xl cursor-zoom-in rounded-tr-[2rem]"
+        className="relative overflow-hidden cursor-zoom-in rounded-tr-[2rem]"
         onClick={handlePreview}
         role="button"
         tabIndex={0}
