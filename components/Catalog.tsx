@@ -217,8 +217,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </div>
 
-                {/* COLUNA 3: FILA DE IMAGENS - 20% (vertical) */}
-                <div className="w-[20%] flex flex-col">
+                {/* COLUNA 3: FILA DE IMAGENS - 20% */}
+                <div className="w-[20%] flex">
                   {featuredLayers.slice(1).map((product, idx) => {
                     const image = product.images?.find((img): img is string => Boolean(img));
                     const nextProduct = nextLayers[idx + 1]; // Usa nextLayers para próximas
@@ -227,7 +227,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     if (!image) return null;
 
                     return (
-                      <div key={`queue-${product.id}`} className="flex-1 relative overflow-hidden">
+                      <div key={`queue-${product.id}`} className="flex-1 h-full relative overflow-hidden">
                         {/* Imagem atual - PARADA (usa featuredLayers/displayIndex) */}
                         <button
                           type="button"
