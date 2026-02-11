@@ -130,6 +130,61 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
             >
+              {/* IMAGEM FLUTUANTE - sobre a faixa, alinhada à coluna 2 */}
+              <div
+                className="absolute bottom-0 overflow-hidden"
+                style={{
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '223px',
+                  height: '396px',
+                  zIndex: 100
+                }}
+              >
+                {/* Imagem atual - PARADA (usa displayIndex) */}
+                {featuredLayers[0] && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
+                      if (img) openModal(featuredLayers[0], img);
+                    }}
+                    className="absolute inset-0 w-full h-full"
+                    style={{ zIndex: 1 }}
+                  >
+                    <img
+                      src={featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
+                      alt={featuredLayers[0].name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                )}
+
+                {/* Próxima imagem - DESLIZA por cima (usa activeFeaturedIndex) */}
+                {nextLayers[0] && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const img = nextLayers[0].images?.find((i): i is string => Boolean(i));
+                      if (img) openModal(nextLayers[0], img);
+                    }}
+                    className="absolute inset-0 w-full h-full"
+                    style={{
+                      zIndex: 2,
+                      transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+                      transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
+                      transitionDelay: isAnimating ? '0ms' : '0ms'
+                    }}
+                  >
+                    <img
+                      src={nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
+                      alt={nextLayers[0].name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                )}
+              </div>
+
               {/* 4 COLUNAS: 40% | 20% | 20% | 20% */}
               <div className="flex h-full">
                 {/* COLUNA 1: TEXTO - 40% dividida em 4 linhas */}
