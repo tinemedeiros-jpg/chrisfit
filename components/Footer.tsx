@@ -35,19 +35,18 @@ const Footer: React.FC = () => {
           </div>
 
           <div className="bg-white/5 border border-white/10 p-5 backdrop-blur-md">
-            <div className="flex items-center justify-center space-x-3 text-[#D05B92] mb-3">
+            <div className="flex items-center justify-center space-x-3 text-white mb-3">
               <CreditCard size={22} />
               <span className="font-bold sport-font tracking-wider text-base">Pagamento PIX</span>
             </div>
             <div className="text-center">
-              <p className="text-xs uppercase tracking-widest opacity-40 mb-2 font-bold">Chave Celular</p>
               <div
                 onClick={copyPix}
-                className="bg-black/40 p-3 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#D05B92]/50 transition-all group"
+                className="bg-black/40 p-3 flex items-center justify-between cursor-pointer border border-white/10 hover:border-white/30 transition-all group"
               >
                 <span className="text-lg font-mono tracking-widest text-white">(11) 9.6355-4043</span>
                 {copied ? (
-                  <Check size={18} className="text-[#D05B92]" />
+                  <Check size={18} className="text-white" />
                 ) : (
                   <Copy size={18} className="opacity-30 group-hover:opacity-100 transition-opacity" />
                 )}
@@ -62,7 +61,7 @@ const Footer: React.FC = () => {
             <a
               href="https://wa.me/5511963554043"
               target="_blank"
-              className="inline-flex items-center space-x-3 bg-[#D05B92] text-white px-10 py-5 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl hover:shadow-[#D05B92]/20 border-2 border-white/20"
+              className="inline-flex items-center space-x-3 bg-[#BA4680] text-white px-10 py-5 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl hover:shadow-[#BA4680]/20 border-2 border-white/20"
             >
               <Phone size={22} fill="white" />
               <span className="sport-font tracking-wide text-lg">Enviar Mensagem</span>
