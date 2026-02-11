@@ -40,10 +40,15 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
     setIsAnimating(true);
 
+    // Calcula tempo total: última imagem da fila tem delay de (N-1) * 50ms + 500ms de animação
+    const queueCount = featuredDisplay.length - 1; // Número de imagens na fila
+    const lastDelay = queueCount * 50; // Delay da última imagem
+    const totalTime = lastDelay + 500; // Tempo total até última animação terminar
+
     const timeout = setTimeout(() => {
       setIsAnimating(false);
       setDisplayIndex(activeFeaturedIndex); // Atualiza a base APÓS animação
-    }, 500);
+    }, totalTime);
 
     return () => clearTimeout(timeout);
   }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length]);
@@ -256,7 +261,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                               zIndex: 2,
                               transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
                               transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
-                              transitionDelay: isAnimating ? `${(idx + 1) * 150}ms` : '0ms'
+                              transitionDelay: isAnimating ? `${(idx + 1) * 50}ms` : '0ms'
                             }}
                           >
                             <img
