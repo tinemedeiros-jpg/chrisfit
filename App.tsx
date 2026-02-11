@@ -242,7 +242,7 @@ const App: React.FC = () => {
 
       <main className="flex-grow bg-white">
         {viewMode === 'catalog' ? (
-          <Catalog products={products} isLoading={isLoading} error={error} searchTerm={searchTerm} />
+          <Catalog products={products} isLoading={isLoading} error={error} searchTerm={searchTerm} onSearchChange={setSearchTerm} />
         ) : (
           <AdminPanel 
             products={products} 
