@@ -117,7 +117,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             <div
               className="relative w-full h-[360px] bg-[#D05B92]"
               style={{
-                boxShadow: '0 16px 30px rgba(0,0,0,0.25)'
+                boxShadow: '0 -10px 25px rgba(0,0,0,0.3)'
               }}
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
