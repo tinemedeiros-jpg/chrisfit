@@ -78,7 +78,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       setActiveFeaturedIndex((current) =>
         isCarouselPaused ? current : (current + 1) % featuredDisplay.length
       );
-    }, 10000);
+    }, 8000);
 
     return () => window.clearInterval(interval);
   }, [featuredDisplay.length, isCarouselPaused]);
@@ -117,7 +117,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             <div
               className="relative w-full h-[360px] bg-[#D05B92]"
               style={{
-                boxShadow: '0 -10px 25px rgba(0,0,0,0.3), inset 0 -16px 30px rgba(0,0,0,0.25)'
+                boxShadow: '0 -10px 25px rgba(0,0,0,0.3)'
               }}
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
@@ -288,6 +288,15 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   ))}
                 </div>
               )}
+
+              {/* Overlay com sombra por cima de tudo */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  boxShadow: 'inset 0 -16px 30px rgba(0,0,0,0.25)',
+                  zIndex: 1000
+                }}
+              />
             </div>
           ) : (
             <div className="px-6 py-10 text-white/80 text-sm">
