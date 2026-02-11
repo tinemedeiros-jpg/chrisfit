@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-[#0b1b2b] text-white py-16 mt-20" id="contato">
+    <footer className="bg-[#D05B92] text-white py-16 mt-20" id="contato">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-start">
           <div className="space-y-4">
@@ -36,7 +36,7 @@ const Footer: React.FC = () => {
               <p className="text-xs uppercase tracking-widest opacity-40 mb-2 font-bold">Chave Celular</p>
               <div
                 onClick={copyPix}
-                className="bg-black/40 p-4 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#2aa7df]/50 transition-all group"
+                className="bg-black/40 p-4 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#D05B92]/50 transition-all group"
               >
                 <span className="text-xl font-mono tracking-widest text-white">(11) 9.6355-4043</span>
                 {copied ? (
