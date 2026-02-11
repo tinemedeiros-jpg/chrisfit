@@ -137,10 +137,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     <div className="animate-in fade-in duration-700">
       {/* SEÇÃO DE DESTAQUES - ESTRUTURA SIMPLES */}
       <section className="text-white" id="destaques">
-        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#D05B92]">
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#BA4680]">
           {hasFeatured ? (
             <div
-              className="relative w-full h-[360px] bg-[#D05B92]"
+              className="relative w-full h-[360px] bg-[#BA4680]"
               style={{
                 boxShadow: '0 -10px 25px rgba(0,0,0,0.3)'
               }}
