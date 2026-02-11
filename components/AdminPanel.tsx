@@ -580,12 +580,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {Array.from({ length: MAX_IMAGES }).map((_, index) => (
                   <label key={`image-input-${index}`} className="block text-[11px] text-gray-400">
-                    Imagem {index + 1}
+                    Imagem/Vídeo {index + 1}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       onChange={(event) => handleFileChange(index, event)}
-                      className="mt-1 w-full bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#1e90c8]"
+                      className="mt-1 w-full bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#1e00c8]"
                     />
                     <label className="mt-2 inline-flex items-center gap-2 text-[10px] text-gray-500">
                       <input
