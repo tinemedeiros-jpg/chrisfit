@@ -13,7 +13,14 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-[#D05B92] text-white py-16" style={{ boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.15)' }} id="contato">
+    <footer
+      className="bg-[#D05B92] text-white py-16 relative"
+      style={{
+        boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.3)',
+        zIndex: 50
+      }}
+      id="contato"
+    >
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-start">
           <div className="space-y-4">
@@ -27,25 +34,25 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 p-8 backdrop-blur-md">
-            <div className="flex items-center justify-center space-x-3 text-[#22c55e] mb-4">
-              <CreditCard size={24} />
-              <span className="font-bold sport-font tracking-wider text-lg">Pagamento PIX</span>
+          <div className="bg-white/5 border border-white/10 p-5 backdrop-blur-md">
+            <div className="flex items-center justify-center space-x-3 text-[#D05B92] mb-3">
+              <CreditCard size={22} />
+              <span className="font-bold sport-font tracking-wider text-base">Pagamento PIX</span>
             </div>
             <div className="text-center">
               <p className="text-xs uppercase tracking-widest opacity-40 mb-2 font-bold">Chave Celular</p>
               <div
                 onClick={copyPix}
-                className="bg-black/40 p-4 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#D05B92]/50 transition-all group"
+                className="bg-black/40 p-3 flex items-center justify-between cursor-pointer border border-white/10 hover:border-[#D05B92]/50 transition-all group"
               >
-                <span className="text-xl font-mono tracking-widest text-white">(11) 9.6355-4043</span>
+                <span className="text-lg font-mono tracking-widest text-white">(11) 9.6355-4043</span>
                 {copied ? (
-                  <Check size={20} className="text-[#22c55e]" />
+                  <Check size={18} className="text-[#D05B92]" />
                 ) : (
-                  <Copy size={20} className="opacity-30 group-hover:opacity-100 transition-opacity" />
+                  <Copy size={18} className="opacity-30 group-hover:opacity-100 transition-opacity" />
                 )}
               </div>
-              <p className="text-[10px] opacity-40 mt-3 uppercase font-bold tracking-[0.2em]">
+              <p className="text-[10px] opacity-40 mt-2 uppercase font-bold tracking-[0.2em]">
                 Clique no número para copiar
               </p>
             </div>
@@ -55,7 +62,7 @@ const Footer: React.FC = () => {
             <a
               href="https://wa.me/5511963554043"
               target="_blank"
-              className="inline-flex items-center space-x-3 bg-[#22c55e] text-white px-10 py-5 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl hover:shadow-[#22c55e]/20"
+              className="inline-flex items-center space-x-3 bg-[#D05B92] text-white px-10 py-5 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl hover:shadow-[#D05B92]/20 border-2 border-white/20"
             >
               <Phone size={22} fill="white" />
               <span className="sport-font tracking-wide text-lg">Enviar Mensagem</span>
