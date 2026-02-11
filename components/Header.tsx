@@ -9,7 +9,12 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
   return (
-    <header className="relative overflow-hidden bg-[#2aa7df] text-white">
+    <header
+      className="relative overflow-hidden bg-[#2aa7df] text-white"
+      style={{
+        boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+      }}
+    >
       <div className="container mx-auto px-6 py-10 relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight brand-font">Chris Fit</h1>
