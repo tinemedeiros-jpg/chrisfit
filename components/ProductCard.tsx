@@ -137,12 +137,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
           })}
           {/* Overlay adicional para escurecer */}
           <div className="absolute inset-0 bg-black/20" />
+
+          {/* Gradiente escurecendo para baixo */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none"
+            style={{
+              background: 'linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1))'
+            }}
+          />
         </div>
 
         {/* Código como aba externa */}
         <div className="absolute -left-3 top-6 z-30">
           <div className="bg-[#D05B92] px-4 py-2 shadow-lg">
-            <span className="text-white text-[11px] uppercase tracking-[0.4em] font-semibold">
+            <span className="text-white text-[11px] uppercase tracking-[0.4em] font-semibold pl-2">
               {product.code}
             </span>
           </div>
