@@ -111,11 +111,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   return (
     <div className="animate-in fade-in duration-700">
       {/* SEÇÃO DE DESTAQUES - ESTRUTURA SIMPLES */}
-      <section className="text-white" id="destaques">
-        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#FFD6E8]">
+      <section className="text-gray-900" id="destaques">
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#FFB4D0]">
           {hasFeatured ? (
             <div
-              className="relative w-full h-[360px] bg-[#FFD6E8]"
+              className="relative w-full h-[360px] bg-[#FFB4D0]"
               style={{
                 boxShadow: '0 16px 30px rgba(0,0,0,0.25)'
               }}
@@ -126,7 +126,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               <div className="flex h-full">
                 {/* COLUNA 1: TEXTO - sempre mostra info do item ativo */}
                 <div className="w-1/3 flex flex-col justify-center items-end px-10 text-right">
-                  <p className="uppercase tracking-[0.4em] text-xs text-white/90 mb-6">destaques</p>
+                  <p className="uppercase tracking-[0.4em] text-xs text-gray-700 mb-6">destaques</p>
 
                   {featuredDisplay[activeFeaturedIndex] && (
                     <div className="flex flex-col items-end gap-3 transition-opacity duration-500">
@@ -135,28 +135,28 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                         {featuredDisplay[activeFeaturedIndex].isPromo &&
                          featuredDisplay[activeFeaturedIndex].promoPrice ? (
                           <>
-                            <span className="text-sm text-white/60 line-through">
+                            <span className="text-sm text-gray-600 line-through">
                               {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
                             </span>
-                            <span className="text-4xl font-bold leading-none">
+                            <span className="text-4xl font-bold leading-none text-gray-900">
                               {formatCurrency(featuredDisplay[activeFeaturedIndex].promoPrice)}
                             </span>
                           </>
                         ) : (
-                          <span className="text-4xl font-bold leading-none">
+                          <span className="text-4xl font-bold leading-none text-gray-900">
                             {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
                           </span>
                         )}
                       </div>
 
                       {/* Nome */}
-                      <span className="text-xl font-light tracking-[0.4em] text-white">
+                      <span className="text-xl font-light tracking-[0.4em] text-gray-900">
                         {featuredDisplay[activeFeaturedIndex].name}
                       </span>
 
                       {/* Tamanhos */}
                       {featuredDisplay[activeFeaturedIndex].sizes.length > 0 && (
-                        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90">
+                        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-700">
                           {featuredDisplay[activeFeaturedIndex].sizes.join(' . ')}
                         </span>
                       )}
@@ -281,8 +281,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       onClick={() => setActiveFeaturedIndex(index)}
                       className={`h-1 transition-all duration-300 ${
                         index === activeFeaturedIndex
-                          ? 'bg-white w-6'
-                          : 'bg-white/50 hover:bg-white/70 w-4'
+                          ? 'bg-gray-900 w-6'
+                          : 'bg-gray-900/50 hover:bg-gray-900/70 w-4'
                       }`}
                     />
                   ))}
@@ -290,7 +290,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               )}
             </div>
           ) : (
-            <div className="px-6 py-10 text-white/80 text-sm">
+            <div className="px-6 py-10 text-gray-700 text-sm">
               Marque itens como destaque no admin para exibir aqui.
             </div>
           )}
@@ -299,7 +299,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
       <section className="container mx-auto mb-10 px-4 py-10" id="catalogo">
         <div className="mb-8">
-          <p className="uppercase tracking-[0.4em] text-xs text-[#FFD6E8] font-semibold">
+          <p className="uppercase tracking-[0.4em] text-xs text-[#FFB4D0] font-semibold">
             catálogo completo
           </p>
           <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
@@ -307,7 +307,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
         {isLoading ? (
           <div className="bg-white/70 py-24 text-center border border-[#FFE8F5]">
-            <p className="text-[#FFD6E8] font-bold sport-font italic">Carregando catálogo...</p>
+            <p className="text-[#FFB4D0] font-bold sport-font italic">Carregando catálogo...</p>
           </div>
         ) : error ? (
           <div className="bg-white/70 py-24 text-center border border-red-200">
@@ -322,7 +322,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
           </div>
         ) : (
           <div className="bg-white/30 backdrop-blur-sm py-32 text-center border-2 border-dashed border-[#FFE8F5]">
-            <div className="max-w-xs mx-auto text-[#FFD6E8]/60">
+            <div className="max-w-xs mx-auto text-[#FFB4D0]/60">
               <p className="text-xl font-bold sport-font italic">Item não encontrado</p>
             </div>
           </div>
@@ -337,7 +337,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             aria-hidden="true"
           />
         <div className="relative bg-white shadow-2xl max-w-3xl w-full overflow-hidden z-10">
-            <div className="absolute top-0 left-0 right-0 h-14 bg-[#FFD6E8] flex items-center justify-between px-6 text-white z-10">
+            <div className="absolute top-0 left-0 right-0 h-14 bg-[#FFB4D0] flex items-center justify-between px-6 text-gray-900 z-10">
               <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
                 {activeModal.product.code}
               </span>
@@ -367,8 +367,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           onClick={() => setActiveModal({ product: activeModal.product, image })}
                           className={`h-14 w-14 rounded-xl overflow-hidden border transition ${
                             image === activeModal.image
-                              ? 'border-[#FFD6E8] ring-2 ring-[#FFD6E8]/40'
-                              : 'border-white/70 hover:border-[#FFD6E8]/60'
+                              ? 'border-[#FFB4D0] ring-2 ring-[#FFB4D0]/40'
+                              : 'border-white/70 hover:border-[#FFB4D0]/60'
                           }`}
                           aria-label={`Foto ${index + 1}`}
                         >

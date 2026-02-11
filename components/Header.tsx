@@ -10,7 +10,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
   return (
     <header
-      className="relative overflow-hidden bg-[#FFD6E8] text-white"
+      className="relative overflow-hidden bg-[#FFB4D0] text-gray-900"
       style={{
         boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
       }}
@@ -20,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight brand-font">Chris Fit</h1>
 
           <div className="w-full md:max-w-xl relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/70 group-focus-within:text-white transition-colors">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-600 group-focus-within:text-gray-900 transition-colors">
               <Search size={20} />
             </div>
             <input
@@ -28,17 +28,17 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
               placeholder="Buscar no catálogo (nome ou código)..."
               value={searchTerm}
               onChange={(event) => onSearchChange(event.target.value)}
-              className="w-full bg-white/20 border border-white/30 focus:border-white/60 outline-none rounded-full py-3 pl-12 pr-4 placeholder:text-white/60 text-white shadow-lg transition-all"
+              className="w-full bg-white/30 border border-gray-900/20 focus:border-gray-900/40 outline-none rounded-full py-3 pl-12 pr-4 placeholder:text-gray-600 text-gray-900 shadow-lg transition-all"
             />
           </div>
 
           <a
             href="https://wa.me/5511963554043"
             target="_blank"
-            className="h-12 w-12 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/20 transition-colors"
+            className="h-12 w-12 rounded-full border border-gray-900/30 flex items-center justify-center hover:bg-black/10 transition-colors"
             aria-label="Contato no WhatsApp"
           >
-            <MessageCircle size={22} fill="white" />
+            <MessageCircle size={22} fill="currentColor" />
           </a>
         </div>
       </div>
