@@ -117,7 +117,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
               <video
                 key={`${product.id}-bg-${image}-${index}`}
                 src={image}
-                className={`absolute inset-0 w-full h-full object-cover blur-md brightness-50 transition-opacity duration-700 ${
+                className={`absolute inset-0 w-full h-full object-cover blur-sm brightness-75 transition-opacity duration-700 ${
                   hoverIndex === index ? 'opacity-100' : 'opacity-0'
                 }`}
                 muted
@@ -128,15 +128,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
             ) : (
               <div
                 key={`${product.id}-bg-${image}-${index}`}
-                className={`absolute inset-0 w-full h-full bg-cover bg-center blur-md brightness-50 transition-opacity duration-700 ${
+                className={`absolute inset-0 w-full h-full bg-cover bg-center blur-sm brightness-75 transition-opacity duration-700 ${
                   hoverIndex === index ? 'opacity-100' : 'opacity-0'
                 }`}
                 style={{ backgroundImage: `url(${image})` }}
               />
             );
           })}
-          {/* Overlay adicional para escurecer mais */}
-          <div className="absolute inset-0 bg-black/30" />
+          {/* Overlay adicional para escurecer */}
+          <div className="absolute inset-0 bg-black/20" />
         </div>
 
         {/* Código como aba externa */}
@@ -162,7 +162,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                       videoRefs.current[index] = el;
                     }}
                     src={image}
-                    className={`absolute inset-0 w-full h-full object-cover shadow-2xl transition-all duration-700 ${
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
                       hoverIndex === index ? 'opacity-100' : 'opacity-0'
                     }`}
                     muted
@@ -176,7 +176,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                     key={`${product.id}-${image}-${index}`}
                     src={image}
                     alt={`${product.name} - ${index + 1}`}
-                    className={`absolute inset-0 w-full h-full object-cover shadow-2xl transition-all duration-700 ${
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
                       hoverIndex === index ? 'opacity-100' : 'opacity-0'
                     }`}
                     loading="lazy"
@@ -187,7 +187,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
           </div>
 
           {/* Informações do produto - alinhado à direita */}
-          <div className="text-right text-white">
+          <div className="text-right text-white pr-6">
             {/* Preço */}
             <div className="mb-3">
               {hasPromo && (
