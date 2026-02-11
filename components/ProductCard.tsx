@@ -149,45 +149,43 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
         </div>
 
         {/* Conteúdo do card */}
-        <div className="relative z-10 p-6 flex flex-col h-full min-h-[600px]">
-          {/* Imagem/Vídeo nítido em carrossel - centralizado */}
-          <div className="flex-1 flex items-center justify-center mb-6">
-            <div className="relative w-full max-w-[280px] aspect-[4/5]">
-              {images.map((image, index) => {
-                const isVideo = isVideoUrl(image);
-                return isVideo ? (
-                  <video
-                    key={`${product.id}-${image}-${index}`}
-                    ref={(el) => {
-                      videoRefs.current[index] = el;
-                    }}
-                    src={image}
-                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
-                      hoverIndex === index ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    muted
-                    loop
-                    playsInline
-                    autoPlay={index === hoverIndex}
-                    preload="metadata"
-                  />
-                ) : (
-                  <img
-                    key={`${product.id}-${image}-${index}`}
-                    src={image}
-                    alt={`${product.name} - ${index + 1}`}
-                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
-                      hoverIndex === index ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    loading="lazy"
-                  />
-                );
-              })}
-            </div>
+        <div className="relative z-10 flex flex-col h-full min-h-[600px]">
+          {/* Imagem/Vídeo nítido em carrossel - ocupa todo espaço */}
+          <div className="flex-1 relative">
+            {images.map((image, index) => {
+              const isVideo = isVideoUrl(image);
+              return isVideo ? (
+                <video
+                  key={`${product.id}-${image}-${index}`}
+                  ref={(el) => {
+                    videoRefs.current[index] = el;
+                  }}
+                  src={image}
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+                    hoverIndex === index ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  muted
+                  loop
+                  playsInline
+                  autoPlay={index === hoverIndex}
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  key={`${product.id}-${image}-${index}`}
+                  src={image}
+                  alt={`${product.name} - ${index + 1}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+                    hoverIndex === index ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  loading="lazy"
+                />
+              );
+            })}
           </div>
 
           {/* Informações do produto - alinhado à direita */}
-          <div className="text-right text-white pr-6">
+          <div className="text-right text-white pr-6 pb-6 pt-12">
             {/* Preço */}
             <div className="mb-3">
               {hasPromo && (
