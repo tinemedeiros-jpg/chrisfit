@@ -438,13 +438,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       </section>
 
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-4" role="dialog">
           <div
             className="absolute inset-0 bg-black/70"
             onClick={closeModal}
             aria-hidden="true"
           />
-        <div className="relative bg-white shadow-2xl max-w-3xl w-full overflow-hidden z-10">
+        <div className="relative bg-white shadow-2xl max-w-3xl w-full overflow-hidden z-[201]">
             <div className="absolute top-0 left-0 right-0 h-14 bg-[#D05B92] flex items-center justify-between px-6 text-white z-10">
               <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
                 {activeModal.product.code}
