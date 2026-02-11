@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-[#D05B92] text-white py-16 mt-20" id="contato">
+    <footer className="bg-[#D05B92] text-white py-16" style={{ boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.15)' }} id="contato">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-start">
           <div className="space-y-4">
