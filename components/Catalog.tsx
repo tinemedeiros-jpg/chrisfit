@@ -241,7 +241,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 {/* COLUNA 1: TEXTO - 40% dividida em 4 linhas */}
                 <div className="w-[40%] flex flex-col px-10">
                   {/* LINHA 1: Destaques - 15% */}
-                  <div className="h-[15%] flex items-center justify-end text-right">
+                  <div className="h-[15%] flex items-center justify-end text-right pt-[10px]">
                     <p className="uppercase tracking-[0.4em] text-xs text-white/90">destaques</p>
                   </div>
 
@@ -284,7 +284,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   </div>
 
                   {/* LINHA 4: Tamanhos - próxima ao nome */}
-                  <div className="pb-4 flex items-end justify-end text-right">
+                  <div className="pb-[10px] flex items-end justify-end text-right">
                     {featuredDisplay[activeFeaturedIndex] && featuredDisplay[activeFeaturedIndex].sizes.length > 0 && (
                       <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90">
                         {featuredDisplay[activeFeaturedIndex].sizes.join(' . ')}
