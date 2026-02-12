@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Product, ProductUpsertPayload } from '../types';
-import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play } from 'lucide-react';
+import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { isVideoFile, validateVideoDuration, isVideoUrl } from '../lib/mediaUtils';
 
@@ -55,6 +55,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
   const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
+  const [sortColumn, setSortColumn] = useState<'code' | 'name' | 'price' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Função para calcular o próximo código disponível
   const getNextAvailableCode = () => {
@@ -71,7 +73,44 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     const nextCode = maxCode + 1;
     return String(nextCode).padStart(4, '0');
   };
-  
+
+  // Handler para ordenação de colunas
+  const handleSort = (column: 'code' | 'name' | 'price') => {
+    if (sortColumn === column) {
+      // Se já está ordenando por essa coluna, inverte a direção
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Nova coluna, começa com ascendente
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  // Produtos ordenados
+  const sortedProducts = useMemo(() => {
+    if (!sortColumn) return products;
+
+    return [...products].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortColumn) {
+        case 'code':
+          comparison = a.code.localeCompare(b.code);
+          break;
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'price':
+          const priceA = a.isPromo && a.promoPrice ? a.promoPrice : a.price;
+          const priceB = b.isPromo && b.promoPrice ? b.promoPrice : b.price;
+          comparison = priceA - priceB;
+          break;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [products, sortColumn, sortDirection]);
+
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -770,9 +809,39 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             <thead className="bg-[#D05B92]/5 text-[#D05B92] font-bold uppercase text-[10px] tracking-[0.2em]">
               <tr>
                 <th className="px-8 py-6">Visual</th>
-                <th className="px-8 py-6">Cód.</th>
-                <th className="px-8 py-6">Nome</th>
-                <th className="px-8 py-6">Preço</th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('code')}
+                >
+                  <div className="flex items-center gap-2">
+                    Cód.
+                    {sortColumn === 'code' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-2">
+                    Nome
+                    {sortColumn === 'name' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('price')}
+                >
+                  <div className="flex items-center gap-2">
+                    Preço
+                    {sortColumn === 'price' && (
+                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    )}
+                  </div>
+                </th>
                 <th className="px-8 py-6">Status</th>
                 <th className="px-8 py-6">Tamanhos</th>
                 <th className="px-8 py-6">Observações</th>
@@ -781,7 +850,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {products.map(product => (
+              {sortedProducts.map(product => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-8 py-4">
                     <div className="relative w-14 h-14">
