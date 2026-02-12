@@ -32,7 +32,7 @@ const App: React.FC = () => {
     const { data, error: fetchError } = await supabase
       .from('products')
       .select(
-        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, observation, created_at, product_images ( url, position )'
+        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, observation, description, created_at, product_images ( url, position )'
       )
       .order('created_at', { ascending: false });
 
@@ -68,6 +68,7 @@ const App: React.FC = () => {
         sizes: Array.isArray(product.sizes) ? product.sizes : [],
         images,
         observation: product.observation ?? null,
+        description: product.description ?? null,
         createdAt: product.created_at ?? ''
       } satisfies Product;
     });
@@ -182,7 +183,8 @@ const App: React.FC = () => {
         is_featured: payload.isFeatured ?? false,
         is_active: payload.isActive ?? true,
         sizes: payload.sizes,
-        observation: payload.observation ?? null
+        observation: payload.observation ?? null,
+        description: payload.description ?? null
       })
       .select('id')
       .single();
@@ -216,7 +218,8 @@ const App: React.FC = () => {
         is_featured: payload.isFeatured ?? false,
         is_active: payload.isActive ?? true,
         sizes: payload.sizes,
-        observation: payload.observation ?? null
+        observation: payload.observation ?? null,
+        description: payload.description ?? null
       })
       .eq('id', payload.id);
 

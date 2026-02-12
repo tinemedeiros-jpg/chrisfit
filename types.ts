@@ -11,6 +11,7 @@ export interface Product {
   sizes: string[];
   images: Array<string | null>;
   observation?: string | null;
+  description?: string | null;
   createdAt: string;
 }
 
@@ -27,6 +28,7 @@ export interface ProductUpsertPayload {
   isActive?: boolean;
   sizes: string[];
   observation?: string;
+  description?: string;
   existingImages: Array<string | null>;
   newImages: Array<File | null>;
 }
