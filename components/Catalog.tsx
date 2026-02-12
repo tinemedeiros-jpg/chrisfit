@@ -543,90 +543,94 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       </section>
 
       {activeModal && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center" role="dialog">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-8" role="dialog">
           <div
             className="absolute inset-0 bg-black/70"
             onClick={closeModal}
             aria-hidden="true"
           />
-          {/* Modal: 70% da largura (15% de respiro em cada lado) */}
-          <div className="relative w-[70%] h-[85vh] bg-[#f4fbff] shadow-2xl overflow-hidden z-[1201] rounded-tr-[2rem] flex flex-col">
-            {/* Faixa rosa superior - toda largura */}
-            <div className="w-full h-16 bg-[#D05B92] flex items-center justify-between px-6 text-white flex-shrink-0">
-              <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
-                {activeModal.product.code}
-              </span>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition"
-                aria-label="Fechar"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Conteúdo principal: container de mídia + texto/menu */}
-            <div className="flex-1 flex overflow-hidden">
-              {/* Container de mídia - proporção 1080x1920 (9:16) */}
-              <div className="flex-1 flex items-center justify-center p-8">
-                <div
-                  className="relative bg-black overflow-hidden"
-                  style={{
-                    aspectRatio: '9/16',
-                    maxHeight: '100%',
-                    maxWidth: '100%'
-                  }}
-                >
-                  {/* Fundo embaçado se a mídia não preencher */}
-                  <div className="absolute inset-0">
-                    {isVideoUrl(activeModal.image) ? (
-                      <video
-                        src={activeModal.image}
-                        className="w-full h-full object-cover blur-xl brightness-50"
-                        muted
-                        loop
-                        playsInline
-                        autoPlay
-                        preload="metadata"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full bg-cover bg-center blur-xl brightness-50"
-                        style={{ backgroundImage: `url(${activeModal.image})` }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Mídia principal nítida */}
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    {isVideoUrl(activeModal.image) ? (
-                      <video
-                        src={activeModal.image}
-                        controls
-                        className="w-full h-full object-contain"
-                        preload="metadata"
-                      />
-                    ) : (
-                      <img
-                        src={activeModal.image}
-                        alt={activeModal.product.name}
-                        className="w-full h-full object-contain"
-                      />
-                    )}
-                  </div>
+          {/* Modal: altura máxima para imagem 9:16 com respiro */}
+          <div className="relative flex shadow-2xl z-[1201] max-h-full">
+            {/* Lado esquerdo: Imagem com tag de código */}
+            <div className="relative flex-shrink-0" style={{ aspectRatio: '9/16' }}>
+              {/* Tag de código - aba externa superior esquerda */}
+              <div className="absolute -left-3 top-6 z-30">
+                <div className="bg-[#D05B92] px-4 py-2 shadow-lg">
+                  <span className="text-white text-[11px] uppercase tracking-[0.4em] font-semibold pl-2">
+                    {activeModal.product.code}
+                  </span>
                 </div>
               </div>
 
-              {/* Área de texto e menu vertical */}
-              <div className="w-[320px] flex-shrink-0 p-6 flex flex-col gap-6 overflow-y-auto">
+              {/* Container da imagem/vídeo */}
+              <div className="relative w-full h-full bg-black overflow-hidden">
+                {/* Fundo embaçado se a mídia não preencher */}
+                <div className="absolute inset-0">
+                  {isVideoUrl(activeModal.image) ? (
+                    <video
+                      src={activeModal.image}
+                      className="w-full h-full object-cover blur-xl brightness-50"
+                      muted
+                      loop
+                      playsInline
+                      autoPlay
+                      preload="metadata"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full bg-cover bg-center blur-xl brightness-50"
+                      style={{ backgroundImage: `url(${activeModal.image})` }}
+                    />
+                  )}
+                </div>
+
+                {/* Mídia principal nítida */}
+                <div className="relative w-full h-full flex items-center justify-center">
+                  {isVideoUrl(activeModal.image) ? (
+                    <video
+                      src={activeModal.image}
+                      controls
+                      className="w-full h-full object-contain"
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={activeModal.image}
+                      alt={activeModal.product.name}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Lado direito: Área branca com informações */}
+            <div
+              className="relative bg-[#f4fbff] flex flex-col rounded-tr-[2rem]"
+              style={{
+                width: 'calc((100vh - 4rem) * 9 / 16)',
+                maxWidth: '600px'
+              }}
+            >
+              {/* Botão fechar - canto superior direito */}
+              <button
+                type="button"
+                onClick={closeModal}
+                className="absolute top-6 right-6 h-9 w-9 rounded-full bg-[#D05B92] flex items-center justify-center hover:brightness-110 transition z-10"
+                aria-label="Fechar"
+              >
+                <X size={16} className="text-white" />
+              </button>
+
+              {/* Conteúdo scrollável */}
+              <div className="flex-1 overflow-y-auto p-8 pt-16">
                 {/* Nome do produto */}
-                <div>
+                <div className="mb-4">
                   <h3 className="text-2xl font-semibold text-[#BA4680]">{activeModal.product.name}</h3>
                 </div>
 
                 {/* Preço */}
-                <div className="text-[#BA4680]">
+                <div className="text-[#BA4680] mb-6">
                   {activeModal.product.isPromo && activeModal.product.promoPrice ? (
                     <div className="flex flex-col">
                       <span className="text-xs line-through text-[#BA4680]/60">
@@ -641,14 +645,17 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </div>
 
-                {/* Observação */}
+                {/* Espaço para futura descrição */}
+                {/* TODO: Adicionar campo de descrição aqui */}
+
+                {/* Observação - menor e acima do menu */}
                 {activeModal.product.observation && (
-                  <p className="text-sm text-[#BA4680]/70">{activeModal.product.observation}</p>
+                  <p className="text-xs text-[#BA4680]/70 mb-4">{activeModal.product.observation}</p>
                 )}
 
-                {/* Menu vertical de fotos/vídeos */}
+                {/* Menu vertical de fotos/vídeos - menor altura */}
                 {modalImages.length > 1 && (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 mb-4">
                     {modalImages.map((image, index) => {
                       const isThumbVideo = isVideoUrl(image);
                       return (
@@ -656,7 +663,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           key={`${activeModal.product.id}-modal-thumb-${index}`}
                           type="button"
                           onClick={() => setActiveModal({ product: activeModal.product, image })}
-                          className={`relative h-20 w-full rounded-lg overflow-hidden border-2 transition ${
+                          className={`relative h-16 w-full rounded-lg overflow-hidden border-2 transition ${
                             image === activeModal.image
                               ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
                               : 'border-gray-200 hover:border-[#D05B92]/60'
@@ -667,7 +674,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                             <>
                               <video src={image} className="h-full w-full object-cover" preload="metadata" muted />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <Play size={20} fill="white" className="text-white" />
+                                <Play size={18} fill="white" className="text-white" />
                               </div>
                             </>
                           ) : (
@@ -678,12 +685,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     })}
                   </div>
                 )}
+              </div>
 
-                {/* Botão de pedido */}
+              {/* Botão de pedido - sempre no mesmo lugar (bottom) */}
+              <div className="p-8 pt-0">
                 <a
                   href={getWhatsAppUrl(activeModal.product)}
                   target="_blank"
-                  className="inline-flex items-center justify-center gap-2 bg-[#D05B92] text-white px-6 py-3 rounded-full font-bold shadow-lg hover:brightness-110 transition mt-auto"
+                  className="inline-flex items-center justify-center gap-2 bg-[#D05B92] text-white px-6 py-3 rounded-full font-bold shadow-lg hover:brightness-110 transition w-full"
                 >
                   Pedir este item
                 </a>
