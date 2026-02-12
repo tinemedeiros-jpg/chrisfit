@@ -514,14 +514,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-white p-8 shadow-2xl mb-12 border border-[#1e90c8]/10 space-y-6 relative overflow-hidden">
+        <form onSubmit={handleSubmit} className="bg-white p-8 shadow-2xl mb-12 border border-[#1e90c8]/10 space-y-4 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-2 h-full bg-[#1e90c8]"></div>
-          <h3 className="text-xl font-bold sport-font italic text-gray-800 mb-4 flex items-center space-x-2">
+          <h3 className="text-xl font-bold sport-font italic text-gray-800 flex items-center space-x-2">
             {editingId ? <Edit2 size={20} /> : <Plus size={20} />}
             <span>{editingId ? 'Editar Produto' : 'Cadastrar Novo Item'}</span>
           </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             <div className="space-y-2 md:col-span-3">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Código</label>
               <input required type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
@@ -545,10 +545,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 placeholder="0,00"
               />
             </div>
-            <div className="space-y-3 md:col-span-4">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Destaque & Promoção</label>
-              <div className="flex flex-col gap-3">
-                <label className="flex items-center gap-3 text-sm text-gray-600 font-medium">
+            <div className="space-y-2 md:col-span-12">
+              <div className="flex items-center gap-4">
+                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Destaque & Promoção</label>
+                <label className="flex items-center gap-2 text-xs text-gray-600 font-medium">
                   <input
                     type="checkbox"
                     checked={formData.isFeatured}
@@ -557,7 +557,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   />
                   Marcar como destaque
                 </label>
-                <label className="flex items-center gap-3 text-sm text-gray-600 font-medium">
+                <label className="flex items-center gap-2 text-xs text-gray-600 font-medium">
                   <input
                     type="checkbox"
                     checked={formData.isPromo}
@@ -571,21 +571,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   />
                   Marcar como promoção
                 </label>
-                {formData.isPromo && (
-                  <input
-                    required
-                    type="text"
-                    inputMode="decimal"
-                    value={formData.promoPrice}
-                    onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, promoPrice: sanitizePriceInput(event.target.value) }))
-                    }
-                    onBlur={handlePromoPriceBlur}
-                    className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]"
-                    placeholder="Preço promocional"
-                  />
-                )}
               </div>
+              {formData.isPromo && (
+                <input
+                  required
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.promoPrice}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, promoPrice: sanitizePriceInput(event.target.value) }))
+                  }
+                  onBlur={handlePromoPriceBlur}
+                  className="w-full max-w-xs bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]"
+                  placeholder="Preço promocional"
+                />
+              )}
             </div>
             <div className="space-y-2 md:col-span-12">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Descrição (aparece apenas na modal)</label>
@@ -596,10 +596,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 placeholder="Descrição detalhada do produto..."
               />
             </div>
-            <div className="space-y-2 md:col-span-8">
+            <div className="space-y-2 md:col-span-5">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Tamanhos (P, M, G...)</label>
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col lg:flex-row gap-3">
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     list="size-options"
@@ -611,15 +611,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         addSize(sizeInput);
                       }
                     }}
-                    className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8]"
-                    placeholder="Selecione ou digite um tamanho"
+                    className="flex-1 bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#1e90c8] text-sm"
+                    placeholder="Tamanho"
                   />
                   <button
                     type="button"
                     onClick={() => addSize(sizeInput)}
-                    className="px-5 py-3 rounded-xl bg-[#1e90c8] text-white font-bold hover:brightness-110 transition-all"
+                    className="px-4 py-2 rounded-lg bg-[#1e90c8] text-white text-xs font-bold hover:brightness-110 transition-all whitespace-nowrap"
                   >
-                    Adicionar tamanho
+                    Adicionar
                   </button>
                 </div>
                 <datalist id="size-options">
