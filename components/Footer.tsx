@@ -16,7 +16,7 @@ const Footer: React.FC = () => {
     <footer
       className="bg-[#D05B92] text-white py-16 relative"
       style={{
-        boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.3)',
+        boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.5)',
         zIndex: 50
       }}
       id="contato"
