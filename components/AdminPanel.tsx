@@ -81,7 +81,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     isFeatured: false,
     isActive: true,
     sizes: [] as string[],
-    observation: ''
+    observation: '',
+    description: ''
   });
   const [sizeInput, setSizeInput] = useState('');
 
@@ -160,7 +161,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isFeatured: Boolean(product.isFeatured),
       isActive: product.isActive !== false,
       sizes: product.sizes,
-      observation: product.observation || ''
+      observation: product.observation || '',
+      description: product.description || ''
     });
     setExistingImages(normalizeImageSlots(product.images));
     setNewImages(Array(MAX_IMAGES).fill(null));
@@ -359,6 +361,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isActive: formData.isActive,
       sizes: formData.sizes,
       observation: formData.observation,
+      description: formData.description,
       existingImages: reorderedImages,
       newImages: reorderedNewImages
     };
@@ -403,6 +406,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isActive: product.isActive,
       sizes: product.sizes,
       observation: product.observation ?? '',
+      description: product.description ?? '',
       existingImages: normalizeImageSlots(product.images),
       newImages: Array(MAX_IMAGES).fill(null)
     };
@@ -429,6 +433,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isActive: !product.isActive,
       sizes: product.sizes,
       observation: product.observation ?? '',
+      description: product.description ?? '',
       existingImages: normalizeImageSlots(product.images),
       newImages: Array(MAX_IMAGES).fill(null)
     };
@@ -582,6 +587,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 )}
               </div>
             </div>
+            <div className="space-y-2 md:col-span-12">
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Descrição (aparece apenas na modal)</label>
+              <textarea
+                value={formData.description}
+                onChange={e => setFormData({...formData, description: e.target.value})}
+                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#1e90c8] min-h-[100px]"
+                placeholder="Descrição detalhada do produto..."
+              />
+            </div>
             <div className="space-y-2 md:col-span-8">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Tamanhos (P, M, G...)</label>
               <div className="flex flex-col gap-3">
@@ -638,64 +652,96 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               </div>
             </div>
             <div className="space-y-2 md:col-span-7">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Imagens do Produto</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Array.from({ length: MAX_IMAGES }).map((_, index) => (
-                  <label key={`image-input-${index}`} className="block text-[11px] text-gray-400">
-                    Imagem/Vídeo {index + 1}
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      onChange={(event) => handleFileChange(index, event)}
-                      className="mt-1 w-full bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#1e00c8]"
-                    />
-                    <label className="mt-2 inline-flex items-center gap-2 text-[10px] text-gray-500">
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Imagens do Produto</label>
+
+              {/* Linha 1: Label + 5 quadrados de upload */}
+              <div className="flex items-start gap-3 mb-2">
+                <div className="text-[11px] text-gray-400 uppercase tracking-wider pt-2 w-32 flex-shrink-0">
+                  Adicionar Imagem
+                </div>
+                <div className="flex gap-2 flex-1">
+                  {Array.from({ length: MAX_IMAGES }).map((_, index) => {
+                    const hasImage = existingImages[index] || newImages[index];
+                    return (
+                      <label
+                        key={`image-input-${index}`}
+                        className="relative w-20 h-20 border-2 border-dashed border-gray-300 hover:border-[#1e90c8] cursor-pointer flex items-center justify-center bg-gray-50 transition-colors overflow-hidden"
+                      >
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={(event) => handleFileChange(index, event)}
+                          className="hidden"
+                        />
+                        {hasImage ? (
+                          <div className="relative w-full h-full">
+                            {existingImages[index] ? (
+                              <>
+                                <img src={existingImages[index] ?? ''} alt={`${index + 1}`} className="w-full h-full object-cover" />
+                                {isVideoUrl(existingImages[index]) && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                    <Play size={16} fill="white" className="text-white" />
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    removeExistingImage(index);
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 shadow"
+                                >
+                                  <X size={10} />
+                                </button>
+                              </>
+                            ) : newImages[index] ? (
+                              <>
+                                <div className="w-full h-full flex items-center justify-center bg-green-50 text-green-600 text-[10px] font-bold">
+                                  Novo
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    removeNewImage(index);
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 shadow"
+                                >
+                                  <X size={10} />
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <Plus size={24} className="text-gray-400" />
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Linha 2: Label + 5 radio buttons */}
+              <div className="flex items-center gap-3">
+                <div className="text-[11px] text-gray-400 uppercase tracking-wider w-32 flex-shrink-0">
+                  Imagem pro Destaque
+                </div>
+                <div className="flex gap-2 flex-1">
+                  {Array.from({ length: MAX_IMAGES }).map((_, index) => (
+                    <div key={`radio-${index}`} className="w-20 flex justify-center">
                       <input
                         type="radio"
                         name="featured-image"
                         checked={featuredImageIndex === index}
                         onChange={() => setFeaturedImageIndex(index)}
-                        className="h-3.5 w-3.5 text-[#1e90c8] focus:ring-[#1e90c8]"
+                        className="h-4 w-4 text-[#1e90c8] focus:ring-[#1e90c8] cursor-pointer"
                       />
-                      Imagem de destaque
-                    </label>
-                    <div className="mt-2 flex items-center gap-2">
-                      {existingImages[index] ? (
-                        <div className="relative">
-                          <img src={existingImages[index] ?? ''} alt={`Imagem ${index + 1}`} className="w-16 h-16 object-cover border border-gray-200" />
-                          {isVideoUrl(existingImages[index]) && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
-                              <Play size={20} fill="white" className="text-white" />
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => removeExistingImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 shadow"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-gray-300 uppercase tracking-widest">Vazio</span>
-                      )}
-                      {newImages[index] && (
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                          <span>Novo: {newImages[index]?.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeNewImage(index)}
-                            className="text-red-400 hover:text-red-500"
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </label>
-                ))}
+                  ))}
+                </div>
               </div>
-              <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
+
+              <p className="text-[11px] text-gray-400 mt-2">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
             </div>
             <div className="space-y-2 md:col-span-5">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
