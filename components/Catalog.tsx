@@ -684,8 +684,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </div>
 
-                {/* Espaço para futura descrição */}
-                {/* TODO: Adicionar campo de descrição aqui */}
+                {/* Descrição - abaixo do preço */}
+                {activeModal.product.description && (
+                  <p className="text-sm text-[#BA4680]/80 mb-6 leading-relaxed">{activeModal.product.description}</p>
+                )}
 
                 {/* Espaçador que empurra conteúdo para baixo */}
                 <div className="flex-1" />
