@@ -154,8 +154,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 style={{
                   left: '50%',
                   transform: 'translateX(-50%) translateY(20px) rotate(4deg)',
-                  width: '246px',
-                  height: '437px',
+                  width: '270.6px',
+                  height: '480.7px',
                   zIndex: 1100,
                   boxShadow: '-2px -4px 15px rgba(0,0,0,0.25), 4px 8px 35px rgba(0,0,0,0.4)'
                 }}
