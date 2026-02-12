@@ -1,30 +1,33 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
+import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 
 interface CatalogProps {
   products: Product[];
   isLoading: boolean;
   error: string | null;
   searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
-const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm }) => {
+const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm, onSearchChange }) => {
   const [activeModal, setActiveModal] = useState<{ product: Product; image: string } | null>(null);
 
   const filteredProducts = useMemo(
     () =>
       products.filter(
         (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.code.includes(searchTerm)
+          product.isActive !== false &&
+          (product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.code.includes(searchTerm))
       ),
     [products, searchTerm]
   );
   const featuredProducts = useMemo(
-    () => products.filter((product) => product.isFeatured),
+    () => products.filter((product) => product.isFeatured && product.isActive !== false),
     [products]
   );
   const featuredDisplay = useMemo(() => featuredProducts.slice(0, 10), [featuredProducts]);
@@ -32,21 +35,32 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayIndex, setDisplayIndex] = useState(0); // Índice da imagem base (atualiza após animação)
+  const [hasStartedCarousel, setHasStartedCarousel] = useState(false); // Controla se já começou o carrossel
   const hasFeatured = featuredProducts.length > 0;
 
-  // Detecta mudança no índice e anima
+  // Refs para controlar vídeos no carousel
+  const floatingVideoRef = React.useRef<HTMLVideoElement | null>(null);
+  const mainVideoRef = React.useRef<HTMLVideoElement | null>(null);
+  const queueVideoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
+
+  // Detecta mudança no índice e anima (mas não na primeira vez)
   useEffect(() => {
-    if (!hasFeatured || featuredDisplay.length <= 1) return;
+    if (!hasFeatured || featuredDisplay.length <= 1 || !hasStartedCarousel) return;
 
     setIsAnimating(true);
+
+    // Calcula tempo total: última imagem da fila tem delay de (N-1) * 50ms + 500ms de animação
+    const queueCount = featuredDisplay.length - 1; // Número de imagens na fila
+    const lastDelay = queueCount * 50; // Delay da última imagem
+    const totalTime = lastDelay + 500; // Tempo total até última animação terminar
 
     const timeout = setTimeout(() => {
       setIsAnimating(false);
       setDisplayIndex(activeFeaturedIndex); // Atualiza a base APÓS animação
-    }, 500);
+    }, totalTime);
 
     return () => clearTimeout(timeout);
-  }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length]);
+  }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length, hasStartedCarousel]);
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
 
   // featuredLayers usa displayIndex (não activeFeaturedIndex) para a base
@@ -75,13 +89,25 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
     const interval = window.setInterval(() => {
+      setHasStartedCarousel(true); // Marca que o carrossel começou
       setActiveFeaturedIndex((current) =>
         isCarouselPaused ? current : (current + 1) % featuredDisplay.length
       );
-    }, 10000);
+    }, 8000);
 
     return () => window.clearInterval(interval);
   }, [featuredDisplay.length, isCarouselPaused]);
+
+  // Controla play/pause dos vídeos no carousel featured
+  useEffect(() => {
+    // Play nos vídeos ativos (displayIndex)
+    if (floatingVideoRef.current && isVideoUrl(featuredLayers[0]?.images?.find((i): i is string => Boolean(i)) ?? null)) {
+      floatingVideoRef.current.play().catch(() => {});
+    }
+    if (mainVideoRef.current && isVideoUrl(featuredLayers[0]?.images?.find((i): i is string => Boolean(i)) ?? null)) {
+      mainVideoRef.current.play().catch(() => {});
+    }
+  }, [displayIndex, featuredLayers]);
 
   const sideImages = featuredLayers
     .slice(1)
@@ -112,62 +138,33 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     <div className="animate-in fade-in duration-700">
       {/* SEÇÃO DE DESTAQUES - ESTRUTURA SIMPLES */}
       <section className="text-white" id="destaques">
-        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#D05B92]">
+        <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#BA4680]">
           {hasFeatured ? (
             <div
-              className="relative w-full h-[360px] bg-[#D05B92]"
+              className="relative w-full h-[360px] bg-[#BA4680]"
               style={{
                 boxShadow: '0 -10px 25px rgba(0,0,0,0.3)'
               }}
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
             >
-              {/* 3 COLUNAS SIMPLES */}
-              <div className="flex h-full">
-                {/* COLUNA 1: TEXTO - sempre mostra info do item ativo */}
-                <div className="w-1/3 flex flex-col justify-center items-end px-10 text-right">
-                  <p className="uppercase tracking-[0.4em] text-xs text-white/90 mb-6">destaques</p>
-
-                  {featuredDisplay[activeFeaturedIndex] && (
-                    <div className="flex flex-col items-end gap-3 transition-opacity duration-500">
-                      {/* Preço */}
-                      <div className="flex flex-col items-end">
-                        {featuredDisplay[activeFeaturedIndex].isPromo &&
-                         featuredDisplay[activeFeaturedIndex].promoPrice ? (
-                          <>
-                            <span className="text-sm text-white/60 line-through">
-                              {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
-                            </span>
-                            <span className="text-4xl font-bold leading-none">
-                              {formatCurrency(featuredDisplay[activeFeaturedIndex].promoPrice)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-4xl font-bold leading-none">
-                            {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Nome */}
-                      <span className="text-xl font-light tracking-[0.4em] text-white">
-                        {featuredDisplay[activeFeaturedIndex].name}
-                      </span>
-
-                      {/* Tamanhos */}
-                      {featuredDisplay[activeFeaturedIndex].sizes.length > 0 && (
-                        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90">
-                          {featuredDisplay[activeFeaturedIndex].sizes.join(' . ')}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* COLUNA 2: IMAGEM ATIVA - próxima desliza por cima */}
-                <div className="w-1/3 relative overflow-hidden">
-                  {/* Imagem atual - PARADA (usa displayIndex, muda só após animação) */}
-                  {featuredLayers[0] && (
+              {/* IMAGEM FLUTUANTE - sobre a faixa, alinhada à coluna 2 */}
+              <div
+                className="absolute bottom-0 overflow-hidden"
+                style={{
+                  left: '50%',
+                  transform: 'translateX(-50%) translateY(20px) rotate(4deg)',
+                  width: '246px',
+                  height: '437px',
+                  zIndex: 1100,
+                  boxShadow: '-2px -4px 15px rgba(0,0,0,0.25), 4px 8px 35px rgba(0,0,0,0.4)'
+                }}
+              >
+                {/* Imagem/Vídeo atual - PARADA (usa displayIndex) */}
+                {featuredLayers[0] && (() => {
+                  const media = featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                  const isVideo = isVideoUrl(media);
+                  return (
                     <button
                       type="button"
                       onClick={() => {
@@ -177,16 +174,33 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       className="absolute inset-0 w-full h-full"
                       style={{ zIndex: 1 }}
                     >
-                      <img
-                        src={featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
-                        alt={featuredLayers[0].name}
-                        className="w-full h-full object-cover"
-                      />
+                      {isVideo ? (
+                        <video
+                          ref={floatingVideoRef}
+                          src={media}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                          autoPlay
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          src={media}
+                          alt={featuredLayers[0].name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </button>
-                  )}
+                  );
+                })()}
 
-                  {/* Próxima imagem - DESLIZA por cima (usa activeFeaturedIndex) */}
-                  {nextLayers[0] && (
+                {/* Próxima imagem/vídeo - DESLIZA por cima (usa activeFeaturedIndex) */}
+                {nextLayers[0] && (() => {
+                  const media = nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                  const isVideo = isVideoUrl(media);
+                  return (
                     <button
                       type="button"
                       onClick={() => {
@@ -197,20 +211,168 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       style={{
                         zIndex: 2,
                         transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
-                        transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
+                        transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
+                        transitionDelay: isAnimating ? '0ms' : '0ms'
                       }}
                     >
-                      <img
-                        src={nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? ''}
-                        alt={nextLayers[0].name}
-                        className="w-full h-full object-cover"
-                      />
+                      {isVideo ? (
+                        <video
+                          src={media}
+                          className="w-full h-full object-cover"
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          src={media}
+                          alt={nextLayers[0].name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </button>
-                  )}
+                  );
+                })()}
+              </div>
+
+              {/* 4 COLUNAS: 40% | 20% | 20% | 20% */}
+              <div className="flex h-full">
+                {/* COLUNA 1: TEXTO - 40% dividida em 4 linhas */}
+                <div className="w-[40%] flex flex-col px-10">
+                  {/* LINHA 1: Destaques - 15% */}
+                  <div className="h-[15%] flex items-center justify-end text-right pt-[30px]">
+                    <p className="uppercase tracking-[0.4em] text-xs text-white/90">destaques</p>
+                  </div>
+
+                  {/* LINHA 2: Preço - 25% */}
+                  <div className="h-[25%] flex items-center justify-end text-right">
+                    {featuredDisplay[activeFeaturedIndex] && (
+                      <div className="flex flex-col items-end">
+                        {featuredDisplay[activeFeaturedIndex].isPromo &&
+                         featuredDisplay[activeFeaturedIndex].promoPrice ? (
+                          <>
+                            <span className="text-sm text-white/60 line-through">
+                              {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
+                            </span>
+                            <div className="font-bold leading-none">
+                              <span className="text-2xl">R$ </span>
+                              <span className="text-6xl">
+                                {featuredDisplay[activeFeaturedIndex].promoPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="font-bold leading-none">
+                            <span className="text-2xl">R$ </span>
+                            <span className="text-6xl">
+                              {featuredDisplay[activeFeaturedIndex].price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* LINHA 3: Nome - dinâmica, cresce conforme conteúdo */}
+                  <div className="flex-grow flex items-start justify-end text-right pt-4">
+                    {featuredDisplay[activeFeaturedIndex] && (
+                      <h3 className="text-2xl font-semibold leading-tight text-white">
+                        {featuredDisplay[activeFeaturedIndex].name}
+                      </h3>
+                    )}
+                  </div>
+
+                  {/* LINHA 4: Tamanhos - próxima ao nome */}
+                  <div className="pb-[30px] flex items-end justify-end text-right">
+                    {featuredDisplay[activeFeaturedIndex] && featuredDisplay[activeFeaturedIndex].sizes.length > 0 && (
+                      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/90">
+                        {featuredDisplay[activeFeaturedIndex].sizes.join(' . ')}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* COLUNA 3: FILA DE IMAGENS - próximas deslizam por cima */}
-                <div className="w-1/3 flex">
+                {/* COLUNA 2: IMAGEM/VÍDEO ATIVA - 20% */}
+                <div className="w-[20%] relative overflow-hidden">
+                  {/* Mídia atual - PARADA (usa displayIndex, muda só após animação) */}
+                  {featuredLayers[0] && (() => {
+                    const media = featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                    const isVideo = isVideoUrl(media);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
+                          if (img) openModal(featuredLayers[0], img);
+                        }}
+                        className="absolute inset-0 w-full h-full"
+                        style={{ zIndex: 1 }}
+                      >
+                        {isVideo ? (
+                          <video
+                            ref={mainVideoRef}
+                            src={media}
+                            className="w-full h-full object-cover"
+                            muted
+                            loop
+                            playsInline
+                            autoPlay
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={media}
+                            alt={featuredLayers[0].name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </button>
+                    );
+                  })()}
+
+                  {/* Próxima mídia - DESLIZA por cima (usa activeFeaturedIndex) */}
+                  {nextLayers[0] && (() => {
+                    const media = nextLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                    const isVideo = isVideoUrl(media);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const img = nextLayers[0].images?.find((i): i is string => Boolean(i));
+                          if (img) openModal(nextLayers[0], img);
+                        }}
+                        className="absolute inset-0 w-full h-full"
+                        style={{
+                          zIndex: 2,
+                          transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+                          transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
+                          transitionDelay: isAnimating ? '0ms' : '0ms'
+                        }}
+                      >
+                        {isVideo ? (
+                          <video
+                            src={media}
+                            className="w-full h-full object-cover"
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={media}
+                            alt={nextLayers[0].name}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </button>
+                    );
+                  })()}
+                </div>
+
+                {/* COLUNA 3: FILA DE IMAGENS - 20% */}
+                <div className="w-[20%] flex">
                   {featuredLayers.slice(1).map((product, idx) => {
                     const image = product.images?.find((img): img is string => Boolean(img));
                     const nextProduct = nextLayers[idx + 1]; // Usa nextLayers para próximas
@@ -220,7 +382,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
                     return (
                       <div key={`queue-${product.id}`} className="flex-1 h-full relative overflow-hidden">
-                        {/* Imagem atual - PARADA (usa featuredLayers/displayIndex) */}
+                        {/* Mídia atual - PARADA (usa featuredLayers/displayIndex) */}
                         <button
                           type="button"
                           onClick={() => {
@@ -232,15 +394,27 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           className="absolute inset-0 w-full h-full"
                           style={{ zIndex: 1 }}
                         >
-                          <img
-                            src={image}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {isVideoUrl(image) ? (
+                            <video
+                              src={image}
+                              className="w-full h-full object-cover"
+                              muted
+                              loop
+                              playsInline
+                              autoPlay
+                              preload="metadata"
+                            />
+                          ) : (
+                            <img
+                              src={image}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                           <div className="absolute inset-0 bg-black/50" />
                         </button>
 
-                        {/* Próxima imagem - DESLIZA por cima (usa nextLayers/activeFeaturedIndex) */}
+                        {/* Próxima mídia - DESLIZA por cima (usa nextLayers/activeFeaturedIndex) */}
                         {nextImage && (
                           <button
                             type="button"
@@ -254,14 +428,26 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                             style={{
                               zIndex: 2,
                               transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
-                              transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
+                              transition: isAnimating ? 'transform 500ms ease-in-out' : 'none',
+                              transitionDelay: isAnimating ? `${(idx + 1) * 50}ms` : '0ms'
                             }}
                           >
-                            <img
-                              src={nextImage}
-                              alt={nextProduct.name}
-                              className="w-full h-full object-cover"
-                            />
+                            {isVideoUrl(nextImage) ? (
+                              <video
+                                src={nextImage}
+                                className="w-full h-full object-cover"
+                                muted
+                                loop
+                                playsInline
+                                preload="metadata"
+                              />
+                            ) : (
+                              <img
+                                src={nextImage}
+                                alt={nextProduct.name}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
                             <div className="absolute inset-0 bg-black/50" />
                           </button>
                         )}
@@ -269,6 +455,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     );
                   })}
                 </div>
+
+                {/* COLUNA 4: VAZIA - 20% */}
+                <div className="w-[20%]" />
               </div>
 
               {/* Dots do carrossel */}
@@ -288,6 +477,15 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   ))}
                 </div>
               )}
+
+              {/* Overlay com sombra por cima de tudo */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  boxShadow: 'inset 0 -16px 30px rgba(0,0,0,0.25)',
+                  zIndex: 1000
+                }}
+              />
             </div>
           ) : (
             <div className="px-6 py-10 text-white/80 text-sm">
@@ -298,11 +496,26 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       </section>
 
       <section className="container mx-auto mb-10 px-4 py-10" id="catalogo">
-        <div className="mb-8">
-          <p className="uppercase tracking-[0.4em] text-xs text-[#D05B92] font-semibold">
-            catálogo completo
-          </p>
-          <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
+        <div className="mb-8 flex items-center justify-between gap-6">
+          <div>
+            <p className="uppercase tracking-[0.4em] text-xs text-[#D05B92] font-semibold">
+              catálogo completo
+            </p>
+            <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
+          </div>
+
+          <div className="w-full max-w-md relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#D05B92]/70 group-focus-within:text-[#D05B92] transition-colors">
+              <Search size={20} />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar no catálogo..."
+              value={searchTerm}
+              onChange={(event) => onSearchChange(event.target.value)}
+              className="w-full bg-white border border-[#D05B92]/30 focus:border-[#D05B92] outline-none rounded-full py-3 pl-12 pr-4 placeholder:text-gray-400 text-[#0f1c2e] shadow-sm transition-all"
+            />
+          </div>
         </div>
 
         {isLoading ? (
@@ -330,13 +543,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       </section>
 
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center px-4" role="dialog">
           <div
             className="absolute inset-0 bg-black/70"
             onClick={closeModal}
             aria-hidden="true"
           />
-        <div className="relative bg-white shadow-2xl max-w-3xl w-full overflow-hidden z-10">
+        <div className="relative bg-white shadow-2xl max-w-3xl w-full overflow-hidden z-[1201]">
             <div className="absolute top-0 left-0 right-0 h-14 bg-[#D05B92] flex items-center justify-between px-6 text-white z-10">
               <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
                 {activeModal.product.code}
@@ -352,29 +565,45 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2">
               <div className="bg-[#FFF5F9] flex flex-col items-center justify-center z-20">
-                <img
-                  src={activeModal.image}
-                  alt={activeModal.product.name}
-                  className="w-full h-full object-contain max-h-[520px]"
-                />
+                {isVideoUrl(activeModal.image) ? (
+                  <video
+                    src={activeModal.image}
+                    controls
+                    className="w-full h-full object-contain max-h-[520px]"
+                    preload="metadata"
+                  />
+                ) : (
+                  <img
+                    src={activeModal.image}
+                    alt={activeModal.product.name}
+                    className="w-full h-full object-contain max-h-[520px]"
+                  />
+                )}
                 {modalImages.length > 1 && (
                   <div className="w-full px-4 pb-4">
                     <div className="flex items-center justify-center gap-2 bg-white/80 p-3 shadow-sm">
-                      {modalImages.map((image, index) => (
-                        <button
-                          key={`${activeModal.product.id}-modal-thumb-${index}`}
-                          type="button"
-                          onClick={() => setActiveModal({ product: activeModal.product, image })}
-                          className={`h-14 w-14 rounded-xl overflow-hidden border transition ${
-                            image === activeModal.image
-                              ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
-                              : 'border-white/70 hover:border-[#D05B92]/60'
-                          }`}
-                          aria-label={`Foto ${index + 1}`}
-                        >
-                          <img src={image} alt="" className="h-full w-full object-cover" />
-                        </button>
-                      ))}
+                      {modalImages.map((image, index) => {
+                        const isThumbVideo = isVideoUrl(image);
+                        return (
+                          <button
+                            key={`${activeModal.product.id}-modal-thumb-${index}`}
+                            type="button"
+                            onClick={() => setActiveModal({ product: activeModal.product, image })}
+                            className={`h-14 w-14 rounded-xl overflow-hidden border transition ${
+                              image === activeModal.image
+                                ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
+                                : 'border-white/70 hover:border-[#D05B92]/60'
+                            }`}
+                            aria-label={`${isThumbVideo ? 'Vídeo' : 'Foto'} ${index + 1}`}
+                          >
+                            {isThumbVideo ? (
+                              <video src={image} className="h-full w-full object-cover" preload="metadata" muted />
+                            ) : (
+                              <img src={image} alt="" className="h-full w-full object-cover" />
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

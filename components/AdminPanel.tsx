@@ -1,8 +1,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Product, ProductUpsertPayload } from '../types';
-import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut } from 'lucide-react';
+import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { isVideoFile, validateVideoDuration, isVideoUrl } from '../lib/mediaUtils';
 
 interface AdminPanelProps {
   products: Product[];
@@ -54,6 +55,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
   const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
+
+  // Função para calcular o próximo código disponível
+  const getNextAvailableCode = () => {
+    if (products.length === 0) return '0001';
+
+    const codes = products
+      .map(p => p.code)
+      .map(code => parseInt(code, 10))
+      .filter(num => !isNaN(num));
+
+    if (codes.length === 0) return '0001';
+
+    const maxCode = Math.max(...codes);
+    const nextCode = maxCode + 1;
+    return String(nextCode).padStart(4, '0');
+  };
   
   const [formData, setFormData] = useState({
     code: '',
@@ -62,6 +79,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     promoPrice: '',
     isPromo: false,
     isFeatured: false,
+    isActive: true,
     sizes: [] as string[],
     observation: ''
   });
@@ -80,6 +98,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  // Auto-preenche código ao abrir form de novo produto
+  useEffect(() => {
+    if (showAddForm && !editingId && !formData.code) {
+      setFormData(prev => ({
+        ...prev,
+        code: getNextAvailableCode()
+      }));
+    }
+  }, [showAddForm, editingId]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +158,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         : '',
       isPromo: Boolean(product.isPromo),
       isFeatured: Boolean(product.isFeatured),
+      isActive: product.isActive !== false,
       sizes: product.sizes,
       observation: product.observation || ''
     });
@@ -152,6 +181,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       promoPrice: '',
       isPromo: false,
       isFeatured: false,
+      isActive: true,
       sizes: [],
       observation: ''
     });
@@ -234,9 +264,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     return { images: nextImages, nextFiles: updatedFiles };
   };
 
-  const handleFileChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
+
+    // Validar duração do vídeo (máximo 30 segundos)
+    if (isVideoFile(file)) {
+      const validation = await validateVideoDuration(file, 30);
+      if (!validation.valid) {
+        alert(`❌ ${validation.message}\n\nPor favor, edite o vídeo para ter no máximo 30 segundos e tente novamente.`);
+        event.target.value = '';
+        return;
+      }
+    }
 
     setNewImages((prev) => {
       const next = [...prev];
@@ -316,6 +356,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       promoPrice: parsedPromoPrice,
       isPromo: formData.isPromo,
       isFeatured: formData.isFeatured,
+      isActive: formData.isActive,
       sizes: formData.sizes,
       observation: formData.observation,
       existingImages: reorderedImages,
@@ -337,6 +378,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const handleStatusToggle = async (product: Product, field: 'isFeatured' | 'isPromo') => {
     if (statusUpdatingId) return;
+    // Não permite alterar status se o produto estiver desabilitado
+    if (product.isActive === false) {
+      return;
+    }
     if (field === 'isPromo' && !product.isPromo) {
       return;
     }
@@ -355,6 +400,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       promoPrice: product.promoPrice ?? null,
       isPromo: nextIsPromo,
       isFeatured: nextIsFeatured,
+      isActive: product.isActive,
       sizes: product.sizes,
       observation: product.observation ?? '',
       existingImages: normalizeImageSlots(product.images),
@@ -364,6 +410,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       await onUpdate(payload);
     } catch (submitError) {
       alert(submitError instanceof Error ? submitError.message : 'Erro ao atualizar status.');
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
+  const handleActiveToggle = async (product: Product) => {
+    if (statusUpdatingId) return;
+    setStatusUpdatingId(product.id);
+    const payload: ProductUpsertPayload = {
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      price: product.price,
+      promoPrice: product.promoPrice ?? null,
+      isPromo: product.isPromo,
+      isFeatured: product.isFeatured,
+      isActive: !product.isActive,
+      sizes: product.sizes,
+      observation: product.observation ?? '',
+      existingImages: normalizeImageSlots(product.images),
+      newImages: Array(MAX_IMAGES).fill(null)
+    };
+
+    try {
+      await onUpdate(payload);
+    } catch (updateError) {
+      alert(updateError instanceof Error ? updateError.message : 'Erro ao atualizar.');
     } finally {
       setStatusUpdatingId(null);
     }
@@ -569,12 +642,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {Array.from({ length: MAX_IMAGES }).map((_, index) => (
                   <label key={`image-input-${index}`} className="block text-[11px] text-gray-400">
-                    Imagem {index + 1}
+                    Imagem/Vídeo {index + 1}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       onChange={(event) => handleFileChange(index, event)}
-                      className="mt-1 w-full bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#1e90c8]"
+                      className="mt-1 w-full bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#1e00c8]"
                     />
                     <label className="mt-2 inline-flex items-center gap-2 text-[10px] text-gray-500">
                       <input
@@ -590,6 +663,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       {existingImages[index] ? (
                         <div className="relative">
                           <img src={existingImages[index] ?? ''} alt={`Imagem ${index + 1}`} className="w-16 h-16 object-cover border border-gray-200" />
+                          {isVideoUrl(existingImages[index]) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                              <Play size={20} fill="white" className="text-white" />
+                            </div>
+                          )}
                           <button
                             type="button"
                             onClick={() => removeExistingImage(index)}
@@ -660,13 +738,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               {products.map(product => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-8 py-4">
-                    <img
-                      src={
-                        product.images.find((image): image is string => Boolean(image)) ??
-                        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'
-                      }
-                      className="w-14 h-14 object-cover shadow-md border-2 border-white"
-                    />
+                    <div className="relative w-14 h-14">
+                      <img
+                        src={
+                          product.images.find((image): image is string => Boolean(image)) ??
+                          'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'
+                        }
+                        className="w-14 h-14 object-cover shadow-md border-2 border-white"
+                      />
+                      {isVideoUrl(product.images.find((image): image is string => Boolean(image)) ?? null) && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <Play size={18} fill="white" className="text-white" />
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
@@ -675,6 +760,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   </td>
                   <td className="px-8 py-4 text-xs text-gray-500">
                     <div className="flex flex-wrap gap-2 mb-3">
+                      {product.isActive === false && (
+                        <span className="px-2 py-1 bg-red-100 text-red-700 font-semibold">
+                          Desabilitado
+                        </span>
+                      )}
                       {product.isFeatured && (
                         <span className="px-2 py-1 bg-[#1e90c8]/10 text-[#1e90c8] font-semibold">
                           Destaque
@@ -685,7 +775,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                           Promoção
                         </span>
                       )}
-                      {!product.isFeatured && !product.isPromo && <span>—</span>}
+                      {product.isActive !== false && !product.isFeatured && !product.isPromo && <span>—</span>}
                     </div>
                     {product.isPromo && product.promoPrice ? (
                       <p className="text-[11px] text-green-700 font-semibold">
@@ -697,22 +787,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         <input
                           type="checkbox"
                           checked={product.isFeatured}
-                          disabled={statusUpdatingId === product.id}
+                          disabled={statusUpdatingId === product.id || product.isActive === false}
                           onChange={() => handleStatusToggle(product, 'isFeatured')}
-                          className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                          className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8] disabled:opacity-50"
                         />
-                        Destaque
+                        <span className={product.isActive === false ? 'opacity-50' : ''}>Destaque</span>
                       </label>
                       {product.isPromo && (
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
                             checked={product.isPromo}
-                            disabled={statusUpdatingId === product.id}
+                            disabled={statusUpdatingId === product.id || product.isActive === false}
                             onChange={() => handleStatusToggle(product, 'isPromo')}
-                            className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8]"
+                            className="h-4 w-4 border-gray-300 text-[#1e90c8] focus:ring-[#1e90c8] disabled:opacity-50"
                           />
-                          Promoção
+                          <span className={product.isActive === false ? 'opacity-50' : ''}>Promoção</span>
                         </label>
                       )}
                     </div>
@@ -726,10 +816,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       {product.images.map((image, index) => (
                         <div
                           key={`${product.id}-slot-${index}`}
-                          className="w-10 h-10 border border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 text-[9px] text-gray-300 font-semibold"
+                          className="w-10 h-10 border border-gray-200 overflow-hidden flex items-center justify-center bg-gray-50 text-[9px] text-gray-300 font-semibold relative"
                         >
                           {image ? (
-                            <img src={image} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
+                            <>
+                              <img src={image} alt={`Imagem ${index + 1}`} className="w-full h-full object-cover" />
+                              {isVideoUrl(image) && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                  <Play size={14} fill="white" className="text-white" />
+                                </div>
+                              )}
+                            </>
                           ) : (
                             index + 1
                           )}
@@ -738,21 +835,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     </div>
                   </td>
                   <td className="px-8 py-4 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button 
+                    <div className="flex justify-end items-center space-x-3">
+                      <button
                         onClick={() => startEdit(product)}
-                        className="p-3 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                        title="Editar item"
+                        disabled={product.isActive === false}
+                        className={`p-3 rounded-xl transition-all ${
+                          product.isActive === false
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-blue-400 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                        title={product.isActive === false ? "Item desabilitado" : "Editar item"}
                       >
                         <Edit2 size={18} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => onDelete(product.id)}
                         className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                         title="Excluir item"
                       >
                         <Trash2 size={18} />
                       </button>
+                      <label className="flex items-center gap-2 text-[11px] text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={product.isActive !== false}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleActiveToggle(product)}
+                          className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        Ativo
+                      </label>
                     </div>
                   </td>
                 </tr>

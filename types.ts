@@ -7,6 +7,7 @@ export interface Product {
   promoPrice?: number | null;
   isPromo?: boolean;
   isFeatured?: boolean;
+  isActive?: boolean;
   sizes: string[];
   images: Array<string | null>;
   observation?: string | null;
@@ -23,6 +24,7 @@ export interface ProductUpsertPayload {
   promoPrice?: number | null;
   isPromo?: boolean;
   isFeatured?: boolean;
+  isActive?: boolean;
   sizes: string[];
   observation?: string;
   existingImages: Array<string | null>;

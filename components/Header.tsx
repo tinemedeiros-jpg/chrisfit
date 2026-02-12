@@ -17,21 +17,8 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
       }}
     >
       <div className="container mx-auto px-6 py-10 relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight brand-font">Chris Fit</h1>
-
-          <div className="w-full md:max-w-xl relative group">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/70 group-focus-within:text-white transition-colors">
-              <Search size={20} />
-            </div>
-            <input
-              type="text"
-              placeholder="Buscar no catálogo (nome ou código)..."
-              value={searchTerm}
-              onChange={(event) => onSearchChange(event.target.value)}
-              className="w-full bg-white/20 border border-white/30 focus:border-white/60 outline-none rounded-full py-3 pl-12 pr-4 placeholder:text-white/60 text-white shadow-lg transition-all"
-            />
-          </div>
+        <div className="flex items-center justify-between">
+          <h1 className="font-semibold tracking-tight brand-font" style={{ fontSize: '4.06875rem', lineHeight: '1' }}>Chris Fit</h1>
 
           <a
             href="https://wa.me/5511963554043"

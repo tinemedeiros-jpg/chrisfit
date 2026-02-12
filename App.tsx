@@ -32,7 +32,7 @@ const App: React.FC = () => {
     const { data, error: fetchError } = await supabase
       .from('products')
       .select(
-        'id, code, name, price, promo_price, is_promo, is_featured, sizes, observation, created_at, product_images ( url, position )'
+        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, observation, created_at, product_images ( url, position )'
       )
       .order('created_at', { ascending: false });
 
@@ -64,6 +64,7 @@ const App: React.FC = () => {
               : null,
         isPromo: Boolean(product.is_promo),
         isFeatured: Boolean(product.is_featured),
+        isActive: product.is_active !== false,
         sizes: Array.isArray(product.sizes) ? product.sizes : [],
         images,
         observation: product.observation ?? null,
@@ -179,6 +180,7 @@ const App: React.FC = () => {
         promo_price: payload.promoPrice ?? null,
         is_promo: payload.isPromo ?? false,
         is_featured: payload.isFeatured ?? false,
+        is_active: payload.isActive ?? true,
         sizes: payload.sizes,
         observation: payload.observation ?? null
       })
@@ -212,6 +214,7 @@ const App: React.FC = () => {
         promo_price: payload.promoPrice ?? null,
         is_promo: payload.isPromo ?? false,
         is_featured: payload.isFeatured ?? false,
+        is_active: payload.isActive ?? true,
         sizes: payload.sizes,
         observation: payload.observation ?? null
       })
@@ -242,7 +245,7 @@ const App: React.FC = () => {
 
       <main className="flex-grow bg-white">
         {viewMode === 'catalog' ? (
-          <Catalog products={products} isLoading={isLoading} error={error} searchTerm={searchTerm} />
+          <Catalog products={products} isLoading={isLoading} error={error} searchTerm={searchTerm} onSearchChange={setSearchTerm} />
         ) : (
           <AdminPanel 
             products={products} 
