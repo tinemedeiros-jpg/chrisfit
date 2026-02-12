@@ -15,17 +15,36 @@ interface CatalogProps {
 
 const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm, onSearchChange }) => {
   const [activeModal, setActiveModal] = useState<{ product: Product; image: string; initialImage: string } | null>(null);
+  const [sortOrder, setSortOrder] = useState<'code' | 'name' | 'recent' | 'promo'>('code');
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter(
-        (product) =>
-          product.isActive !== false &&
-          (product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.code.includes(searchTerm))
-      ),
-    [products, searchTerm]
-  );
+  const filteredProducts = useMemo(() => {
+    const filtered = products.filter(
+      (product) =>
+        product.isActive !== false &&
+        (product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.code.includes(searchTerm))
+    );
+
+    // Aplica ordenação
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortOrder) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'recent':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'promo':
+          // Promoções primeiro, depois por código
+          if (a.isPromo && !b.isPromo) return -1;
+          if (!a.isPromo && b.isPromo) return 1;
+          return a.code.localeCompare(b.code);
+        case 'code':
+        default:
+          return a.code.localeCompare(b.code);
+      }
+    });
+
+    return sorted;
+  }, [products, searchTerm, sortOrder]);
   const featuredProducts = useMemo(
     () => products.filter((product) => product.isFeatured && product.isActive !== false),
     [products]
@@ -515,6 +534,26 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               onChange={(event) => onSearchChange(event.target.value)}
               className="w-full bg-white border border-[#D05B92]/30 focus:border-[#D05B92] outline-none rounded-full py-3 pl-12 pr-4 placeholder:text-gray-400 text-[#0f1c2e] shadow-sm transition-all"
             />
+          </div>
+        </div>
+
+        {/* Dropdown de ordenação */}
+        <div className="mb-6 flex justify-end">
+          <div className="relative">
+            <label htmlFor="sort-order" className="text-xs text-[#BA4680] uppercase tracking-wider mr-3">
+              Ordenar por:
+            </label>
+            <select
+              id="sort-order"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'code' | 'name' | 'recent' | 'promo')}
+              className="bg-white border border-[#D05B92]/30 text-[#BA4680] rounded-full px-4 py-2 text-sm font-semibold focus:outline-none focus:border-[#D05B92] cursor-pointer shadow-sm hover:shadow-md transition-all"
+            >
+              <option value="code">Código</option>
+              <option value="name">Nome</option>
+              <option value="recent">Mais Recente</option>
+              <option value="promo">Promoções</option>
+            </select>
           </div>
         </div>
 
