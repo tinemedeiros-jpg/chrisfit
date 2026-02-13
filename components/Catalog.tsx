@@ -93,6 +93,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     if (!featuredDisplay.length) return [];
     return featuredDisplay.map((_, offset) => featuredDisplay[(activeFeaturedIndex + offset) % featuredDisplay.length]);
   }, [featuredDisplay, activeFeaturedIndex]);
+  const activeFeaturedImage = featuredLayers[0]?.images?.find(
+    (image): image is string => Boolean(image)
+  ) ?? null;
   // Geometria para 15° de inclinação
   // Para altura de 360px: offset = 360 * tan(15°) ≈ 96px
   // Em porcentagem da largura da coluna (~467px em tela 1400px): 96/467 ≈ 20.5%
@@ -116,13 +119,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   // Controla play/pause dos vídeos no carousel featured
   useEffect(() => {
     // Play nos vídeos ativos (displayIndex)
-    if (floatingVideoRef.current && isVideoUrl(activeFeaturedImage || null)) {
+    if (floatingVideoRef.current && isVideoUrl(activeFeaturedImage)) {
       floatingVideoRef.current.play().catch(() => {});
     }
-    if (mainVideoRef.current && isVideoUrl(activeFeaturedImage || null)) {
+    if (mainVideoRef.current && isVideoUrl(activeFeaturedImage)) {
       mainVideoRef.current.play().catch(() => {});
     }
-  }, [activeFeaturedImage, displayIndex, featuredLayers]);
+  }, [activeFeaturedImage, displayIndex]);
 
   const sideImages = featuredLayers
     .slice(1)
