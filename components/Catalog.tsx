@@ -93,10 +93,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     if (!featuredDisplay.length) return [];
     return featuredDisplay.map((_, offset) => featuredDisplay[(activeFeaturedIndex + offset) % featuredDisplay.length]);
   }, [featuredDisplay, activeFeaturedIndex]);
-  const activeFeaturedImage = featuredLayers[0]?.images?.find(
-    (image): image is string => Boolean(image)
-  );
-
   // Geometria para 15° de inclinação
   // Para altura de 360px: offset = 360 * tan(15°) ≈ 96px
   // Em porcentagem da largura da coluna (~467px em tela 1400px): 96/467 ≈ 20.5%
