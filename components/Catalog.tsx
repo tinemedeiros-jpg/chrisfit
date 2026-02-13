@@ -746,7 +746,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
             {/* Lado esquerdo: Imagem com tag de código */}
             <div
-              className="relative flex-shrink-0 w-full aspect-[9/16] h-[min(58vh,760px)] max-h-[calc(96vh-12rem)] lg:h-full lg:max-h-none"
+              className="relative flex-shrink-0 w-full lg:w-auto aspect-[9/16] h-[min(58vh,760px)] max-h-[calc(96vh-12rem)] lg:h-full lg:max-h-none"
             >
               {/* Tag de código - aba externa superior esquerda */}
               <div className="absolute -left-3 top-6 z-30">
