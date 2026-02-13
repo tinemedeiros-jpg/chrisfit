@@ -291,7 +291,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </button>
 
-                <div className="relative z-10 text-center text-white px-5 pb-5">
+                <div className="relative z-10 text-center text-white px-5 pb-5 flex flex-col items-center">
                   <p className="uppercase tracking-[0.35em] text-[10px] text-white/85 mb-2">destaques</p>
                   <h3 className="text-lg font-semibold leading-tight">
                     {featuredDisplay[activeFeaturedIndex]?.name}
