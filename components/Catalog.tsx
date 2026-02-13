@@ -300,7 +300,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 })()}
               </div>
 
-              {/* 4 COLUNAS: 40% | 20% | 20% | 20% */}
+              {/* 3 COLUNAS: 40% | 20% | 40% */}
               <div className="flex h-full">
                 {/* COLUNA 1: TEXTO - 40% dividida em 4 linhas */}
                 <div className="w-[40%] flex flex-col px-10">
@@ -435,8 +435,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   })()}
                 </div>
 
-                {/* COLUNA 3: FILA DE IMAGENS - 20% */}
-                <div className="w-[20%] flex">
+                {/* COLUNA 3: FILA DE IMAGENS - 40% */}
+                <div className="w-[40%] flex">
                   {featuredLayers.slice(1).map((product, idx) => {
                     const image = product.images?.find((img): img is string => Boolean(img));
                     const nextProduct = nextLayers[idx + 1]; // Usa nextLayers para próximas
@@ -520,8 +520,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   })}
                 </div>
 
-                {/* COLUNA 4: VAZIA - 20% */}
-                <div className="w-[20%]" />
               </div>
 
               {/* Dots do carrossel */}
