@@ -61,6 +61,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const floatingVideoRef = React.useRef<HTMLVideoElement | null>(null);
   const mainVideoRef = React.useRef<HTMLVideoElement | null>(null);
   const queueVideoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
+  const floatingMediaContainerRef = useRef<HTMLDivElement | null>(null);
+  const featuredTextColumnRef = useRef<HTMLDivElement | null>(null);
+  const [forceMinimalFeaturedLayout, setForceMinimalFeaturedLayout] = useState(false);
 
   // Detecta mudança no índice e anima (mas não na primeira vez)
   useEffect(() => {
@@ -118,6 +121,46 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
   // Controla play/pause dos vídeos no carousel featured
   useEffect(() => {
+    const evaluateFeaturedLayout = () => {
+      if (typeof window === 'undefined') return;
+
+      if (window.innerWidth < 768) {
+        setForceMinimalFeaturedLayout(false);
+        return;
+      }
+
+      const floatingRect = floatingMediaContainerRef.current?.getBoundingClientRect();
+      const textRect = featuredTextColumnRef.current?.getBoundingClientRect();
+
+      if (!floatingRect || !textRect) {
+        setForceMinimalFeaturedLayout(false);
+        return;
+      }
+
+      const isTouchingRightViewportEdge = floatingRect.right >= window.innerWidth - 1;
+      const isAboveTextColumn = floatingRect.bottom <= textRect.top;
+
+      setForceMinimalFeaturedLayout(isTouchingRightViewportEdge && isAboveTextColumn);
+    };
+
+    evaluateFeaturedLayout();
+
+    const observer = new ResizeObserver(() => {
+      evaluateFeaturedLayout();
+    });
+
+    if (floatingMediaContainerRef.current) observer.observe(floatingMediaContainerRef.current);
+    if (featuredTextColumnRef.current) observer.observe(featuredTextColumnRef.current);
+
+    window.addEventListener('resize', evaluateFeaturedLayout);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', evaluateFeaturedLayout);
+    };
+  }, [activeFeaturedIndex, displayIndex, isAnimating]);
+
+  useEffect(() => {
     // Play nos vídeos ativos (displayIndex)
     if (floatingVideoRef.current && isVideoUrl(activeFeaturedImage)) {
       floatingVideoRef.current.play().catch(() => {});
@@ -166,7 +209,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
             >
-              <div className="md:hidden h-full p-5 flex flex-col justify-between">
+              <div className={`${forceMinimalFeaturedLayout ? 'block' : 'md:hidden'} h-full p-5 flex flex-col justify-between`}>
                 <button
                   type="button"
                   onClick={() => {
@@ -211,9 +254,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 </div>
               </div>
 
-              <div className="hidden md:block h-full">
+              <div className={`${forceMinimalFeaturedLayout ? 'hidden' : 'hidden md:block'} h-full`}>
               {/* IMAGEM FLUTUANTE - sobre a faixa, alinhada à coluna 2 */}
               <div
+                ref={floatingMediaContainerRef}
                 className="absolute bottom-0 overflow-hidden"
                 style={{
                   left: '50%',
@@ -303,7 +347,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               {/* 3 COLUNAS: 40% | 20% | 40% */}
               <div className="flex h-full">
                 {/* COLUNA 1: TEXTO - 40% dividida em 4 linhas */}
-                <div className="w-[40%] flex flex-col px-10">
+                <div ref={featuredTextColumnRef} className="w-[40%] flex flex-col px-10">
                   {/* LINHA 1: Destaques - 15% */}
                   <div className="h-[15%] flex items-center justify-end text-right pt-[30px]">
                     <p className="uppercase tracking-[0.4em] text-xs text-white/90">destaques</p>
