@@ -215,6 +215,21 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
   const closeModal = () => setActiveModal(null);
 
+  useEffect(() => {
+    if (!activeModal) return undefined;
+
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [activeModal]);
+
   const formatCurrency = (value: number) =>
     `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
@@ -732,7 +747,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
           />
           {/* Modal fixa e responsiva: mantém campo 9:16 sem estourar viewport */}
           <div
-            className="relative z-[1201] shadow-2xl overflow-hidden bg-[#f4fbff] w-full max-w-[1320px] max-h-[96vh] lg:h-[min(92vh,920px)] flex flex-col lg:flex-row"
+            className="relative z-[1201] shadow-2xl overflow-y-auto lg:overflow-hidden bg-[#f4fbff] w-full max-w-[1320px] max-h-[96vh] lg:h-[min(92vh,920px)] flex flex-col lg:flex-row"
           >
             {/* Botão fechar - sobreposto à mídia no compacto */}
             <button
@@ -803,7 +818,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             <div className="relative bg-[#f4fbff] flex flex-col w-full lg:flex-1 lg:min-w-[420px] lg:rounded-tr-[2rem]">
 
               {/* Conteúdo scrollável */}
-              <div className="flex-1 overflow-y-auto p-5 lg:p-8 pt-14 lg:pt-16 flex flex-col">
+              <div
+                className="flex-1 overflow-y-auto p-5 lg:p-8 pt-14 lg:pt-16 flex flex-col"
+                style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+              >
                 {/* Nome do produto */}
                 <div className="mb-4">
                   <h3 className="text-xl lg:text-2xl font-semibold text-[#BA4680]">{activeModal.product.name}</h3>
