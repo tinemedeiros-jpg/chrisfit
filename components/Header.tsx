@@ -16,9 +16,9 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
         zIndex: 100
       }}
     >
-      <div className="container mx-auto px-6 py-10 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 relative z-10">
         <div className="flex items-center justify-between">
-          <h1 className="font-semibold tracking-tight brand-font" style={{ fontSize: '4.06875rem', lineHeight: '1' }}>Chris Fit</h1>
+          <h1 className="font-semibold tracking-tight brand-font text-[2.7rem] sm:text-[4.06875rem] leading-none">Chris Fit</h1>
 
           <a
             href="https://wa.me/5511963554043"
