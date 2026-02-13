@@ -277,6 +277,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               <div className={`${forceMinimalFeaturedLayout ? 'hidden' : 'hidden md:block'} h-full`}>
               {/* IMAGEM FLUTUANTE - sobre a faixa, alinhada à coluna 2 */}
               <div
+                ref={floatingMediaContainerRef}
                 className="absolute bottom-0 overflow-hidden"
                 style={{
                   left: '50%',
@@ -366,7 +367,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               {/* 3 COLUNAS: 40% | 20% | 40% */}
               <div className="flex h-full">
                 {/* COLUNA 1: TEXTO - 40% dividida em 4 linhas */}
-                <div className="w-[40%] flex flex-col px-10">
+                <div ref={featuredTextColumnRef} className="w-[40%] flex flex-col px-10">
                   {/* LINHA 1: Destaques - 15% */}
                   <div className="h-[15%] flex items-center justify-end text-right pt-[30px]">
                     <p className="uppercase tracking-[0.4em] text-xs text-white/90">destaques</p>
