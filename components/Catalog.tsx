@@ -211,7 +211,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 </div>
               </div>
 
-              <div className="hidden md:block">
+              <div className="hidden md:block h-full">
               {/* IMAGEM FLUTUANTE - sobre a faixa, alinhada à coluna 2 */}
               <div
                 className="absolute bottom-0 overflow-hidden"
