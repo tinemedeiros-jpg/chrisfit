@@ -234,14 +234,35 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
           {hasFeatured ? (
             <div
               ref={featuredLayoutContainerRef}
-              className="relative w-full h-[320px] md:h-[360px] bg-[#BA4680]"
-              style={{
-                boxShadow: '0 -10px 25px rgba(0,0,0,0.3)'
-              }}
+              className="relative w-full h-[320px] md:h-[360px] bg-[#BA4680] md:[box-shadow:0_-10px_25px_rgba(0,0,0,0.3)]"
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
             >
-              <div className={`${forceMinimalFeaturedLayout ? 'block' : 'md:hidden'} h-full p-5 flex flex-col justify-between`}>
+              <div className={`${forceMinimalFeaturedLayout ? 'block' : 'md:hidden'} relative h-full overflow-hidden flex flex-col justify-between`}>
+                {activeFeaturedImage && (
+                  <div className="absolute inset-0 z-0 pointer-events-none">
+                    {isVideoUrl(activeFeaturedImage) ? (
+                      <video
+                        src={activeFeaturedImage}
+                        className="h-full w-full object-cover blur-sm brightness-75 scale-110"
+                        muted
+                        loop
+                        playsInline
+                        autoPlay
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={activeFeaturedImage}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-full w-full object-cover blur-sm brightness-75 scale-110"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-[#BA4680]/40" />
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
@@ -249,7 +270,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     const img = activeProduct?.images?.find((i): i is string => Boolean(i));
                     if (img && activeProduct) openModal(activeProduct, img);
                   }}
-                  className="relative mx-auto h-[190px] w-[107px] overflow-hidden shadow-xl"
+                  className="relative z-10 mx-auto h-[190px] w-[107px] overflow-hidden shadow-xl"
                 >
                   {activeFeaturedImage && isVideoUrl(activeFeaturedImage) ? (
                     <video
@@ -270,7 +291,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   )}
                 </button>
 
-                <div className="text-center text-white">
+                <div className="relative z-10 text-center text-white px-5 pb-5">
                   <p className="uppercase tracking-[0.35em] text-[10px] text-white/85 mb-2">destaques</p>
                   <h3 className="text-lg font-semibold leading-tight">
                     {featuredDisplay[activeFeaturedIndex]?.name}
