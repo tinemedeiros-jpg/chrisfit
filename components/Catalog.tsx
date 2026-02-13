@@ -62,6 +62,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const mainVideoRef = React.useRef<HTMLVideoElement | null>(null);
   const queueVideoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
   const featuredLayoutContainerRef = useRef<HTMLDivElement | null>(null);
+  const floatingMediaContainerRef = useRef<HTMLDivElement | null>(null);
+  const featuredTextColumnRef = useRef<HTMLDivElement | null>(null);
   const [forceMinimalFeaturedLayout, setForceMinimalFeaturedLayout] = useState(false);
 
   // Detecta mudança no índice e anima (mas não na primeira vez)
