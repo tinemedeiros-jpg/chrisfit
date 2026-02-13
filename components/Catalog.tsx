@@ -66,6 +66,17 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const featuredTextColumnRef = useRef<HTMLDivElement | null>(null);
   const [forceMinimalFeaturedLayout, setForceMinimalFeaturedLayout] = useState(false);
 
+  const setFeaturedIndex = (index: number) => {
+    setActiveFeaturedIndex(index);
+
+    // Na primeira interação manual, aplica a troca imediatamente para não parecer travado.
+    if (!hasStartedCarousel) {
+      setDisplayIndex(index);
+      setHasStartedCarousel(true);
+      setIsAnimating(false);
+    }
+  };
+
   // Detecta mudança no índice e anima (mas não na primeira vez)
   useEffect(() => {
     if (!hasFeatured || featuredDisplay.length <= 1 || !hasStartedCarousel) return;
@@ -144,7 +155,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
         floatingRect.top < textRect.bottom &&
         floatingRect.bottom > textRect.top;
 
-      const shouldUseMinimal = isTouchingRightViewportEdge && overlapsTextColumn;
+      const shouldUseMinimal = window.innerWidth < 1200 || overlapsTextColumn || isTouchingRightViewportEdge;
       setForceMinimalFeaturedLayout((current) =>
         current === shouldUseMinimal ? current : shouldUseMinimal
       );
@@ -222,8 +233,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 <button
                   type="button"
                   onClick={() => {
-                    const img = featuredDisplay[activeFeaturedIndex]?.images?.find((i): i is string => Boolean(i));
-                    if (img) openModal(featuredDisplay[activeFeaturedIndex], img);
+                    const activeProduct = featuredLayers[0] ?? featuredDisplay[activeFeaturedIndex];
+                    const img = activeProduct?.images?.find((i): i is string => Boolean(i));
+                    if (img && activeProduct) openModal(activeProduct, img);
                   }}
                   className="relative mx-auto h-[190px] w-[107px] overflow-hidden shadow-xl"
                 >
@@ -269,8 +281,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 ref={floatingMediaContainerRef}
                 className="absolute bottom-0 overflow-hidden"
                 style={{
-                  left: '50%',
-                  transform: 'translateX(-50%) translateY(20px) rotate(4deg)',
+                  right: 'max(16px, 8%)',
+                  transform: 'translateY(20px) rotate(4deg)',
                   width: '270.6px',
                   height: '480.7px',
                   zIndex: 1100,
@@ -505,7 +517,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           onClick={() => {
                             const targetIndex = featuredDisplay.findIndex((p) => p.id === product.id);
                             if (targetIndex >= 0) {
-                              setActiveFeaturedIndex(targetIndex);
+                              setFeaturedIndex(targetIndex);
                             }
                           }}
                           className="absolute inset-0 w-full h-full"
@@ -538,7 +550,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                             onClick={() => {
                               const targetIndex = featuredDisplay.findIndex((p) => p.id === nextProduct.id);
                               if (targetIndex >= 0) {
-                                setActiveFeaturedIndex(targetIndex);
+                                setFeaturedIndex(targetIndex);
                               }
                             }}
                             className="absolute inset-0 w-full h-full"
@@ -582,7 +594,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     <button
                       key={`${product.id}-dot-${index}`}
                       type="button"
-                      onClick={() => setActiveFeaturedIndex(index)}
+                      onClick={() => setFeaturedIndex(index)}
                       className={`h-1 transition-all duration-300 ${
                         index === activeFeaturedIndex
                           ? 'bg-white w-6'
