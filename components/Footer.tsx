@@ -30,7 +30,7 @@ const Footer: React.FC = () => {
               <span>•</span>
               <span>Performance</span>
               <span>•</span>
-              <span>Entrega rápida</span>
+              <span>Entrega agendada</span>
             </div>
           </div>
 
