@@ -93,10 +93,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     if (!featuredDisplay.length) return [];
     return featuredDisplay.map((_, offset) => featuredDisplay[(activeFeaturedIndex + offset) % featuredDisplay.length]);
   }, [featuredDisplay, activeFeaturedIndex]);
-  const activeFeaturedImage = featuredLayers[0]?.images?.find(
-    (image): image is string => Boolean(image)
-  );
-
   // Geometria para 15° de inclinação
   // Para altura de 360px: offset = 360 * tan(15°) ≈ 96px
   // Em porcentagem da largura da coluna (~467px em tela 1400px): 96/467 ≈ 20.5%
@@ -515,7 +511,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       </section>
 
       <section className="container mx-auto mb-10 px-4 py-10" id="catalogo">
-        <div className="mb-8 flex items-center justify-between gap-6">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <p className="uppercase tracking-[0.4em] text-xs text-[#D05B92] font-semibold">
               catálogo completo
@@ -523,7 +519,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             <h3 className="text-3xl font-semibold text-[#0f1c2e]">Escolha o look ideal</h3>
           </div>
 
-          <div className="w-full max-w-md relative group">
+          <div className="w-full md:max-w-md relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#D05B92]/70 group-focus-within:text-[#D05B92] transition-colors">
               <Search size={20} />
             </div>
@@ -582,16 +578,25 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       </section>
 
       {activeModal && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-8" role="dialog">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-2 sm:p-4 lg:p-8" role="dialog">
           <div
             className="absolute inset-0 bg-black/70"
             onClick={closeModal}
             aria-hidden="true"
           />
-          {/* Modal: altura máxima para imagem 9:16 com respiro */}
-          <div className="relative flex shadow-2xl z-[1201] max-h-full">
+          {/* Modal fixa e responsiva: mantém campo 9:16 sem estourar viewport */}
+          <div
+            className="relative z-[1201] shadow-2xl overflow-hidden bg-[#f4fbff] w-full max-w-[1120px] max-h-[95vh] lg:max-h-[calc(100vh-3rem)] flex flex-col lg:flex-row"
+          >
             {/* Lado esquerdo: Imagem com tag de código */}
-            <div className="relative flex-shrink-0" style={{ aspectRatio: '9/16' }}>
+            <div
+              className="relative flex-shrink-0 w-full lg:w-auto"
+              style={{
+                aspectRatio: '9/16',
+                height: 'min(56vh, 720px)',
+                maxHeight: 'calc(95vh - 12rem)'
+              }}
+            >
               {/* Tag de código - aba externa superior esquerda */}
               <div className="absolute -left-3 top-6 z-30">
                 <div className="bg-[#D05B92] px-4 py-2 shadow-lg">
@@ -644,28 +649,22 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             </div>
 
             {/* Lado direito: Área branca com informações */}
-            <div
-              className="relative bg-[#f4fbff] flex flex-col rounded-tr-[2rem]"
-              style={{
-                width: 'calc((100vh - 4rem) * 9 / 16)',
-                maxWidth: '600px'
-              }}
-            >
+            <div className="relative bg-[#f4fbff] flex flex-col w-full lg:min-w-[360px] lg:max-w-[520px] lg:rounded-tr-[2rem]">
               {/* Botão fechar - canto superior direito */}
               <button
                 type="button"
                 onClick={closeModal}
-                className="absolute top-6 right-6 h-9 w-9 rounded-full bg-[#D05B92] flex items-center justify-center hover:brightness-110 transition z-10"
+                className="absolute top-4 right-4 lg:top-6 lg:right-6 h-9 w-9 rounded-full bg-[#D05B92] flex items-center justify-center hover:brightness-110 transition z-10"
                 aria-label="Fechar"
               >
                 <X size={16} className="text-white" />
               </button>
 
               {/* Conteúdo scrollável */}
-              <div className="flex-1 overflow-y-auto p-8 pt-16 flex flex-col">
+              <div className="flex-1 overflow-y-auto p-5 lg:p-8 pt-14 lg:pt-16 flex flex-col">
                 {/* Nome do produto */}
                 <div className="mb-4">
-                  <h3 className="text-2xl font-semibold text-[#BA4680]">{activeModal.product.name}</h3>
+                  <h3 className="text-xl lg:text-2xl font-semibold text-[#BA4680]">{activeModal.product.name}</h3>
                 </div>
 
                 {/* Preço */}
