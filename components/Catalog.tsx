@@ -61,6 +61,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const floatingVideoRef = React.useRef<HTMLVideoElement | null>(null);
   const mainVideoRef = React.useRef<HTMLVideoElement | null>(null);
   const queueVideoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
+  const featuredLayoutContainerRef = useRef<HTMLDivElement | null>(null);
+  const floatingMediaContainerRef = useRef<HTMLDivElement | null>(null);
+  const featuredTextColumnRef = useRef<HTMLDivElement | null>(null);
+  const [forceMinimalFeaturedLayout, setForceMinimalFeaturedLayout] = useState(false);
 
   // Detecta mudança no índice e anima (mas não na primeira vez)
   useEffect(() => {
@@ -118,6 +122,53 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
   // Controla play/pause dos vídeos no carousel featured
   useEffect(() => {
+    const evaluateFeaturedLayout = () => {
+      if (typeof window === 'undefined') return;
+
+      if (window.innerWidth < 768) {
+        setForceMinimalFeaturedLayout(false);
+        return;
+      }
+
+      const floatingRect = floatingMediaContainerRef.current?.getBoundingClientRect();
+      const textRect = featuredTextColumnRef.current?.getBoundingClientRect();
+
+      // Quando o desktop está oculto pelo fallback, os refs podem ficar sem dimensão.
+      // Nesses casos, mantém o estado atual para evitar oscilação/flicker.
+      if (!floatingRect || !textRect || floatingRect.width === 0 || textRect.width === 0) return;
+
+      const isTouchingRightViewportEdge = floatingRect.right >= window.innerWidth - 2;
+      const overlapsTextColumn =
+        floatingRect.left < textRect.right &&
+        floatingRect.right > textRect.left &&
+        floatingRect.top < textRect.bottom &&
+        floatingRect.bottom > textRect.top;
+
+      const shouldUseMinimal = isTouchingRightViewportEdge && overlapsTextColumn;
+      setForceMinimalFeaturedLayout((current) =>
+        current === shouldUseMinimal ? current : shouldUseMinimal
+      );
+    };
+
+    evaluateFeaturedLayout();
+
+    const observer = new ResizeObserver(() => {
+      evaluateFeaturedLayout();
+    });
+
+    if (featuredLayoutContainerRef.current) observer.observe(featuredLayoutContainerRef.current);
+    if (floatingMediaContainerRef.current) observer.observe(floatingMediaContainerRef.current);
+    if (featuredTextColumnRef.current) observer.observe(featuredTextColumnRef.current);
+
+    window.addEventListener('resize', evaluateFeaturedLayout);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', evaluateFeaturedLayout);
+    };
+  }, []);
+
+  useEffect(() => {
     // Play nos vídeos ativos (displayIndex)
     if (floatingVideoRef.current && isVideoUrl(activeFeaturedImage)) {
       floatingVideoRef.current.play().catch(() => {});
@@ -159,6 +210,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
         <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] bg-[#BA4680]">
           {hasFeatured ? (
             <div
+              ref={featuredLayoutContainerRef}
               className="relative w-full h-[320px] md:h-[360px] bg-[#BA4680]"
               style={{
                 boxShadow: '0 -10px 25px rgba(0,0,0,0.3)'
@@ -166,7 +218,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
             >
-              <div className="md:hidden h-full p-5 flex flex-col justify-between">
+              <div className={`${forceMinimalFeaturedLayout ? 'block' : 'md:hidden'} h-full p-5 flex flex-col justify-between`}>
                 <button
                   type="button"
                   onClick={() => {
@@ -211,9 +263,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 </div>
               </div>
 
-              <div className="hidden md:block h-full">
+              <div className={`${forceMinimalFeaturedLayout ? 'hidden' : 'hidden md:block'} h-full`}>
               {/* IMAGEM FLUTUANTE - sobre a faixa, alinhada à coluna 2 */}
               <div
+                ref={floatingMediaContainerRef}
                 className="absolute bottom-0 overflow-hidden"
                 style={{
                   left: '50%',
@@ -303,7 +356,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               {/* 3 COLUNAS: 40% | 20% | 40% */}
               <div className="flex h-full">
                 {/* COLUNA 1: TEXTO - 40% dividida em 4 linhas */}
-                <div className="w-[40%] flex flex-col px-10">
+                <div ref={featuredTextColumnRef} className="w-[40%] flex flex-col px-10">
                   {/* LINHA 1: Destaques - 15% */}
                   <div className="h-[15%] flex items-center justify-end text-right pt-[30px]">
                     <p className="uppercase tracking-[0.4em] text-xs text-white/90">destaques</p>
