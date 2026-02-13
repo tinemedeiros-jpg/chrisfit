@@ -1,7 +1,7 @@
 {
   "name": "chris-fit-catalog",
   "private": true,
-  "version": "v0.20260213_1529",
+  "version": "v0.20260213_1544",
   "type": "module",
   "scripts": {
     "dev": "vite",
