@@ -130,30 +130,12 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
         return;
       }
 
-      const containerRect = featuredLayoutContainerRef.current?.getBoundingClientRect();
+      const floatingRect = floatingMediaContainerRef.current?.getBoundingClientRect();
+      const textRect = featuredTextColumnRef.current?.getBoundingClientRect();
 
-      if (!containerRect) {
-        setForceMinimalFeaturedLayout(false);
-        return;
-      }
-
-      const floatingWidth = 270.6;
-      const floatingHeight = 480.7;
-      const floatingTranslateY = 20;
-      const floatingCenterX = containerRect.left + containerRect.width * 0.5;
-      const floatingRect = {
-        left: floatingCenterX - floatingWidth / 2,
-        right: floatingCenterX + floatingWidth / 2,
-        top: containerRect.bottom - floatingHeight + floatingTranslateY,
-        bottom: containerRect.bottom + floatingTranslateY
-      };
-
-      const textRect = {
-        left: containerRect.left,
-        right: containerRect.left + containerRect.width * 0.4,
-        top: containerRect.top,
-        bottom: containerRect.bottom
-      };
+      // Quando o desktop está oculto pelo fallback, os refs podem ficar sem dimensão.
+      // Nesses casos, mantém o estado atual para evitar oscilação/flicker.
+      if (!floatingRect || !textRect || floatingRect.width === 0 || textRect.width === 0) return;
 
       const isTouchingRightViewportEdge = floatingRect.right >= window.innerWidth - 2;
       const overlapsTextColumn =
@@ -162,7 +144,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
         floatingRect.top < textRect.bottom &&
         floatingRect.bottom > textRect.top;
 
-      setForceMinimalFeaturedLayout(isTouchingRightViewportEdge && overlapsTextColumn);
+      const shouldUseMinimal = isTouchingRightViewportEdge && overlapsTextColumn;
+      setForceMinimalFeaturedLayout((current) =>
+        current === shouldUseMinimal ? current : shouldUseMinimal
+      );
     };
 
     evaluateFeaturedLayout();
@@ -172,6 +157,8 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     });
 
     if (featuredLayoutContainerRef.current) observer.observe(featuredLayoutContainerRef.current);
+    if (floatingMediaContainerRef.current) observer.observe(floatingMediaContainerRef.current);
+    if (featuredTextColumnRef.current) observer.observe(featuredTextColumnRef.current);
 
     window.addEventListener('resize', evaluateFeaturedLayout);
 
@@ -179,7 +166,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       observer.disconnect();
       window.removeEventListener('resize', evaluateFeaturedLayout);
     };
-  }, [activeFeaturedIndex, displayIndex, isAnimating]);
+  }, []);
 
   useEffect(() => {
     // Play nos vídeos ativos (displayIndex)
