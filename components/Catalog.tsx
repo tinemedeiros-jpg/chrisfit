@@ -65,6 +65,21 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const floatingMediaContainerRef = useRef<HTMLDivElement | null>(null);
   const featuredTextColumnRef = useRef<HTMLDivElement | null>(null);
   const [forceMinimalFeaturedLayout, setForceMinimalFeaturedLayout] = useState(false);
+  const [floatingCenterX, setFloatingCenterX] = useState<number | null>(null);
+
+  const floatingWidth = 270.6;
+  const floatingSafeGap = 16;
+
+  const setFeaturedIndex = (index: number) => {
+    setActiveFeaturedIndex(index);
+
+    // Na primeira interação manual, aplica a troca imediatamente para não parecer travado.
+    if (!hasStartedCarousel) {
+      setDisplayIndex(index);
+      setHasStartedCarousel(true);
+      setIsAnimating(false);
+    }
+  };
 
   const setFeaturedIndex = (index: number) => {
     setActiveFeaturedIndex(index);
@@ -141,21 +156,27 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
         return;
       }
 
-      const floatingRect = floatingMediaContainerRef.current?.getBoundingClientRect();
+      const containerRect = featuredLayoutContainerRef.current?.getBoundingClientRect();
       const textRect = featuredTextColumnRef.current?.getBoundingClientRect();
 
       // Quando o desktop está oculto pelo fallback, os refs podem ficar sem dimensão.
       // Nesses casos, mantém o estado atual para evitar oscilação/flicker.
-      if (!floatingRect || !textRect || floatingRect.width === 0 || textRect.width === 0) return;
+      if (!containerRect || !textRect || containerRect.width === 0 || textRect.width === 0) return;
 
-      const isTouchingRightViewportEdge = floatingRect.right >= window.innerWidth - 2;
-      const overlapsTextColumn =
-        floatingRect.left < textRect.right &&
-        floatingRect.right > textRect.left &&
-        floatingRect.top < textRect.bottom &&
-        floatingRect.bottom > textRect.top;
+      const textRightInsideContainer = textRect.right - containerRect.left;
+      const preferredCenter = containerRect.width * 0.5;
+      const minCenter = textRightInsideContainer + floatingSafeGap + floatingWidth / 2;
+      const maxCenter = containerRect.width - floatingSafeGap - floatingWidth / 2;
 
-      const shouldUseMinimal = window.innerWidth < 1200 || overlapsTextColumn || isTouchingRightViewportEdge;
+      const clampedCenter = Math.max(Math.min(preferredCenter, maxCenter), minCenter);
+      const boundedCenter = Number.isFinite(clampedCenter) ? clampedCenter : preferredCenter;
+      setFloatingCenterX((current) => (current === boundedCenter ? current : boundedCenter));
+
+      const projectedLeft = boundedCenter - floatingWidth / 2;
+      const touchesRightEdge = boundedCenter >= maxCenter - 1;
+      const invadesTextColumn = projectedLeft < textRightInsideContainer;
+
+      const shouldUseMinimal = touchesRightEdge && invadesTextColumn;
       setForceMinimalFeaturedLayout((current) =>
         current === shouldUseMinimal ? current : shouldUseMinimal
       );
@@ -177,7 +198,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
       observer.disconnect();
       window.removeEventListener('resize', evaluateFeaturedLayout);
     };
-  }, []);
+  }, [floatingSafeGap, floatingWidth]);
 
   useEffect(() => {
     // Play nos vídeos ativos (displayIndex)
@@ -281,9 +302,9 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 ref={floatingMediaContainerRef}
                 className="absolute bottom-0 overflow-hidden"
                 style={{
-                  right: 'max(16px, 8%)',
-                  transform: 'translateY(20px) rotate(4deg)',
-                  width: '270.6px',
+                  left: floatingCenterX !== null ? `${floatingCenterX}px` : '50%',
+                  transform: 'translateX(-50%) translateY(20px) rotate(4deg)',
+                  width: `${floatingWidth}px`,
                   height: '480.7px',
                   zIndex: 1100,
                   boxShadow: '-2px -4px 15px rgba(0,0,0,0.25), 4px 8px 35px rgba(0,0,0,0.4)'
