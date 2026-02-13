@@ -16,7 +16,7 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
-const ADMIN_VERSION = 'v0.20260207_0141';
+const ADMIN_VERSION = 'v0.20260213_1457';
 
 const sanitizePriceInput = (value: string) => {
   const normalized = value.replace(/\./g, ',').replace(/[^\d,]/g, '');
