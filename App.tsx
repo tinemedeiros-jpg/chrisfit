@@ -5,7 +5,7 @@ import Header from './components/Header';
 import Catalog from './components/Catalog';
 import AdminPanel from './components/AdminPanel';
 import Footer from './components/Footer';
-import { supabase } from './lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from './lib/supabaseClient';
 
 const BUCKET_NAME = 'product-images';
 const MAX_IMAGES = 5;
@@ -27,6 +27,13 @@ const App: React.FC = () => {
   }, []);
 
   const fetchProducts = useCallback(async () => {
+    if (!isSupabaseConfigured) {
+      setProducts([]);
+      setError('Configuração ausente: defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     const { data, error: fetchError } = await supabase
@@ -91,6 +98,10 @@ const App: React.FC = () => {
   }, []);
 
   const uploadImages = async (productId: string, files: Array<{ file: File; position: number }>) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Configuração do Supabase ausente.');
+    }
+
     const uploadedEntries: Array<{ url: string; position: number }> = [];
 
     for (const { file, position } of files) {
@@ -164,6 +175,10 @@ const App: React.FC = () => {
   };
 
   const addProduct = async (payload: ProductUpsertPayload) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Configuração do Supabase ausente.');
+    }
+
     const {
       data: { user }
     } = await supabase.auth.getUser();
@@ -199,6 +214,9 @@ const App: React.FC = () => {
 
   const updateProduct = async (payload: ProductUpsertPayload) => {
     if (!payload.id) return;
+    if (!isSupabaseConfigured) {
+      throw new Error('Configuração do Supabase ausente.');
+    }
     const {
       data: { user }
     } = await supabase.auth.getUser();
@@ -232,6 +250,11 @@ const App: React.FC = () => {
   };
 
   const deleteProduct = async (id: string) => {
+    if (!isSupabaseConfigured) {
+      setError('Configuração do Supabase ausente.');
+      return;
+    }
+
     if (confirm('Deseja realmente excluir este item?')) {
       const { error: deleteError } = await supabase.from('products').delete().eq('id', id);
       if (deleteError) {
