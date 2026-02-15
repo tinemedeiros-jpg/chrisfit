@@ -285,7 +285,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     const img = activeProduct?.images?.find((i): i is string => Boolean(i));
                     if (img && activeProduct) openModal(activeProduct, img);
                   }}
-                  className="relative z-10 mx-auto h-[570px] w-[321px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl"
+                  className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl"
                 >
                   {activeFeaturedImage && isVideoUrl(activeFeaturedImage) ? (
                     <video
