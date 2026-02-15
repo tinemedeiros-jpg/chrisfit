@@ -234,7 +234,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
   const getWhatsAppUrl = (product: Product) => {
-    const whatsappNumber = '5511963554043';
+    const whatsappNumber = '5511968268034';
     const message = encodeURIComponent(
       `Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`
     );
@@ -253,7 +253,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               onMouseEnter={() => setIsCarouselPaused(true)}
               onMouseLeave={() => setIsCarouselPaused(false)}
             >
-              <div className={`${forceMinimalFeaturedLayout ? 'block' : 'md:hidden'} relative h-full overflow-hidden flex flex-col justify-between`}>
+              <div className={`${forceMinimalFeaturedLayout ? 'block' : 'md:hidden'} relative h-full overflow-hidden flex flex-col justify-between shadow-[0_12px_28px_rgba(0,0,0,0.35)]`}>
                 {activeFeaturedImage && (
                   <div className="absolute inset-0 z-0 pointer-events-none">
                     {isVideoUrl(activeFeaturedImage) ? (
@@ -285,7 +285,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     const img = activeProduct?.images?.find((i): i is string => Boolean(i));
                     if (img && activeProduct) openModal(activeProduct, img);
                   }}
-                  className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl"
+                  className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl rounded-br-[2.5rem]"
                 >
                   {activeFeaturedImage && isVideoUrl(activeFeaturedImage) ? (
                     <video
@@ -321,6 +321,10 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       : ''}
                   </p>
                 </div>
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{ boxShadow: 'inset 0 -16px 30px rgba(0,0,0,0.25)' }}
+                />
               </div>
 
               <div className={`${forceMinimalFeaturedLayout ? 'hidden' : 'hidden md:block'} h-full`}>

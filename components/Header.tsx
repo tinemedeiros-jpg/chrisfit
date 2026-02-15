@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
           <h1 className="font-semibold tracking-tight brand-font text-[2.7rem] sm:text-[4.06875rem] leading-none min-w-0">Chris Fit</h1>
 
           <a
-            href="https://wa.me/5511963554043"
+            href="https://wa.me/5511968268034"
             target="_blank"
             className="h-12 w-12 shrink-0 rounded-full border border-white/40 flex items-center justify-center hover:bg-[#f4fbff]/20 transition-colors relative z-20"
             aria-label="Contato no WhatsApp"

@@ -10,7 +10,7 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
-  const whatsappNumber = "5511963554043";
+  const whatsappNumber = "5511968268034";
   const message = encodeURIComponent(`Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
   const availableImages = product.images.filter(

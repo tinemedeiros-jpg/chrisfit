@@ -4,7 +4,7 @@ import { Phone, CreditCard, Copy, Check } from 'lucide-react';
 
 const Footer: React.FC = () => {
   const [copied, setCopied] = useState(false);
-  const pixKey = "11963554043";
+  const pixKey = "11968268034";
 
   const copyPix = () => {
     navigator.clipboard.writeText(pixKey);
@@ -44,7 +44,7 @@ const Footer: React.FC = () => {
                 onClick={copyPix}
                 className="bg-black/40 p-3 flex items-center justify-between cursor-pointer border border-white/10 hover:border-white/30 transition-all group"
               >
-                <span className="text-lg font-mono tracking-widest text-white">(11) 9.6355-4043</span>
+                <span className="text-lg font-mono tracking-widest text-white">(11) 968268034</span>
                 {copied ? (
                   <Check size={18} className="text-white" />
                 ) : (
@@ -59,7 +59,7 @@ const Footer: React.FC = () => {
 
           <div className="flex flex-col items-center md:items-end gap-6">
             <a
-              href="https://wa.me/5511963554043"
+              href="https://wa.me/5511968268034"
               target="_blank"
               className="inline-flex items-center space-x-3 bg-[#BA4680] text-white px-10 py-5 rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl hover:shadow-[#BA4680]/20 border-2 border-white/20"
             >
