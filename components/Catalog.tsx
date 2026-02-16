@@ -4,6 +4,7 @@ import { Product } from '../types';
 import ProductCard from './ProductCard';
 import { X, Search, Play } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
+import PriceText from './PriceText';
 
 interface CatalogProps {
   products: Product[];
@@ -230,9 +231,6 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     };
   }, [activeModal]);
 
-  const formatCurrency = (value: number) =>
-    `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-
   const getWhatsAppUrl = (product: Product) => {
     const whatsappNumber = '5511968268034';
     const message = encodeURIComponent(
@@ -312,13 +310,18 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                     {featuredDisplay[activeFeaturedIndex]?.name}
                   </h3>
                   <p className="text-2xl font-bold mt-2">
-                    {featuredDisplay[activeFeaturedIndex]
-                      ? formatCurrency(
-                          featuredDisplay[activeFeaturedIndex].isPromo && featuredDisplay[activeFeaturedIndex].promoPrice
-                            ? featuredDisplay[activeFeaturedIndex].promoPrice
-                            : featuredDisplay[activeFeaturedIndex].price
-                        )
-                      : ''}
+                    {featuredDisplay[activeFeaturedIndex] ? (
+                      <>
+                        R$ <PriceText
+                          value={
+                            featuredDisplay[activeFeaturedIndex].isPromo && featuredDisplay[activeFeaturedIndex].promoPrice
+                              ? featuredDisplay[activeFeaturedIndex].promoPrice
+                              : featuredDisplay[activeFeaturedIndex].price
+                          }
+                          decimalsClassName="text-[0.33em]"
+                        />
+                      </>
+                    ) : ''}
                   </p>
                 </div>
                 <div
@@ -434,12 +437,12 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                          featuredDisplay[activeFeaturedIndex].promoPrice ? (
                           <>
                             <span className="text-sm text-white/60 line-through">
-                              {formatCurrency(featuredDisplay[activeFeaturedIndex].price)}
+R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassName="text-[0.33em]" />
                             </span>
                             <div className="font-bold leading-none">
                               <span className="text-2xl">R$ </span>
                               <span className="text-6xl">
-                                {featuredDisplay[activeFeaturedIndex].promoPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                <PriceText value={featuredDisplay[activeFeaturedIndex].promoPrice} decimalsClassName="text-[0.33em]" />
                               </span>
                             </div>
                           </>
@@ -447,7 +450,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                           <div className="font-bold leading-none">
                             <span className="text-2xl">R$ </span>
                             <span className="text-6xl">
-                              {featuredDisplay[activeFeaturedIndex].price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassName="text-[0.33em]" />
                             </span>
                           </div>
                         )}
@@ -836,14 +839,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   {activeModal.product.isPromo && activeModal.product.promoPrice ? (
                     <div className="flex flex-col">
                       <span className="text-xs line-through text-[#BA4680]/60">
-                        {formatCurrency(activeModal.product.price)}
+R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" />
                       </span>
                       <span className="text-3xl font-bold">
-                        {formatCurrency(activeModal.product.promoPrice)}
+R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.33em]" />
                       </span>
                     </div>
                   ) : (
-                    <span className="text-3xl font-bold">{formatCurrency(activeModal.product.price)}</span>
+                    <span className="text-3xl font-bold">R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" /></span>
                   )}
                 </div>
 

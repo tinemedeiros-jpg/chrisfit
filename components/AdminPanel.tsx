@@ -4,6 +4,7 @@ import { Product, ProductUpsertPayload } from '../types';
 import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { isVideoFile, validateVideoDuration, isVideoUrl } from '../lib/mediaUtils';
+import PriceText from './PriceText';
 
 interface AdminPanelProps {
   products: Product[];
@@ -871,7 +872,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   <td className="px-8 py-4 font-mono text-sm font-bold text-gray-400">{product.code}</td>
                   <td className="px-8 py-4 font-bold text-gray-800 sport-font italic">{product.name}</td>
                   <td className="px-8 py-4 text-[#D05B92] font-black">
-                    R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ <PriceText value={product.price} decimalsClassName="text-[0.33em]" />
                   </td>
                   <td className="px-8 py-4 text-xs text-gray-500">
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -894,7 +895,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     </div>
                     {product.isPromo && product.promoPrice ? (
                       <p className="text-[11px] text-[#BA4680] font-semibold">
-                        R$ {product.promoPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ <PriceText value={product.promoPrice} decimalsClassName="text-[0.33em]" />
                       </p>
                     ) : null}
                     <div className="flex flex-col gap-2 text-[11px] text-gray-500">

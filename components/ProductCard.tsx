@@ -3,6 +3,7 @@ import React from 'react';
 import { Product } from '../types';
 import { MessageCircle, Play } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
+import PriceText from './PriceText';
 
 interface ProductCardProps {
   product: Product;
@@ -198,11 +199,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
             <div className="mb-3">
               {hasPromo && (
                 <span className="block text-sm line-through text-white/60">
-                  R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ <PriceText value={product.price} decimalsClassName="text-[0.33em]" />
                 </span>
               )}
               <div className="text-3xl font-bold">
-                R$ {displayPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ <PriceText value={displayPrice} decimalsClassName="text-[0.33em]" />
               </div>
             </div>
 
