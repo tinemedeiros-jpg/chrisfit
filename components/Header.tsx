@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
+import AppLogo from './AppLogo';
 
 interface HeaderProps {
   searchTerm: string;
@@ -18,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ searchTerm, onSearchChange }) => {
     >
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 relative z-10">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-semibold tracking-tight brand-font text-[2.7rem] sm:text-[4.06875rem] leading-none min-w-0">Chris Fit</h1>
+          <AppLogo className="h-10 sm:h-14 w-auto min-w-0 text-white" />
 
           <a
             href="https://wa.me/5511968268034"

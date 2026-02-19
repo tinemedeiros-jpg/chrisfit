@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Phone, CreditCard, Copy, Check } from 'lucide-react';
+import AppLogo from './AppLogo';
 
 const Footer: React.FC = () => {
   const [copied, setCopied] = useState(false);
@@ -24,7 +25,7 @@ const Footer: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 items-start">
           <div className="space-y-4">
-            <h2 className="brand-font text-5xl text-white">Chris Fit</h2>
+            <AppLogo className="h-10 w-auto text-white" />
             <div className="flex gap-3 text-xs uppercase tracking-[0.3em] text-white/50">
               <span>Moda</span>
               <span>•</span>
