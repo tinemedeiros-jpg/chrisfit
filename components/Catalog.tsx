@@ -210,11 +210,63 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     }))
     .filter((entry) => Boolean(entry.image));
 
-  const openModal = (product: Product, image: string) => {
+  const openModal = (product: Product, image: string, options?: { syncUrl?: boolean }) => {
     setActiveModal({ product, image, initialImage: image });
+
+    if (options?.syncUrl === false) return;
+
+    const params = new URLSearchParams(window.location.search);
+    params.set('item', product.code);
+
+    const mediaIndex = product.images.findIndex((currentImage) => currentImage === image);
+    if (mediaIndex >= 0) {
+      params.set('media', String(mediaIndex));
+    } else {
+      params.delete('media');
+    }
+
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', nextUrl);
   };
 
-  const closeModal = () => setActiveModal(null);
+  const closeModal = () => {
+    setActiveModal(null);
+
+    const params = new URLSearchParams(window.location.search);
+    params.delete('item');
+    params.delete('media');
+
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', nextUrl);
+  };
+
+  useEffect(() => {
+    if (!products.length || activeModal) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const itemParam = params.get('item');
+    if (!itemParam) return;
+
+    const normalizedItem = itemParam.trim().toLowerCase();
+    const targetProduct = products.find(
+      (product) =>
+        product.code.toLowerCase() === normalizedItem ||
+        product.id.toLowerCase() === normalizedItem
+    );
+
+    if (!targetProduct) return;
+
+    const availableImages = targetProduct.images.filter((image): image is string => Boolean(image));
+    if (!availableImages.length) return;
+
+    const mediaParam = Number(params.get('media'));
+    const hasValidMediaParam = Number.isInteger(mediaParam) && mediaParam >= 0 && mediaParam < availableImages.length;
+    const selectedImage = hasValidMediaParam ? availableImages[mediaParam] : availableImages[0];
+
+    openModal(targetProduct, selectedImage, { syncUrl: false });
+  }, [products, activeModal]);
 
   useEffect(() => {
     if (!activeModal) return undefined;
