@@ -800,7 +800,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 <p className="text-[11px] text-gray-400">Sem cores definidas.</p>
               )}
             </div>
-            <div className="space-y-2 md:col-span-8">
+            <div className="space-y-2 md:col-span-6 md:col-start-7">
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
+              <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
+                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92] min-h-[80px]" placeholder="Ex: Confirmar cores disponíveis..." />
+            </div>
+            <div className="space-y-2 md:col-span-12">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Imagens do Produto</label>
 
               {/* Linha 1: Label + 5 quadrados de upload */}
@@ -891,11 +896,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               </div>
 
               <p className="text-[11px] text-gray-400 mt-2">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
-            </div>
-            <div className="space-y-2 md:col-span-4">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
-              <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92] min-h-[80px]" placeholder="Ex: Confirmar cores disponíveis..." />
             </div>
           </div>
           
