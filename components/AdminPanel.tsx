@@ -581,19 +581,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         <div className="flex items-center space-x-3">
           <button
             onClick={() => showAddForm ? cancelEdit() : setShowAddForm(true)}
-            className={`px-6 py-3 rounded-full flex items-center space-x-2 shadow-lg transition-all ${
+            className={`p-3 sm:px-6 sm:py-3 rounded-full flex items-center sm:space-x-2 shadow-lg transition-all ${
               showAddForm ? 'bg-gray-200 text-gray-600' : 'bg-[#D05B92] text-white hover:brightness-110'
             }`}
           >
             {showAddForm ? <X size={20} /> : <Plus size={20} />}
-            <span className="font-bold sport-font">{showAddForm ? 'Fechar' : 'Novo Item'}</span>
+            <span className="hidden sm:inline font-bold sport-font">{showAddForm ? 'Fechar' : 'Novo Item'}</span>
           </button>
           <button
             onClick={handleLogout}
-            className="px-4 py-3 rounded-full flex items-center space-x-2 bg-gray-100 text-gray-600 shadow-md hover:bg-gray-200 transition-all"
+            className="p-3 sm:px-4 sm:py-3 rounded-full flex items-center sm:space-x-2 bg-gray-100 text-gray-600 shadow-md hover:bg-gray-200 transition-all"
           >
             <LogOut size={18} />
-            <span className="font-bold sport-font">DESLOGAR</span>
+            <span className="hidden sm:inline font-bold sport-font">DESLOGAR</span>
           </button>
         </div>
       </div>
