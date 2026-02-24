@@ -5,6 +5,7 @@ import ProductCard from './ProductCard';
 import { X, Search, Play } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 import PriceText from './PriceText';
+import ColorDots from './ColorDots';
 
 interface CatalogProps {
   products: Product[];
@@ -337,6 +338,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   }}
                   className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl rounded-br-[2.5rem]"
                 >
+                  <ColorDots colors={(featuredLayers[0] ?? featuredDisplay[activeFeaturedIndex])?.colors} />
                   {activeFeaturedImage && isVideoUrl(activeFeaturedImage) ? (
                     <video
                       src={activeFeaturedImage}
@@ -407,7 +409,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                         const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
                         if (img) openModal(featuredLayers[0], img);
                       }}
-                      className="absolute inset-0 w-full h-full"
+                      className="absolute inset-0 w-full h-full relative"
                       style={{ zIndex: 1 }}
                     >
                       {isVideo ? (
@@ -542,7 +544,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                           const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
                           if (img) openModal(featuredLayers[0], img);
                         }}
-                        className="absolute inset-0 w-full h-full"
+                        className="absolute inset-0 w-full h-full relative"
                         style={{ zIndex: 1 }}
                       >
                         {isVideo ? (
@@ -563,6 +565,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                             className="w-full h-full object-cover"
                           />
                         )}
+                        <ColorDots colors={featuredLayers[0].colors} />
                       </button>
                     );
                   })()}
@@ -602,6 +605,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                             className="w-full h-full object-cover"
                           />
                         )}
+                        <ColorDots colors={nextLayers[0].colors} />
                       </button>
                     );
                   })()}

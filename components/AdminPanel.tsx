@@ -17,7 +17,7 @@ interface AdminPanelProps {
 }
 
 const MAX_IMAGES = 5;
-const ADMIN_VERSION = 'v0.20260213_1631';
+const ADMIN_VERSION = 'v0.20260224_1100';
 
 const sanitizePriceInput = (value: string) => {
   const normalized = value.replace(/\./g, ',').replace(/[^\d,]/g, '');
@@ -122,9 +122,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     isActive: true,
     sizes: [] as string[],
     observation: '',
-    description: ''
+    description: '',
+    colors: [] as string[]
   });
   const [sizeInput, setSizeInput] = useState('');
+  const [colorInput, setColorInput] = useState('#D05B92');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -202,7 +204,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isActive: product.isActive !== false,
       sizes: product.sizes,
       observation: product.observation || '',
-      description: product.description || ''
+      description: product.description || '',
+      colors: product.colors ?? []
     });
     setExistingImages(normalizeImageSlots(product.images));
     setNewImages(Array(MAX_IMAGES).fill(null));
@@ -211,6 +214,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     );
     setShowAddForm(true);
     setSizeInput('');
+    setColorInput((product.colors && product.colors[0]) || '#D05B92');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -225,7 +229,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isFeatured: false,
       isActive: true,
       sizes: [],
-      observation: ''
+      observation: '',
+      description: '',
+      colors: []
     });
     setExistingImages([]);
     setNewImages(Array(MAX_IMAGES).fill(null));
@@ -233,6 +239,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setShowAddForm(false);
     setIsSubmitting(false);
     setSizeInput('');
+    setColorInput('#D05B92');
   };
 
   const remainingSlots = useMemo(() => {
@@ -252,6 +259,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     return Array.from(uniqueSizes).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [products]);
 
+
+  const colorOptions = useMemo(() => {
+    const uniqueColors = new Set<string>();
+    products.forEach((product) => {
+      (product.colors ?? []).forEach((color) => {
+        const normalized = color.trim().toUpperCase();
+        if (/^#[0-9A-F]{6}$/.test(normalized)) {
+          uniqueColors.add(normalized);
+        }
+      });
+    });
+    return Array.from(uniqueColors);
+  }, [products]);
+
   const addSize = (rawSize: string) => {
     const trimmed = rawSize.trim();
     if (!trimmed) return;
@@ -267,6 +288,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setFormData((prev) => ({
       ...prev,
       sizes: prev.sizes.filter((size) => size !== sizeToRemove)
+    }));
+  };
+
+
+  const normalizeColor = (value: string) => {
+    const normalized = value.trim().toUpperCase();
+    if (/^#[0-9A-F]{6}$/.test(normalized)) {
+      return normalized;
+    }
+    return null;
+  };
+
+  const addColor = (rawColor: string) => {
+    const normalized = normalizeColor(rawColor);
+    if (!normalized) return;
+    setFormData((prev) => {
+      if (prev.colors.includes(normalized)) return prev;
+      return { ...prev, colors: [...prev.colors, normalized] };
+    });
+  };
+
+  const removeColor = (colorToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((color) => color !== colorToRemove)
     }));
   };
 
@@ -402,6 +448,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       sizes: formData.sizes,
       observation: formData.observation,
       description: formData.description,
+      colors: formData.colors,
       existingImages: reorderedImages,
       newImages: reorderedNewImages
     };
@@ -421,10 +468,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const handleStatusToggle = async (product: Product, field: 'isFeatured' | 'isPromo') => {
     if (statusUpdatingId) return;
-    // Não permite alterar status se o produto estiver desabilitado
-    if (product.isActive === false) {
-      return;
-    }
     if (field === 'isPromo' && !product.isPromo) {
       return;
     }
@@ -447,6 +490,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       sizes: product.sizes,
       observation: product.observation ?? '',
       description: product.description ?? '',
+      colors: product.colors ?? [],
       existingImages: normalizeImageSlots(product.images),
       newImages: Array(MAX_IMAGES).fill(null)
     };
@@ -474,6 +518,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       sizes: product.sizes,
       observation: product.observation ?? '',
       description: product.description ?? '',
+      colors: product.colors ?? [],
       existingImages: normalizeImageSlots(product.images),
       newImages: Array(MAX_IMAGES).fill(null)
     };
@@ -691,6 +736,70 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 )}
               </div>
             </div>
+            <div className="space-y-2 md:col-span-12">
+              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Cores do item</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="color"
+                  value={colorInput}
+                  onChange={(event) => setColorInput(event.target.value.toUpperCase())}
+                  className="h-10 w-14 border border-gray-200 bg-white cursor-pointer"
+                  aria-label="Selecionar cor"
+                />
+                <input
+                  type="text"
+                  value={colorInput}
+                  onChange={(event) => setColorInput(event.target.value)}
+                  onBlur={() => {
+                    const normalized = normalizeColor(colorInput);
+                    if (normalized) {
+                      setColorInput(normalized);
+                    }
+                  }}
+                  className="w-32 bg-gray-50 border border-gray-100 p-2 text-sm uppercase"
+                  placeholder="#D05B92"
+                />
+                <button
+                  type="button"
+                  onClick={() => addColor(colorInput)}
+                  className="px-4 py-2 rounded-lg bg-[#D05B92] text-white text-xs font-bold hover:brightness-110 transition-all"
+                >
+                  Adicionar cor
+                </button>
+              </div>
+              {colorOptions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => {
+                        setColorInput(color);
+                        addColor(color);
+                      }}
+                      className="w-6 h-6 rounded-full border border-gray-200"
+                      style={{ backgroundColor: color }}
+                      title={`Usar ${color}`}
+                    />
+                  ))}
+                </div>
+              )}
+              {formData.colors.length > 0 ? (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.colors.map((color) => (
+                    <span key={color} className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 text-xs font-semibold text-gray-600">
+                      <span className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: color }} />
+                      {color}
+                      <button type="button" onClick={() => removeColor(color)} className="text-gray-400 hover:text-gray-600" aria-label={`Remover cor ${color}`}>
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-400">Sem cores definidas.</p>
+              )}
+            </div>
             <div className="space-y-2 md:col-span-7">
               <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Imagens do Produto</label>
 
@@ -903,22 +1012,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         <input
                           type="checkbox"
                           checked={product.isFeatured}
-                          disabled={statusUpdatingId === product.id || product.isActive === false}
+                          disabled={statusUpdatingId === product.id}
                           onChange={() => handleStatusToggle(product, 'isFeatured')}
                           className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92] disabled:opacity-50"
                         />
-                        <span className={product.isActive === false ? 'opacity-50' : ''}>Destaque</span>
+                        <span>Destaque</span>
                       </label>
                       {product.isPromo && (
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
                             checked={product.isPromo}
-                            disabled={statusUpdatingId === product.id || product.isActive === false}
+                            disabled={statusUpdatingId === product.id}
                             onChange={() => handleStatusToggle(product, 'isPromo')}
                             className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92] disabled:opacity-50"
                           />
-                          <span className={product.isActive === false ? 'opacity-50' : ''}>Promoção</span>
+                          <span>Promoção</span>
                         </label>
                       )}
                     </div>
@@ -954,13 +1063,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                     <div className="flex justify-end items-center space-x-3">
                       <button
                         onClick={() => startEdit(product)}
-                        disabled={product.isActive === false}
-                        className={`p-3 rounded-xl transition-all ${
-                          product.isActive === false
-                            ? 'text-gray-300 cursor-not-allowed'
-                            : 'text-blue-400 hover:text-blue-600 hover:bg-blue-50'
-                        }`}
-                        title={product.isActive === false ? "Item desabilitado" : "Editar item"}
+                        className="p-3 rounded-xl transition-all text-blue-400 hover:text-blue-600 hover:bg-blue-50"
+                        title="Editar item"
                       >
                         <Edit2 size={18} />
                       </button>

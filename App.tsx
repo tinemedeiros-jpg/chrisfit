@@ -39,7 +39,7 @@ const App: React.FC = () => {
     const { data, error: fetchError } = await supabase
       .from('products')
       .select(
-        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, observation, description, created_at, product_images ( url, position )'
+        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, colors, observation, description, created_at, product_images ( url, position )'
       )
       .order('created_at', { ascending: false });
 
@@ -73,6 +73,7 @@ const App: React.FC = () => {
         isFeatured: Boolean(product.is_featured),
         isActive: product.is_active !== false,
         sizes: Array.isArray(product.sizes) ? product.sizes : [],
+        colors: Array.isArray(product.colors) ? product.colors.filter((color) => typeof color === 'string') : [],
         images,
         observation: product.observation ?? null,
         description: product.description ?? null,
@@ -198,6 +199,7 @@ const App: React.FC = () => {
         is_featured: payload.isFeatured ?? false,
         is_active: payload.isActive ?? true,
         sizes: payload.sizes,
+        colors: payload.colors ?? [],
         observation: payload.observation ?? null,
         description: payload.description ?? null
       })
@@ -236,6 +238,7 @@ const App: React.FC = () => {
         is_featured: payload.isFeatured ?? false,
         is_active: payload.isActive ?? true,
         sizes: payload.sizes,
+        colors: payload.colors ?? [],
         observation: payload.observation ?? null,
         description: payload.description ?? null
       })

@@ -4,6 +4,7 @@ import { Product } from '../types';
 import { MessageCircle, Play } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 import PriceText from './PriceText';
+import ColorDots from './ColorDots';
 
 interface ProductCardProps {
   product: Product;
@@ -161,6 +162,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
         <div className="relative z-10 flex flex-col h-full min-h-[600px]">
           {/* Imagem/Vídeo nítido em carrossel - ocupa todo espaço */}
           <div className="flex-1 relative">
+            <ColorDots colors={product.colors} />
             {images.map((image, index) => {
               const isVideo = isVideoUrl(image);
               return isVideo ? (
