@@ -599,151 +599,145 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-[#f4fbff] p-8 shadow-2xl mb-12 border border-[#D05B92]/10 space-y-4 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-[#D05B92]"></div>
-          <h3 className="text-xl font-bold sport-font italic text-gray-800 flex items-center space-x-2">
-            {editingId ? <Edit2 size={20} /> : <Plus size={20} />}
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 md:p-8 shadow-xl mb-12 border border-[#D05B92]/15 space-y-5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-[#D05B92] to-[#b04478] rounded-l-2xl"></div>
+
+          <h3 className="text-xl font-bold sport-font italic text-gray-800 flex items-center space-x-2 pl-2">
+            {editingId ? <Edit2 size={20} className="text-[#D05B92]" /> : <Plus size={20} className="text-[#D05B92]" />}
             <span>{editingId ? 'Editar Produto' : 'Cadastrar Novo Item'}</span>
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="space-y-2 md:col-span-3">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Código</label>
-              <input required type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92]" placeholder="Ex: 01" />
-            </div>
-            <div className="md:col-span-6 space-y-2">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Nome do Produto</label>
-              <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92]" placeholder="Ex: Conjunto Fitness Premium" />
-            </div>
-            <div className="space-y-2 md:col-span-3">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Preço (R$)</label>
-              <input
-                required
-                type="text"
-                inputMode="decimal"
-                value={formData.price}
-                onChange={handlePriceChange}
-                onBlur={handlePriceBlur}
-                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92]"
-                placeholder="0,00"
-              />
-            </div>
-            <div className="space-y-2 md:col-span-12">
-              <div className="flex items-center gap-4">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Destaque & Promoção</label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 font-medium">
-                  <input
-                    type="checkbox"
-                    checked={formData.isFeatured}
-                    onChange={(event) => setFormData((prev) => ({ ...prev, isFeatured: event.target.checked }))}
-                    className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92]"
-                  />
-                  Marcar como destaque
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-600 font-medium">
-                  <input
-                    type="checkbox"
-                    checked={formData.isPromo}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        isPromo: event.target.checked
-                      }))
-                    }
-                    className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92]"
-                  />
-                  Marcar como promoção
-                </label>
+          {/* Grupo 1: Identificação */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#D05B92]">Identificação</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_2fr_1fr] gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600">Código</label>
+                <input required type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})}
+                  className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-[#D05B92] transition-colors text-gray-800 placeholder-gray-300 text-sm" placeholder="Ex: 01" />
               </div>
-              {formData.isPromo && (
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600">Nome do Produto</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
+                  className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-[#D05B92] transition-colors text-gray-800 placeholder-gray-300 text-sm" placeholder="Ex: Conjunto Fitness Premium" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600">Preço (R$)</label>
+                <input required type="text" inputMode="decimal" value={formData.price} onChange={handlePriceChange} onBlur={handlePriceBlur}
+                  className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-[#D05B92] transition-colors text-gray-800 placeholder-gray-300 text-sm" placeholder="0,00" />
+              </div>
+            </div>
+          </div>
+
+          {/* Grupo 2: Destaque & Promoção */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#D05B92]">Destaque &amp; Promoção</p>
+            <div className="flex flex-wrap gap-5">
+              <label className="flex items-center gap-2 text-sm text-gray-700 font-medium cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formData.isFeatured}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, isFeatured: event.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-[#D05B92] focus:ring-[#D05B92] cursor-pointer"
+                />
+                Marcar como destaque
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 font-medium cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formData.isPromo}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, isPromo: event.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-[#D05B92] focus:ring-[#D05B92] cursor-pointer"
+                />
+                Marcar como promoção
+              </label>
+            </div>
+            {formData.isPromo && (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600">Preço Promocional (R$)</label>
                 <input
                   required
                   type="text"
                   inputMode="decimal"
                   value={formData.promoPrice}
-                  onChange={(event) =>
-                    setFormData((prev) => ({ ...prev, promoPrice: sanitizePriceInput(event.target.value) }))
-                  }
+                  onChange={(event) => setFormData((prev) => ({ ...prev, promoPrice: sanitizePriceInput(event.target.value) }))}
                   onBlur={handlePromoPriceBlur}
-                  className="w-full max-w-xs bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92]"
-                  placeholder="Preço promocional"
+                  className="w-full max-w-xs bg-white border-2 border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-[#D05B92] transition-colors text-gray-800 placeholder-gray-300 text-sm"
+                  placeholder="0,00"
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Grupo 3: Descrição */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-1.5">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-[#D05B92]">
+              Descrição <span className="text-gray-400 normal-case font-normal">(aparece apenas na modal)</span>
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={e => setFormData({...formData, description: e.target.value})}
+              className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-[#D05B92] transition-colors text-gray-800 placeholder-gray-300 text-sm min-h-[90px] resize-y"
+              placeholder="Descrição detalhada do produto..."
+            />
+          </div>
+
+          {/* Grupo 4: Tamanhos e Cores — lado a lado no md, empilhado no mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tamanhos */}
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#D05B92]">Tamanhos</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  list="size-options"
+                  value={sizeInput}
+                  onChange={(event) => setSizeInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      addSize(sizeInput);
+                    }
+                  }}
+                  className="flex-1 bg-white border-2 border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#D05B92] transition-colors text-gray-800 placeholder-gray-300 text-sm"
+                  placeholder="Ex: P, M, G..."
+                />
+                <button
+                  type="button"
+                  onClick={() => addSize(sizeInput)}
+                  className="px-4 py-2 rounded-lg bg-[#D05B92] text-white text-xs font-bold hover:brightness-110 transition-all whitespace-nowrap"
+                >
+                  Adicionar
+                </button>
+              </div>
+              <datalist id="size-options">
+                {sizeOptions.map((size) => (<option key={size} value={size} />))}
+              </datalist>
+              {formData.sizes.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {formData.sizes.map((size) => (
+                    <span key={size} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-700 shadow-sm">
+                      {size}
+                      <button type="button" onClick={() => removeSize(size)} className="text-gray-400 hover:text-red-500 transition-colors" aria-label={`Remover tamanho ${size}`}>
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-400">Adicione pelo menos um tamanho.</p>
               )}
             </div>
-            <div className="space-y-2 md:col-span-12">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Descrição (aparece apenas na modal)</label>
-              <textarea
-                value={formData.description}
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92] min-h-[100px]"
-                placeholder="Descrição detalhada do produto..."
-              />
-            </div>
-            <div className="space-y-2 md:col-span-6">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Tamanhos (P, M, G...)</label>
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    list="size-options"
-                    value={sizeInput}
-                    onChange={(event) => setSizeInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        addSize(sizeInput);
-                      }
-                    }}
-                    className="flex-1 bg-gray-50 border border-gray-100 p-3 outline-none focus:border-[#D05B92] text-sm"
-                    placeholder="Tamanho"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => addSize(sizeInput)}
-                    className="px-4 py-2 rounded-lg bg-[#D05B92] text-white text-xs font-bold hover:brightness-110 transition-all whitespace-nowrap"
-                  >
-                    Adicionar
-                  </button>
-                </div>
-                <datalist id="size-options">
-                  {sizeOptions.map((size) => (
-                    <option key={size} value={size} />
-                  ))}
-                </datalist>
-                {formData.sizes.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {formData.sizes.map((size) => (
-                      <span
-                        key={size}
-                        className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-xs font-semibold text-gray-600"
-                      >
-                        {size}
-                        <button
-                          type="button"
-                          onClick={() => removeSize(size)}
-                          className="text-gray-400 hover:text-gray-600"
-                          aria-label={`Remover tamanho ${size}`}
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-gray-400">Adicione pelo menos um tamanho.</p>
-                )}
-              </div>
-            </div>
-            <div className="space-y-2 md:col-span-6">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Cores do item</label>
+
+            {/* Cores */}
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#D05B92]">Cores do Item</p>
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="color"
                   value={colorInput}
                   onChange={(event) => setColorInput(event.target.value.toUpperCase())}
-                  className="h-10 w-14 border border-gray-200 bg-white cursor-pointer"
+                  className="h-9 w-12 border-2 border-gray-200 rounded bg-white cursor-pointer"
                   aria-label="Selecionar cor"
                 />
                 <input
@@ -756,28 +750,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       setColorInput(normalized);
                     }
                   }}
-                  className="w-32 bg-gray-50 border border-gray-100 p-2 text-sm uppercase"
+                  className="w-28 bg-white border-2 border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#D05B92] transition-colors uppercase placeholder-gray-300"
                   placeholder="#D05B92"
                 />
                 <button
                   type="button"
                   onClick={() => addColor(colorInput)}
-                  className="px-4 py-2 rounded-lg bg-[#D05B92] text-white text-xs font-bold hover:brightness-110 transition-all"
+                  className="px-4 py-2 rounded-lg bg-[#D05B92] text-white text-xs font-bold hover:brightness-110 transition-all whitespace-nowrap"
                 >
-                  Adicionar cor
+                  Adicionar
                 </button>
               </div>
               {colorOptions.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2">
                   {colorOptions.map((color) => (
                     <button
                       key={color}
                       type="button"
-                      onClick={() => {
-                        setColorInput(color);
-                        addColor(color);
-                      }}
-                      className="w-6 h-6 rounded-full border border-gray-200"
+                      onClick={() => { setColorInput(color); addColor(color); }}
+                      className="w-6 h-6 rounded-full border-2 border-white shadow-md hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
                       title={`Usar ${color}`}
                     />
@@ -785,12 +776,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 </div>
               )}
               {formData.colors.length > 0 ? (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2">
                   {formData.colors.map((color) => (
-                    <span key={color} className="inline-flex items-center gap-2 px-2 py-1 bg-gray-100 text-xs font-semibold text-gray-600">
-                      <span className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: color }} />
+                    <span key={color} className="inline-flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-700 shadow-sm">
+                      <span className="w-3.5 h-3.5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color }} />
                       {color}
-                      <button type="button" onClick={() => removeColor(color)} className="text-gray-400 hover:text-gray-600" aria-label={`Remover cor ${color}`}>
+                      <button type="button" onClick={() => removeColor(color)} className="text-gray-400 hover:text-red-500 transition-colors" aria-label={`Remover cor ${color}`}>
                         <X size={12} />
                       </button>
                     </span>
@@ -800,89 +791,77 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 <p className="text-[11px] text-gray-400">Sem cores definidas.</p>
               )}
             </div>
-            <div className="space-y-2 md:col-span-6 md:col-start-7">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Observações (opcional)</label>
-              <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 p-4 outline-none focus:border-[#D05B92] min-h-[80px]" placeholder="Ex: Confirmar cores disponíveis..." />
-            </div>
-            <div className="space-y-2 md:col-span-12">
-              <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Imagens do Produto</label>
+          </div>
 
-              {/* Linha 1: Label + 5 quadrados de upload */}
-              <div className="flex items-start gap-3 mb-2">
-                <div className="text-[11px] text-gray-400 uppercase tracking-wider pt-2 w-32 flex-shrink-0">
-                  Adicionar Imagem
-                </div>
-                <div className="flex gap-2 flex-1">
-                  {Array.from({ length: MAX_IMAGES }).map((_, index) => {
-                    const hasImage = existingImages[index] || newImages[index];
-                    return (
-                      <label
-                        key={`image-input-${index}`}
-                        className="relative w-20 h-20 border-2 border-dashed border-gray-300 hover:border-[#D05B92] cursor-pointer flex items-center justify-center bg-gray-50 transition-colors overflow-hidden"
-                      >
-                        <input
-                          type="file"
-                          accept="image/*,video/*"
-                          onChange={(event) => handleFileChange(index, event)}
-                          className="hidden"
-                        />
-                        {hasImage ? (
-                          <div className="relative w-full h-full">
-                            {existingImages[index] ? (
-                              <>
-                                <img src={existingImages[index] ?? ''} alt={`${index + 1}`} className="w-full h-full object-cover" />
-                                {isVideoUrl(existingImages[index]) && (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
-                                    <Play size={16} fill="white" className="text-white" />
-                                  </div>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    removeExistingImage(index);
-                                  }}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 shadow"
-                                >
-                                  <X size={10} />
-                                </button>
-                              </>
-                            ) : newImages[index] ? (
-                              <>
-                                <div className="w-full h-full flex items-center justify-center bg-pink-50 text-[#D05B92] text-[10px] font-bold">
-                                  Novo
+          {/* Grupo 5: Observações */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-1.5">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-[#D05B92]">
+              Observações <span className="text-gray-400 normal-case font-normal">(opcional)</span>
+            </label>
+            <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})}
+              className="w-full bg-white border-2 border-gray-200 rounded-lg px-3 py-2.5 outline-none focus:border-[#D05B92] transition-colors text-gray-800 placeholder-gray-300 text-sm min-h-[70px] resize-y"
+              placeholder="Ex: Confirmar cores disponíveis..." />
+          </div>
+
+          {/* Grupo 6: Imagens */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#D05B92]">Imagens do Produto</p>
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-600">Selecionar imagens</p>
+              <div className="grid grid-cols-5 gap-2">
+                {Array.from({ length: MAX_IMAGES }).map((_, index) => {
+                  const hasImage = existingImages[index] || newImages[index];
+                  return (
+                    <label
+                      key={`image-input-${index}`}
+                      className="relative aspect-square border-2 border-dashed border-gray-300 hover:border-[#D05B92] cursor-pointer flex items-center justify-center bg-white transition-colors overflow-hidden rounded-lg"
+                    >
+                      <input type="file" accept="image/*,video/*" onChange={(event) => handleFileChange(index, event)} className="hidden" />
+                      {hasImage ? (
+                        <div className="relative w-full h-full">
+                          {existingImages[index] ? (
+                            <>
+                              <img src={existingImages[index] ?? ''} alt={`${index + 1}`} className="w-full h-full object-cover" />
+                              {isVideoUrl(existingImages[index]) && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                  <Play size={16} fill="white" className="text-white" />
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    removeNewImage(index);
-                                  }}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 shadow"
-                                >
-                                  <X size={10} />
-                                </button>
-                              </>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <Plus size={24} className="text-gray-400" />
-                        )}
-                      </label>
-                    );
-                  })}
-                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); removeExistingImage(index); }}
+                                className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 shadow rounded"
+                              >
+                                <X size={10} />
+                              </button>
+                            </>
+                          ) : newImages[index] ? (
+                            <>
+                              <div className="w-full h-full flex items-center justify-center bg-pink-50 text-[#D05B92] text-[10px] font-bold">
+                                Novo
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); removeNewImage(index); }}
+                                className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 shadow rounded"
+                              >
+                                <X size={10} />
+                              </button>
+                            </>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <Plus size={20} className="text-gray-300" />
+                      )}
+                    </label>
+                  );
+                })}
               </div>
-
-              {/* Linha 2: Label + 5 radio buttons */}
-              <div className="flex items-center gap-3">
-                <div className="text-[11px] text-gray-400 uppercase tracking-wider w-32 flex-shrink-0">
-                  Imagem pro Destaque
-                </div>
-                <div className="flex gap-2 flex-1">
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-2">Imagem de destaque</p>
+                <div className="grid grid-cols-5 gap-2">
                   {Array.from({ length: MAX_IMAGES }).map((_, index) => (
-                    <div key={`radio-${index}`} className="w-20 flex justify-center">
+                    <div key={`radio-${index}`} className="flex justify-center">
                       <input
                         type="radio"
                         name="featured-image"
@@ -894,18 +873,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   ))}
                 </div>
               </div>
-
-              <p className="text-[11px] text-gray-400 mt-2">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
             </div>
+            <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
           </div>
-          
-          <div className="flex space-x-4">
-            <button type="submit" disabled={isSubmitting} className="flex-grow bg-[#D05B92] text-white py-4 rounded-2xl font-bold shadow-xl hover:brightness-110 transition-all flex items-center justify-center space-x-2 disabled:opacity-60">
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit" disabled={isSubmitting} className="flex-grow bg-[#D05B92] text-white py-3.5 rounded-xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center justify-center space-x-2 disabled:opacity-60">
               <CheckCircle2 size={20} />
               <span className="sport-font">{isSubmitting ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Adicionar ao Catálogo'}</span>
             </button>
             {editingId && (
-              <button type="button" onClick={cancelEdit} className="bg-gray-100 text-gray-500 px-8 rounded-2xl font-bold hover:bg-gray-200 transition-all">
+              <button type="button" onClick={cancelEdit} className="bg-gray-100 text-gray-600 px-8 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition-all">
                 Cancelar
               </button>
             )}
