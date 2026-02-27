@@ -112,6 +112,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
   }, [products, sortColumn, sortDirection]);
 
+  const catalogBaseUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}${window.location.pathname}`;
+  }, []);
+
+  const sampleCode = useMemo(() => {
+    const firstProductCode = products[0]?.code?.trim();
+    return firstProductCode || '0001';
+  }, [products]);
+
+  const itemLinkExample = useMemo(
+    () => `${catalogBaseUrl}?item=${encodeURIComponent(sampleCode)}`,
+    [catalogBaseUrl, sampleCode]
+  );
+
+  const itemMediaLinkExample = useMemo(
+    () => `${catalogBaseUrl}?item=${encodeURIComponent(sampleCode)}&media=0`,
+    [catalogBaseUrl, sampleCode]
+  );
+
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -597,6 +617,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
           </button>
         </div>
       </div>
+
+      <section className="mb-8 bg-[#f4fbff] border border-[#D05B92]/20 rounded-2xl p-4 sm:p-5">
+        <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-[#D05B92] mb-3">Base do Admin · Links diretos</h3>
+        <div className="space-y-3 text-xs sm:text-sm text-gray-700">
+          <div>
+            <p className="font-semibold text-gray-800">Abrir um item direto no catálogo:</p>
+            <code className="block mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2 break-all">{itemLinkExample}</code>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-800">Abrir um item em uma foto/vídeo específico:</p>
+            <code className="block mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2 break-all">{itemMediaLinkExample}</code>
+            <p className="mt-1 text-[11px] text-gray-500">Use <strong>media</strong> de <strong>0 a {MAX_IMAGES - 1}</strong> (ex.: 0 = primeira foto/vídeo, 1 = segunda).</p>
+          </div>
+        </div>
+      </section>
 
       {showAddForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 md:p-8 shadow-xl mb-12 border border-[#D05B92]/15 space-y-5 relative overflow-hidden">
