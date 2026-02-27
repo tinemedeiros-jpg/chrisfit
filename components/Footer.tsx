@@ -3,7 +3,11 @@ import React, { useState } from 'react';
 import { Phone, CreditCard, Copy, Check } from 'lucide-react';
 import AppLogo from './AppLogo';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  isAdminView?: boolean;
+}
+
+const Footer: React.FC<FooterProps> = ({ isAdminView = false }) => {
   const [copied, setCopied] = useState(false);
   const pixKey = "11968268034";
 
@@ -12,6 +16,10 @@ const Footer: React.FC = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (isAdminView) {
+    return <footer className="bg-[#D05B92] h-6" aria-hidden="true" />;
+  }
 
   return (
     <footer

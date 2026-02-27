@@ -288,7 +288,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <Footer />
+      <Footer isAdminView={viewMode === 'admin'} />
     </div>
   );
 };
