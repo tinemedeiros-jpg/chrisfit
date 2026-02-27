@@ -592,13 +592,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   return (
     <div className="animate-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4 sm:mb-8">
         <div>
-          <h2 className="text-4xl font-black text-[#D05B92] sport-font italic">Dashboard</h2>
-          <p className="text-gray-500 text-sm font-medium">Gerenciamento de Produtos</p>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 mt-2">Versão {ADMIN_VERSION}</p>
+          <h2 className="text-2xl sm:text-4xl font-black text-[#D05B92] sport-font italic">Dashboard</h2>
+          <p className="text-gray-500 text-xs sm:text-sm font-medium">Gerenciamento de Produtos</p>
+          <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-gray-400 mt-1 sm:mt-2">Versão {ADMIN_VERSION}</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <button
             onClick={() => showAddForm ? cancelEdit() : setShowAddForm(true)}
             className={`p-3 sm:px-6 sm:py-3 rounded-full flex items-center sm:space-x-2 shadow-lg transition-all ${
@@ -912,7 +912,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       )}
 
       <div className="bg-[#f4fbff] shadow-2xl overflow-hidden border border-[#D05B92]/10">
-        <div className="overflow-x-auto">
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#D05B92]/5 text-[#D05B92] font-bold uppercase text-[10px] tracking-[0.2em]">
               <tr>
@@ -1090,6 +1090,113 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             </tbody>
           </table>
         </div>
+
+        {/* Mobile card list — visible only on small screens */}
+        <div className="sm:hidden divide-y divide-gray-100">
+          {sortedProducts.map(product => (
+            <div key={product.id} className="p-3 hover:bg-gray-50/50 transition-colors">
+              <div className="flex gap-3 items-start">
+                <div className="relative flex-shrink-0">
+                  <img
+                    src={
+                      product.images.find((image): image is string => Boolean(image)) ??
+                      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400'
+                    }
+                    className="w-12 h-12 object-cover shadow-sm border-2 border-white"
+                  />
+                  {isVideoUrl(product.images.find((image): image is string => Boolean(image)) ?? null) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Play size={14} fill="white" className="text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-1">
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-800 text-sm sport-font italic leading-tight truncate">{product.name}</p>
+                      <p className="text-[11px] text-gray-400 font-mono">#{product.code}</p>
+                    </div>
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                      <button
+                        onClick={() => startEdit(product)}
+                        className="p-1.5 rounded-lg text-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                        title="Editar"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(product.id)}
+                        className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        title="Excluir"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-0.5 flex-wrap">
+                    <span className="text-[#D05B92] font-black text-sm">
+                      R$ <PriceText value={product.price} decimalsClassName="text-[0.33em]" />
+                    </span>
+                    {product.isPromo && product.promoPrice ? (
+                      <span className="text-[10px] text-[#BA4680] font-semibold">
+                        promo: R$ <PriceText value={product.promoPrice} decimalsClassName="text-[0.33em]" />
+                      </span>
+                    ) : null}
+                  </div>
+                  {product.sizes.length > 0 && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">{product.sizes.join(', ')}</p>
+                  )}
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    {product.isActive === false && (
+                      <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[9px] font-semibold rounded">Inativo</span>
+                    )}
+                    {product.isFeatured && (
+                      <span className="px-1.5 py-0.5 bg-[#D05B92]/10 text-[#D05B92] text-[9px] font-semibold rounded">Destaque</span>
+                    )}
+                    {product.isPromo && (
+                      <span className="px-1.5 py-0.5 bg-pink-100 text-[#BA4680] text-[9px] font-semibold rounded">Promoção</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={product.isActive !== false}
+                        disabled={statusUpdatingId === product.id}
+                        onChange={() => handleActiveToggle(product)}
+                        className="h-3.5 w-3.5 border-gray-300 text-[#D05B92] focus:ring-[#D05B92] disabled:opacity-50"
+                      />
+                      Ativo
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={product.isFeatured}
+                        disabled={statusUpdatingId === product.id}
+                        onChange={() => handleStatusToggle(product, 'isFeatured')}
+                        className="h-3.5 w-3.5 border-gray-300 text-[#D05B92] focus:ring-[#D05B92] disabled:opacity-50"
+                      />
+                      Destaque
+                    </label>
+                    {product.isPromo && (
+                      <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={product.isPromo}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleStatusToggle(product, 'isPromo')}
+                          className="h-3.5 w-3.5 border-gray-300 text-[#D05B92] focus:ring-[#D05B92] disabled:opacity-50"
+                        />
+                        Promo
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {isLoading && (
           <div className="py-24 text-center">
             <p className="text-gray-400 font-medium">Carregando produtos...</p>

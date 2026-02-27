@@ -9,9 +9,10 @@ import ColorDots from './ColorDots';
 interface ProductCardProps {
   product: Product;
   onPreview: (product: Product, image: string) => void;
+  compact?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }) => {
   const whatsappNumber = "5511968268034";
   const message = encodeURIComponent(`Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
@@ -29,9 +30,43 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
   const hasPromo = product.isPromo && product.promoPrice && product.promoPrice > 0;
   const displayPrice = hasPromo ? product.promoPrice ?? product.price : product.price;
   const hideButtonText = images.length >= 4;
+
+  // Touch swipe tracking
+  const touchStartX = React.useRef(0);
+  const touchStartY = React.useRef(0);
+  const didSwipe = React.useRef(false);
+
   const handlePreview = React.useCallback(() => {
     onPreview(product, images[hoverIndex]);
   }, [hoverIndex, images, onPreview, product]);
+
+  const handleClick = React.useCallback(() => {
+    if (didSwipe.current) {
+      didSwipe.current = false;
+      return;
+    }
+    handlePreview();
+  }, [handlePreview]);
+
+  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    didSwipe.current = false;
+  }, []);
+
+  const handleTouchEnd = React.useCallback((e: React.TouchEvent) => {
+    if (images.length <= 1) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > deltaY) {
+      didSwipe.current = true;
+      if (deltaX < 0) {
+        setHoverIndex((prev) => (prev + 1) % images.length);
+      } else {
+        setHoverIndex((prev) => (prev - 1 + images.length) % images.length);
+      }
+    }
+  }, [images.length]);
 
   React.useEffect(() => {
     if (images.length <= 1 || isHovering) {
@@ -94,11 +129,98 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
   const currentImage = images[hoverIndex];
   const isCurrentVideo = isVideoUrl(currentImage);
 
+  // ── COMPACT MODE ─────────────────────────────────────────────────────────
+  if (compact) {
+    return (
+      <div className="animate-in zoom-in duration-300">
+        <div
+          className="relative overflow-hidden cursor-zoom-in rounded-lg shadow-md active:shadow-lg transition-shadow"
+          onClick={handleClick}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{ touchAction: 'pan-y' }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handlePreview();
+            }
+          }}
+        >
+          {/* Container com proporção 2:3 */}
+          <div className="relative" style={{ aspectRatio: '2/3' }}>
+            {/* Imagens/vídeos em carrossel */}
+            {images.map((image, index) => {
+              const isVideo = isVideoUrl(image);
+              return isVideo ? (
+                <video
+                  key={`${product.id}-compact-${image}-${index}`}
+                  ref={(el) => { videoRefs.current[index] = el; }}
+                  src={image}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                    hoverIndex === index ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  muted
+                  loop
+                  playsInline
+                  autoPlay={index === hoverIndex}
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  key={`${product.id}-compact-${image}-${index}`}
+                  src={image}
+                  alt={`${product.name}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                    hoverIndex === index ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  loading="lazy"
+                />
+              );
+            })}
+
+            {/* Indicador de fotos (dots) */}
+            {images.length > 1 && (
+              <div className="absolute bottom-6 inset-x-0 flex justify-center gap-1 pointer-events-none">
+                {images.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === hoverIndex
+                        ? 'w-3 h-1.5 bg-white'
+                        : 'w-1.5 h-1.5 bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Gradiente + nome na base */}
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pt-8 pb-2 px-2">
+              <p className="text-white text-[11px] font-medium leading-tight text-center line-clamp-2">
+                {product.name}
+              </p>
+            </div>
+
+            {/* Tag de código compacta */}
+            <div className="absolute top-1.5 left-1.5 bg-[#D05B92]/90 px-1.5 py-0.5 rounded">
+              <span className="text-white text-[8px] uppercase tracking-widest font-bold">
+                {product.code}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── REGULAR MODE ──────────────────────────────────────────────────────────
   return (
     <div className="group animate-in zoom-in duration-300">
       <div
         className="relative overflow-hidden cursor-zoom-in rounded-tr-[2rem] shadow-[0_24px_55px_-18px_rgba(0,0,0,0.7)] hover:shadow-[0_34px_70px_-22px_rgba(0,0,0,0.8)] transition-shadow duration-300"
-        onClick={handlePreview}
+        onClick={handleClick}
         role="button"
         tabIndex={0}
         onKeyDown={(event) => {
@@ -110,6 +232,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onMouseEnter={() => setIsHovering(true)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{ touchAction: 'pan-y' }}
       >
         {/* Background embaçado e escurecido */}
         <div className="absolute inset-0 z-0">
@@ -193,6 +318,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview }) => {
                 />
               );
             })}
+
+            {/* Dots indicador de swipe (só mobile, quando há múltiplas imagens) */}
+            {images.length > 1 && (
+              <div className="absolute bottom-2 inset-x-0 flex justify-center gap-1.5 pointer-events-none sm:hidden">
+                {images.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === hoverIndex
+                        ? 'w-4 h-1.5 bg-white'
+                        : 'w-1.5 h-1.5 bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Informações do produto - alinhado à direita */}

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
-import { X, Search, Play } from 'lucide-react';
+import { X, Search, Play, LayoutGrid, AlignJustify } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 import PriceText from './PriceText';
 import ColorDots from './ColorDots';
@@ -18,6 +18,11 @@ interface CatalogProps {
 const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm, onSearchChange }) => {
   const [activeModal, setActiveModal] = useState<{ product: Product; image: string; initialImage: string } | null>(null);
   const [sortOrder, setSortOrder] = useState<'code' | 'name' | 'recent' | 'promo'>('code');
+  const [compactMode, setCompactMode] = useState(false);
+
+  // Refs para swipe na modal de detalhe
+  const modalTouchStartX = useRef(0);
+  const modalTouchStartY = useRef(0);
 
   const filteredProducts = useMemo(() => {
     const filtered = products.filter(
@@ -102,6 +107,25 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     return () => clearTimeout(timeout);
   }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length, hasStartedCarousel]);
   const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
+  const modalImageIndex = activeModal ? modalImages.indexOf(activeModal.image) : 0;
+
+  const handleModalTouchStart = React.useCallback((e: React.TouchEvent) => {
+    modalTouchStartX.current = e.touches[0].clientX;
+    modalTouchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleModalTouchEnd = React.useCallback((e: React.TouchEvent) => {
+    if (modalImages.length <= 1 || !activeModal) return;
+    const deltaX = e.changedTouches[0].clientX - modalTouchStartX.current;
+    const deltaY = Math.abs(e.changedTouches[0].clientY - modalTouchStartY.current);
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > deltaY) {
+      const currentIndex = modalImages.indexOf(activeModal.image);
+      const newIndex = deltaX < 0
+        ? (currentIndex + 1) % modalImages.length
+        : (currentIndex - 1 + modalImages.length) % modalImages.length;
+      setActiveModal({ ...activeModal, image: modalImages[newIndex] });
+    }
+  }, [modalImages, activeModal]);
 
   // featuredLayers usa displayIndex (não activeFeaturedIndex) para a base
   const featuredLayers = useMemo(() => {
@@ -757,9 +781,27 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
           </div>
         </div>
 
-        {/* Dropdown de ordenação */}
-        <div className="mb-6 flex justify-end">
-          <div className="relative">
+        {/* Controles: ordenação + toggle compacto */}
+        <div className="mb-6 flex items-center justify-between gap-3">
+          {/* Toggle modo compacto - só aparece em telas pequenas */}
+          <button
+            type="button"
+            onClick={() => setCompactMode((prev) => !prev)}
+            className={`sm:hidden flex items-center gap-1.5 px-3 py-2 rounded-full border text-xs font-semibold transition-all ${
+              compactMode
+                ? 'bg-[#D05B92] border-[#D05B92] text-white shadow-md'
+                : 'bg-[#f4fbff] border-[#D05B92]/30 text-[#BA4680] hover:border-[#D05B92]'
+            }`}
+            aria-label={compactMode ? 'Voltar ao modo normal' : 'Ativar modo compacto'}
+          >
+            {compactMode ? (
+              <><AlignJustify size={14} /><span>Normal</span></>
+            ) : (
+              <><LayoutGrid size={14} /><span>Compacto</span></>
+            )}
+          </button>
+
+          <div className="flex items-center ml-auto">
             <label htmlFor="sort-order" className="text-xs text-[#BA4680] uppercase tracking-wider mr-3">
               Ordenar por:
             </label>
@@ -787,9 +829,9 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
             <p className="text-xs text-gray-400 mt-2">{error}</p>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="catalog-grid">
+          <div className={compactMode ? 'catalog-grid-compact' : 'catalog-grid'}>
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onPreview={openModal} />
+              <ProductCard key={product.id} product={product} onPreview={openModal} compact={compactMode} />
             ))}
           </div>
         ) : (
@@ -802,15 +844,22 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
       </section>
 
       {activeModal && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-2 sm:p-4 lg:p-8" role="dialog">
+        <div
+          className="fixed inset-0 z-[1200] overflow-y-auto"
+          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+          role="dialog"
+        >
+          {/* Backdrop fixo ao viewport */}
           <div
-            className="absolute inset-0 bg-black/70"
+            className="fixed inset-0 bg-black/70"
             onClick={closeModal}
             aria-hidden="true"
           />
-          {/* Modal fixa e responsiva: mantém campo 9:16 sem estourar viewport */}
+          {/* Wrapper centraliza verticalmente e permite scroll no mobile */}
+          <div className="relative z-[1201] flex items-start lg:items-center justify-center min-h-full p-2 sm:p-4 lg:p-8">
+          {/* Modal: no mobile cresce livremente; no desktop altura fixa com overflow interno */}
           <div
-            className="relative z-[1201] shadow-2xl overflow-y-auto lg:overflow-hidden bg-[#f4fbff] w-full max-w-[1320px] max-h-[96vh] lg:h-[min(92vh,920px)] flex flex-col lg:flex-row"
+            className="relative w-full shadow-2xl lg:overflow-hidden bg-[#f4fbff] max-w-[1320px] lg:h-[min(92vh,920px)] flex flex-col lg:flex-row my-auto"
           >
             {/* Botão fechar - sobreposto à mídia no compacto */}
             <button
@@ -824,7 +873,10 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
 
             {/* Lado esquerdo: Imagem com tag de código */}
             <div
-              className="relative flex-shrink-0 w-full lg:w-auto aspect-[9/16] h-[min(58vh,760px)] max-h-[calc(96vh-12rem)] lg:h-full lg:max-h-none"
+              className="relative flex-shrink-0 w-full lg:w-auto aspect-[9/16] lg:h-full lg:max-h-none"
+              onTouchStart={handleModalTouchStart}
+              onTouchEnd={handleModalTouchEnd}
+              style={{ touchAction: 'pan-y' }}
             >
               {/* Tag de código - aba externa superior esquerda */}
               <div className="absolute -left-3 top-6 z-30">
@@ -874,16 +926,32 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                     />
                   )}
                 </div>
+
+                {/* Dots de navegação - visíveis só no mobile quando há múltiplas fotos */}
+                {modalImages.length > 1 && (
+                  <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 pointer-events-none lg:hidden">
+                    {modalImages.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`rounded-full transition-all duration-300 ${
+                          i === modalImageIndex
+                            ? 'w-4 h-1.5 bg-white shadow-sm'
+                            : 'w-1.5 h-1.5 bg-white/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Lado direito: Área branca com informações */}
             <div className="relative bg-[#f4fbff] flex flex-col w-full lg:flex-1 lg:min-w-[420px] lg:rounded-tr-[2rem]">
 
-              {/* Conteúdo scrollável */}
+              {/* Conteúdo: no mobile cresce livremente; no desktop scroll interno */}
               <div
-                className="flex-1 overflow-y-auto p-5 lg:p-8 pt-14 lg:pt-16 flex flex-col"
-                style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
+                className="flex flex-col p-5 lg:p-8 pt-14 lg:pt-16 lg:flex-1 lg:overflow-y-auto"
+                style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
               >
                 {/* Nome do produto */}
                 <div className="mb-4">
@@ -919,9 +987,9 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                   <p className="text-xs text-[#BA4680]/70 mb-4">{activeModal.product.observation}</p>
                 )}
 
-                {/* Menu vertical de fotos/vídeos - no final acima do botão */}
+                {/* Galeria de fotos/vídeos: 2 colunas no mobile, 1 coluna no desktop */}
                 {modalImages.length > 1 && (
-                  <div className="flex flex-col gap-2 mb-4">
+                  <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-1 lg:gap-2 mb-4">
                     {modalImages.map((image, index) => {
                       const isThumbVideo = isVideoUrl(image);
                       return (
@@ -929,7 +997,7 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                           key={`${activeModal.product.id}-modal-thumb-${index}`}
                           type="button"
                           onClick={() => setActiveModal({ product: activeModal.product, image, initialImage: activeModal.initialImage })}
-                          className={`relative h-16 w-full rounded-lg overflow-hidden border-2 transition ${
+                          className={`relative h-10 lg:h-16 w-full rounded-md lg:rounded-lg overflow-hidden border-2 transition ${
                             image === activeModal.image
                               ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'
                               : 'border-gray-200 hover:border-[#D05B92]/60'
@@ -940,7 +1008,7 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                             <>
                               <video src={image} className="h-full w-full object-cover" preload="metadata" muted />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <Play size={18} fill="white" className="text-white" />
+                                <Play size={14} fill="white" className="text-white" />
                               </div>
                             </>
                           ) : (
@@ -963,6 +1031,7 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
               </div>
             </div>
           </div>
+          </div>{/* fecha wrapper z-[1201] */}
         </div>
       )}
     </div>
