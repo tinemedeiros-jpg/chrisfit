@@ -56,6 +56,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
   const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
   const [sortColumn, setSortColumn] = useState<'code' | 'name' | 'price' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -256,6 +258,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setExistingImages([]);
     setNewImages(Array(MAX_IMAGES).fill(null));
     setFeaturedImageIndex(0);
+    setDraggedImageIndex(null);
+    setDragOverImageIndex(null);
     setShowAddForm(false);
     setIsSubmitting(false);
     setSizeInput('');
@@ -415,6 +419,49 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       next[index] = null;
       return next;
     });
+  };
+
+  const reorderImageSlots = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= MAX_IMAGES || toIndex >= MAX_IMAGES) {
+      return;
+    }
+
+    setExistingImages((prev) => {
+      const next = normalizeImageSlots(prev);
+      [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+      return next;
+    });
+
+    setNewImages((prev) => {
+      const next = [...prev];
+      [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+      return next;
+    });
+
+    setFeaturedImageIndex((prev) => {
+      if (prev === fromIndex) return toIndex;
+      if (prev === toIndex) return fromIndex;
+      return prev;
+    });
+  };
+
+  const handleImageDragStart = (index: number) => {
+    const hasMedia = Boolean(existingImages[index] || newImages[index]);
+    if (!hasMedia) return;
+    setDraggedImageIndex(index);
+    setDragOverImageIndex(index);
+  };
+
+  const handleImageDrop = (index: number) => {
+    if (draggedImageIndex === null) return;
+    reorderImageSlots(draggedImageIndex, index);
+    setDraggedImageIndex(null);
+    setDragOverImageIndex(null);
+  };
+
+  const resetDragState = () => {
+    setDraggedImageIndex(null);
+    setDragOverImageIndex(null);
   };
 
   useEffect(() => {
@@ -834,7 +881,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   return (
                     <label
                       key={`image-input-${index}`}
-                      className="relative aspect-square border-2 border-dashed border-gray-300 hover:border-[#D05B92] cursor-pointer flex items-center justify-center bg-white transition-colors overflow-hidden rounded-lg"
+                      draggable={Boolean(hasImage)}
+                      onDragStart={() => handleImageDragStart(index)}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        if (draggedImageIndex !== null && dragOverImageIndex !== index) {
+                          setDragOverImageIndex(index);
+                        }
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        handleImageDrop(index);
+                      }}
+                      onDragEnd={resetDragState}
+                      className={`relative aspect-square border-2 border-dashed hover:border-[#D05B92] cursor-pointer flex items-center justify-center bg-white transition-colors overflow-hidden rounded-lg ${
+                        dragOverImageIndex === index && draggedImageIndex !== index
+                          ? 'border-[#D05B92] ring-2 ring-[#D05B92]/20'
+                          : 'border-gray-300'
+                      }`}
                     >
                       <input type="file" accept="image/*,video/*" onChange={(event) => handleFileChange(index, event)} className="hidden" />
                       {hasImage ? (
@@ -894,7 +958,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 </div>
               </div>
             </div>
-            <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}.</p>
+            <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}. Você pode arrastar e soltar as mídias para reorganizar a ordem.</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
