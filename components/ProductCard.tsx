@@ -24,7 +24,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800';
   const images = availableImages.length ? availableImages : [coverImage];
   const [hoverIndex, setHoverIndex] = React.useState(0);
-  const [isHovering, setIsHovering] = React.useState(false);
   const thumbsRef = React.useRef<HTMLDivElement | null>(null);
   const videoRefs = React.useRef<(HTMLVideoElement | null)[]>([]);
   const hasPromo = product.isPromo && product.promoPrice && product.promoPrice > 0;
@@ -68,18 +67,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
     }
   }, [images.length]);
 
-  React.useEffect(() => {
-    if (images.length <= 1 || isHovering) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      setHoverIndex((current) => (current + 1) % images.length);
-    }, 8000);
-
-    return () => window.clearInterval(interval);
-  }, [images.length, isHovering]);
-
   // Controla play/pause dos vídeos quando o índice ativo muda
   React.useEffect(() => {
     videoRefs.current.forEach((video, index) => {
@@ -121,10 +108,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
     },
     [hoverIndex, images.length]
   );
-
-  const handleMouseLeave = React.useCallback(() => {
-    setIsHovering(false);
-  }, []);
 
   const currentImage = images[hoverIndex];
   const isCurrentVideo = isVideoUrl(currentImage);
@@ -230,8 +213,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
           }
         }}
         onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onMouseEnter={() => setIsHovering(true)}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         style={{ touchAction: 'pan-y' }}
