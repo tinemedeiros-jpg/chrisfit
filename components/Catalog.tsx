@@ -15,10 +15,56 @@ interface CatalogProps {
   onSearchChange: (value: string) => void;
 }
 
+
+const normalizeColor = (color: string) => color.trim().toLowerCase();
+
+const getSelectedColorForProduct = (product: Product, preferredColor?: string | null): string | null => {
+  const productColors = product.colors ?? [];
+  const disabledSet = new Set((product.disabledColors ?? []).map(normalizeColor));
+  const preferred = preferredColor ? normalizeColor(preferredColor) : null;
+
+  if (preferred) {
+    const preferredMatch = productColors.find(
+      (color) => normalizeColor(color) === preferred && !disabledSet.has(normalizeColor(color))
+    );
+    if (preferredMatch) return preferredMatch;
+  }
+
+  const defaultMatch = product.defaultColor
+    ? productColors.find(
+        (color) => normalizeColor(color) === normalizeColor(product.defaultColor as string) && !disabledSet.has(normalizeColor(color))
+      )
+    : null;
+
+  if (defaultMatch) return defaultMatch;
+
+  return productColors.find((color) => !disabledSet.has(normalizeColor(color))) ?? null;
+};
+
+const getProductMediaByColor = (product: Product, color: string | null): string[] => {
+  const fallback = product.images.filter((image): image is string => Boolean(image));
+
+  if (!color || !product.colorMedia) {
+    return fallback;
+  }
+
+  const colorKey = Object.keys(product.colorMedia).find(
+    (key) => normalizeColor(key) === normalizeColor(color)
+  );
+
+  if (!colorKey) {
+    return fallback;
+  }
+
+  const media = (product.colorMedia[colorKey] ?? []).filter((item): item is string => Boolean(item));
+  return media.length ? media : fallback;
+};
+
 const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm, onSearchChange }) => {
   const [activeModal, setActiveModal] = useState<{ product: Product; image: string; initialImage: string } | null>(null);
   const [sortOrder, setSortOrder] = useState<'code' | 'name' | 'recent' | 'promo'>('code');
   const [compactMode, setCompactMode] = useState(false);
+  const [featuredColorSelection, setFeaturedColorSelection] = useState<Record<string, string | null>>({});
 
   // Refs para swipe na modal de detalhe
   const modalTouchStartX = useRef(0);
@@ -138,9 +184,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     if (!featuredDisplay.length) return [];
     return featuredDisplay.map((_, offset) => featuredDisplay[(activeFeaturedIndex + offset) % featuredDisplay.length]);
   }, [featuredDisplay, activeFeaturedIndex]);
-  const activeFeaturedImage = featuredLayers[0]?.images?.find(
-    (image): image is string => Boolean(image)
-  ) ?? null;
+  const activeFeaturedProduct = featuredLayers[0] ?? featuredDisplay[activeFeaturedIndex] ?? null;
+  const activeFeaturedSelectedColor = activeFeaturedProduct
+    ? getSelectedColorForProduct(activeFeaturedProduct, featuredColorSelection[activeFeaturedProduct.id])
+    : null;
+  const activeFeaturedImages = activeFeaturedProduct
+    ? getProductMediaByColor(activeFeaturedProduct, activeFeaturedSelectedColor)
+    : [];
+  const activeFeaturedImage = activeFeaturedImages[0] ?? null;
   // Geometria para 15° de inclinação
   // Para altura de 360px: offset = 360 * tan(15°) ≈ 96px
   // Em porcentagem da largura da coluna (~467px em tela 1400px): 96/467 ≈ 20.5%
@@ -148,6 +199,23 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
   const skewOffset = '12%';
   const SKEW_DEG = 15;
   const stripHeight = 360;
+
+
+  useEffect(() => {
+    if (!activeFeaturedProduct) return;
+
+    const ensuredColor = getSelectedColorForProduct(
+      activeFeaturedProduct,
+      featuredColorSelection[activeFeaturedProduct.id]
+    );
+
+    if (ensuredColor === featuredColorSelection[activeFeaturedProduct.id]) return;
+
+    setFeaturedColorSelection((prev) => ({
+      ...prev,
+      [activeFeaturedProduct.id]: ensuredColor
+    }));
+  }, [activeFeaturedProduct, featuredColorSelection]);
 
   useEffect(() => {
     if (featuredDisplay.length <= 1) return undefined;
@@ -356,13 +424,24 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 <button
                   type="button"
                   onClick={() => {
-                    const activeProduct = featuredLayers[0] ?? featuredDisplay[activeFeaturedIndex];
-                    const img = activeProduct?.images?.find((i): i is string => Boolean(i));
+                    const activeProduct = activeFeaturedProduct;
+                    const img = activeFeaturedImage;
                     if (img && activeProduct) openModal(activeProduct, img);
                   }}
                   className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl rounded-br-[2.5rem]"
                 >
-                  <ColorDots colors={(featuredLayers[0] ?? featuredDisplay[activeFeaturedIndex])?.colors} />
+                  <ColorDots
+                    colors={activeFeaturedProduct?.colors}
+                    selectedColor={activeFeaturedSelectedColor}
+                    onSelectColor={(color) => {
+                      if (!activeFeaturedProduct) return;
+                      setFeaturedColorSelection((prev) => ({
+                        ...prev,
+                        [activeFeaturedProduct.id]: color
+                      }));
+                    }}
+                    disabledColors={activeFeaturedProduct?.disabledColors}
+                  />
                   {activeFeaturedImage && isVideoUrl(activeFeaturedImage) ? (
                     <video
                       src={activeFeaturedImage}
@@ -424,14 +503,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
               >
                 {/* Imagem/Vídeo atual - PARADA (usa displayIndex) */}
                 {featuredLayers[0] && (() => {
-                  const media = featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                  const media = activeFeaturedImage ?? '';
                   const isVideo = isVideoUrl(media);
                   return (
                     <button
                       type="button"
                       onClick={() => {
-                        const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
-                        if (img) openModal(featuredLayers[0], img);
+                        const img = activeFeaturedImage;
+                        if (img && activeFeaturedProduct) openModal(activeFeaturedProduct, img);
                       }}
                       className="absolute inset-0 w-full h-full relative"
                       style={{ zIndex: 1 }}
@@ -559,14 +638,14 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                 <div className="w-[20%] relative overflow-hidden">
                   {/* Mídia atual - PARADA (usa displayIndex, muda só após animação) */}
                   {featuredLayers[0] && (() => {
-                    const media = featuredLayers[0].images?.find((i): i is string => Boolean(i)) ?? '';
+                    const media = activeFeaturedImage ?? '';
                     const isVideo = isVideoUrl(media);
                     return (
                       <button
                         type="button"
                         onClick={() => {
-                          const img = featuredLayers[0].images?.find((i): i is string => Boolean(i));
-                          if (img) openModal(featuredLayers[0], img);
+                          const img = activeFeaturedImage;
+                          if (img && activeFeaturedProduct) openModal(activeFeaturedProduct, img);
                         }}
                         className="absolute inset-0 w-full h-full relative"
                         style={{ zIndex: 1 }}
@@ -589,7 +668,18 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                             className="w-full h-full object-cover"
                           />
                         )}
-                        <ColorDots colors={featuredLayers[0].colors} />
+                        <ColorDots
+                          colors={activeFeaturedProduct?.colors}
+                          selectedColor={activeFeaturedSelectedColor}
+                          onSelectColor={(color) => {
+                            if (!activeFeaturedProduct) return;
+                            setFeaturedColorSelection((prev) => ({
+                              ...prev,
+                              [activeFeaturedProduct.id]: color
+                            }));
+                          }}
+                          disabledColors={activeFeaturedProduct?.disabledColors}
+                        />
                       </button>
                     );
                   })()}
