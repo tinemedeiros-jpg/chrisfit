@@ -66,8 +66,6 @@ const App: React.FC = () => {
 
       if (productImageError) {
         setError(productImageError.message);
-        setIsLoading(false);
-        return;
       }
 
       productImagesByProduct = (productImageRows ?? []).reduce((acc, row) => {
@@ -91,8 +89,6 @@ const App: React.FC = () => {
 
       if (colorMediaError) {
         setError(colorMediaError.message);
-        setIsLoading(false);
-        return;
       }
 
       colorMediaByProduct = (colorMediaRows ?? []).reduce((acc, row) => {
@@ -133,7 +129,11 @@ const App: React.FC = () => {
         }
       });
 
-      const colors = Array.isArray(product.colors) ? product.colors.filter((color) => typeof color === 'string').map(normalizeColorHex) : [];
+      const colorsFromColumn = Array.isArray(product.colors)
+        ? product.colors.filter((color) => typeof color === 'string').map(normalizeColorHex)
+        : [];
+      const colorsFromMedia = Object.keys(colorMedia);
+      const colors = Array.from(new Set([...colorsFromColumn, ...colorsFromMedia]));
 
       return {
         id: product.id,
