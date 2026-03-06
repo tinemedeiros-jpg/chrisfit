@@ -6,6 +6,7 @@ interface ColorDotsProps {
   selectedColor?: string | null;
   onSelectColor?: (color: string) => void;
   disabledColors?: string[];
+  absolute?: boolean;
 }
 
 const normalizeColor = (color: string) => color.trim().toLowerCase();
@@ -15,16 +16,18 @@ const ColorDots: React.FC<ColorDotsProps> = ({
   className = '',
   selectedColor,
   onSelectColor,
-  disabledColors = []
+  disabledColors = [],
+  absolute = true
 }) => {
   if (!colors.length) return null;
 
   const normalizedSelected = selectedColor ? normalizeColor(selectedColor) : null;
   const disabledSet = new Set(disabledColors.map(normalizeColor));
   const isInteractive = Boolean(onSelectColor);
+  const positionClass = absolute ? 'absolute bottom-3 right-3' : '';
 
   return (
-    <div className={`absolute bottom-3 right-3 z-20 flex items-center gap-1.5 ${className}`}>
+    <div className={`${positionClass} z-20 flex items-center gap-1.5 ${className}`}>
       {colors.slice(0, 6).map((color) => (
         <button
           key={color}
