@@ -61,7 +61,7 @@ const getProductMediaByColor = (product: Product, color: string | null): string[
 };
 
 const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm, onSearchChange }) => {
-  const [activeModal, setActiveModal] = useState<{ product: Product; image: string; initialImage: string } | null>(null);
+  const [activeModal, setActiveModal] = useState<{ product: Product; image: string; initialImage: string; selectedColor: string | null } | null>(null);
   const [sortOrder, setSortOrder] = useState<'code' | 'name' | 'recent' | 'promo'>('code');
   const [compactMode, setCompactMode] = useState(false);
   const [featuredColorSelection, setFeaturedColorSelection] = useState<Record<string, string | null>>({});
@@ -152,8 +152,18 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
     return () => clearTimeout(timeout);
   }, [activeFeaturedIndex, hasFeatured, featuredDisplay.length, hasStartedCarousel]);
-  const modalImages = activeModal?.product.images?.filter((image): image is string => Boolean(image)) ?? [];
-  const modalImageIndex = activeModal ? modalImages.indexOf(activeModal.image) : 0;
+  const modalImages = activeModal
+    ? getProductMediaByColor(activeModal.product, activeModal.selectedColor)
+    : [];
+  const modalImageIndex = activeModal ? Math.max(0, modalImages.indexOf(activeModal.image)) : 0;
+
+  useEffect(() => {
+    if (!activeModal || modalImages.length === 0) return;
+
+    if (!modalImages.includes(activeModal.image)) {
+      setActiveModal({ ...activeModal, image: modalImages[0] });
+    }
+  }, [activeModal, modalImages]);
 
   const handleModalTouchStart = React.useCallback((e: React.TouchEvent) => {
     modalTouchStartX.current = e.touches[0].clientX;
@@ -304,7 +314,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     .filter((entry) => Boolean(entry.image));
 
   const openModal = (product: Product, image: string, options?: { syncUrl?: boolean }) => {
-    setActiveModal({ product, image, initialImage: image });
+    setActiveModal({ product, image, initialImage: image, selectedColor: null });
 
     if (options?.syncUrl === false) return;
 
@@ -1048,20 +1058,38 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                   <h3 className="text-xl lg:text-2xl font-semibold text-[#BA4680]">{activeModal.product.name}</h3>
                 </div>
 
-                {/* Preço */}
-                <div className="text-[#BA4680] mb-6">
-                  {activeModal.product.isPromo && activeModal.product.promoPrice ? (
-                    <div className="flex flex-col">
-                      <span className="text-xs line-through text-[#BA4680]/60">
+                {/* Preço + seletor de cor */}
+                <div className="text-[#BA4680] mb-6 flex items-start justify-between gap-4">
+                  <div>
+                    {activeModal.product.isPromo && activeModal.product.promoPrice ? (
+                      <div className="flex flex-col">
+                        <span className="text-xs line-through text-[#BA4680]/60">
 R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" />
-                      </span>
-                      <span className="text-3xl font-bold">
+                        </span>
+                        <span className="text-3xl font-bold">
 R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.33em]" />
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-3xl font-bold">R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" /></span>
-                  )}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-3xl font-bold">R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" /></span>
+                    )}
+                  </div>
+
+                  <ColorDots
+                    colors={activeModal.product.colors}
+                    selectedColor={activeModal.selectedColor}
+                    disabledColors={activeModal.product.disabledColors}
+                    absolute={false}
+                    className="static shrink-0"
+                    onSelectColor={(color) => {
+                      const nextMedia = getProductMediaByColor(activeModal.product, color);
+                      setActiveModal({
+                        ...activeModal,
+                        selectedColor: color,
+                        image: nextMedia[0] ?? activeModal.image
+                      });
+                    }}
+                  />
                 </div>
 
                 {/* Descrição - abaixo do preço */}
@@ -1087,7 +1115,7 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                         <button
                           key={`${activeModal.product.id}-modal-thumb-${index}`}
                           type="button"
-                          onClick={() => setActiveModal({ product: activeModal.product, image, initialImage: activeModal.initialImage })}
+                          onClick={() => setActiveModal({ product: activeModal.product, image, initialImage: activeModal.initialImage, selectedColor: activeModal.selectedColor })}
                           className={`relative h-10 lg:h-16 w-full rounded-md lg:rounded-lg overflow-hidden border-2 transition ${
                             image === activeModal.image
                               ? 'border-[#D05B92] ring-2 ring-[#D05B92]/40'

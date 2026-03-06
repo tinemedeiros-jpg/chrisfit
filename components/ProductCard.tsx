@@ -41,19 +41,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
   const message = encodeURIComponent(`Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
   const productColors = product.colors ?? [];
-  const normalizedDisabledColors = React.useMemo(
-    () => new Set((product.disabledColors ?? []).map(normalizeColor)),
-    [product.disabledColors]
-  );
-  const initialColor = React.useMemo(() => {
-    const candidates = [product.defaultColor ?? null, ...productColors];
-    return candidates.find((color): color is string => Boolean(color) && !normalizedDisabledColors.has(normalizeColor(color))) ?? null;
-  }, [product.defaultColor, productColors, normalizedDisabledColors]);
-  const [selectedColor, setSelectedColor] = React.useState<string | null>(initialColor);
+  const [selectedColor, setSelectedColor] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setSelectedColor(initialColor);
-  }, [initialColor, product.id]);
+    setSelectedColor(null);
+  }, [product.id]);
 
   const availableImages = React.useMemo(
     () => getMediaForColor(product, selectedColor),
