@@ -1,3 +1,4 @@
+-- Observação: script não remove dados existentes; apenas adiciona estrutura para suporte de mídia por cor.
 -- 1) Alterações na tabela products
 alter table public.products
   add column if not exists default_color text;
