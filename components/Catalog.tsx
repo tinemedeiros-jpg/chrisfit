@@ -988,6 +988,7 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                 )}
 
                 {/* Galeria de fotos/vídeos: 2 colunas no mobile e no desktop */}
+                {/* Comentário técnico: manter grid em 2 colunas para consistência visual entre breakpoints. */}
                 {modalImages.length > 1 && (
                   <div className="grid grid-cols-2 gap-1.5 lg:gap-2 mb-4">
                     {modalImages.map((image, index) => {
