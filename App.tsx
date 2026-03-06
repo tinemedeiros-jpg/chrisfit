@@ -43,7 +43,7 @@ const App: React.FC = () => {
     const { data, error: fetchError } = await supabase
       .from('products')
       .select(
-        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, colors, default_color, disabled_colors, observation, description, created_at, product_images ( url, position ), product_color_media ( color_hex, url, position )'
+        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, colors, default_color, disabled_colors, observation, description, created_at'
       )
       .order('created_at', { ascending: false });
 
@@ -55,9 +55,35 @@ const App: React.FC = () => {
 
     const productIds = (data ?? []).map((product) => product.id).filter((id): id is string => typeof id === 'string');
 
+    let productImagesByProduct: Record<string, Array<{ url: string; position: number }>> = {};
     let colorMediaByProduct: Record<string, Array<{ color_hex: string; url: string; position: number }>> = {};
 
     if (productIds.length > 0) {
+      const { data: productImageRows, error: productImageError } = await supabase
+        .from('product_images')
+        .select('products_id, url, position')
+        .in('products_id', productIds);
+
+      if (productImageError) {
+        setError(productImageError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      productImagesByProduct = (productImageRows ?? []).reduce((acc, row) => {
+        const productId = typeof row.products_id === 'string' ? row.products_id : '';
+        const url = typeof row.url === 'string' ? row.url : '';
+        const position = typeof row.position === 'number' ? row.position : Number(row.position);
+        if (!productId || !url || !Number.isFinite(position)) {
+          return acc;
+        }
+        if (!acc[productId]) {
+          acc[productId] = [];
+        }
+        acc[productId].push({ url, position });
+        return acc;
+      }, {} as Record<string, Array<{ url: string; position: number }>>);
+
       const { data: colorMediaRows, error: colorMediaError } = await supabase
         .from('product_color_media')
         .select('product_id, color_hex, url, position')
@@ -87,7 +113,7 @@ const App: React.FC = () => {
 
     const mappedProducts = (data ?? []).map((product) => {
       const images = Array<string | null>(MAX_IMAGES).fill(null);
-      const sortedImages = (product.product_images ?? []).sort((a, b) => a.position - b.position);
+      const sortedImages = (productImagesByProduct[product.id] ?? []).sort((a, b) => a.position - b.position);
       const colorMedia: Record<string, Array<string | null>> = {};
 
       (colorMediaByProduct[product.id] ?? []).forEach((entry) => {
