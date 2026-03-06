@@ -10,6 +10,10 @@ import { isSupabaseConfigured, supabase } from './lib/supabaseClient';
 const BUCKET_NAME = 'product-images';
 const MAX_IMAGES = 5;
 
+const normalizeColorHex = (value: string) => value.trim().toUpperCase();
+
+const colorStorageSegment = (hex: string) => normalizeColorHex(hex).replace('#', '');
+
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     window.location.hash.startsWith('#/admin') ? 'admin' : 'catalog'
@@ -39,7 +43,7 @@ const App: React.FC = () => {
     const { data, error: fetchError } = await supabase
       .from('products')
       .select(
-        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, colors, observation, description, created_at, product_images ( url, position )'
+        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, colors, default_color, disabled_colors, observation, description, created_at, product_images ( url, position ), product_color_media ( color_hex, url, position )'
       )
       .order('created_at', { ascending: false });
 
@@ -52,11 +56,26 @@ const App: React.FC = () => {
     const mappedProducts = (data ?? []).map((product) => {
       const images = Array<string | null>(MAX_IMAGES).fill(null);
       const sortedImages = (product.product_images ?? []).sort((a, b) => a.position - b.position);
+      const colorMedia: Record<string, Array<string | null>> = {};
+
+      (product.product_color_media ?? []).forEach((entry) => {
+        const color = typeof entry.color_hex === 'string' ? normalizeColorHex(entry.color_hex) : '';
+        if (!color || typeof entry.position !== 'number' || entry.position < 1 || entry.position > MAX_IMAGES) {
+          return;
+        }
+        if (!colorMedia[color]) {
+          colorMedia[color] = Array<string | null>(MAX_IMAGES).fill(null);
+        }
+        colorMedia[color][entry.position - 1] = resolveImageUrl(entry.url);
+      });
+
       sortedImages.forEach((image) => {
         if (image.position >= 1 && image.position <= MAX_IMAGES) {
           images[image.position - 1] = resolveImageUrl(image.url);
         }
       });
+
+      const colors = Array.isArray(product.colors) ? product.colors.filter((color) => typeof color === 'string').map(normalizeColorHex) : [];
 
       return {
         id: product.id,
@@ -73,7 +92,12 @@ const App: React.FC = () => {
         isFeatured: Boolean(product.is_featured),
         isActive: product.is_active !== false,
         sizes: Array.isArray(product.sizes) ? product.sizes : [],
-        colors: Array.isArray(product.colors) ? product.colors.filter((color) => typeof color === 'string') : [],
+        colors,
+        defaultColor: typeof product.default_color === 'string' ? normalizeColorHex(product.default_color) : null,
+        disabledColors: Array.isArray(product.disabled_colors)
+          ? product.disabled_colors.filter((color) => typeof color === 'string').map(normalizeColorHex)
+          : [],
+        colorMedia,
         images,
         observation: product.observation ?? null,
         description: product.description ?? null,
@@ -175,6 +199,66 @@ const App: React.FC = () => {
     }
   };
 
+  const syncColorMedia = async (
+    productId: string,
+    colorMedia: Record<string, Array<string | null>>,
+    newColorMedia: Record<string, Array<File | null>>
+  ) => {
+    const payload: Array<{ product_id: string; color_hex: string; url: string; position: number }> = [];
+
+    for (const [rawColor, existingByPosition] of Object.entries(colorMedia)) {
+      const color = normalizeColorHex(rawColor);
+      const filesByPosition = newColorMedia[color] ?? Array(MAX_IMAGES).fill(null);
+      const nextUrls = Array<string | null>(MAX_IMAGES).fill(null);
+
+      existingByPosition.forEach((url, index) => {
+        if (index < MAX_IMAGES) {
+          nextUrls[index] = url ?? null;
+        }
+      });
+
+      for (let index = 0; index < MAX_IMAGES; index += 1) {
+        const file = filesByPosition[index];
+        if (!file) continue;
+        const filePath = `${productId}/colors/${colorStorageSegment(color)}/${Date.now()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, {
+          upsert: true
+        });
+        if (uploadError) {
+          throw new Error(uploadError.message);
+        }
+        const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+        nextUrls[index] = data.publicUrl;
+      }
+
+      nextUrls.forEach((url, index) => {
+        if (!url) return;
+        payload.push({
+          product_id: productId,
+          color_hex: color,
+          url,
+          position: index + 1
+        });
+      });
+    }
+
+    const { error: deleteError } = await supabase
+      .from('product_color_media')
+      .delete()
+      .eq('product_id', productId);
+
+    if (deleteError) {
+      throw new Error(deleteError.message);
+    }
+
+    if (payload.length > 0) {
+      const { error: insertError } = await supabase.from('product_color_media').insert(payload);
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
+    }
+  };
+
   const addProduct = async (payload: ProductUpsertPayload) => {
     if (!isSupabaseConfigured) {
       throw new Error('Configuração do Supabase ausente.');
@@ -200,6 +284,8 @@ const App: React.FC = () => {
         is_active: payload.isActive ?? true,
         sizes: payload.sizes,
         colors: payload.colors ?? [],
+        default_color: payload.defaultColor ?? null,
+        disabled_colors: payload.disabledColors ?? [],
         observation: payload.observation ?? null,
         description: payload.description ?? null
       })
@@ -211,6 +297,7 @@ const App: React.FC = () => {
     }
 
     await syncProductImages(data.id, payload.existingImages, payload.newImages);
+    await syncColorMedia(data.id, payload.colorMedia ?? {}, payload.newColorMedia ?? {});
     await fetchProducts();
   };
 
@@ -239,6 +326,8 @@ const App: React.FC = () => {
         is_active: payload.isActive ?? true,
         sizes: payload.sizes,
         colors: payload.colors ?? [],
+        default_color: payload.defaultColor ?? null,
+        disabled_colors: payload.disabledColors ?? [],
         observation: payload.observation ?? null,
         description: payload.description ?? null
       })
@@ -249,6 +338,7 @@ const App: React.FC = () => {
     }
 
     await syncProductImages(payload.id, payload.existingImages, payload.newImages);
+    await syncColorMedia(payload.id, payload.colorMedia ?? {}, payload.newColorMedia ?? {});
     await fetchProducts();
   };
 
