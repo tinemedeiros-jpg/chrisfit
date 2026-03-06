@@ -53,12 +53,44 @@ const App: React.FC = () => {
       return;
     }
 
+    const productIds = (data ?? []).map((product) => product.id).filter((id): id is string => typeof id === 'string');
+
+    let colorMediaByProduct: Record<string, Array<{ color_hex: string; url: string; position: number }>> = {};
+
+    if (productIds.length > 0) {
+      const { data: colorMediaRows, error: colorMediaError } = await supabase
+        .from('product_color_media')
+        .select('product_id, color_hex, url, position')
+        .in('product_id', productIds);
+
+      if (colorMediaError) {
+        setError(colorMediaError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      colorMediaByProduct = (colorMediaRows ?? []).reduce((acc, row) => {
+        const productId = typeof row.product_id === 'string' ? row.product_id : '';
+        const colorHex = typeof row.color_hex === 'string' ? row.color_hex : '';
+        const url = typeof row.url === 'string' ? row.url : '';
+        const position = typeof row.position === 'number' ? row.position : Number(row.position);
+        if (!productId || !colorHex || !url || !Number.isFinite(position)) {
+          return acc;
+        }
+        if (!acc[productId]) {
+          acc[productId] = [];
+        }
+        acc[productId].push({ color_hex: colorHex, url, position });
+        return acc;
+      }, {} as Record<string, Array<{ color_hex: string; url: string; position: number }>>);
+    }
+
     const mappedProducts = (data ?? []).map((product) => {
       const images = Array<string | null>(MAX_IMAGES).fill(null);
       const sortedImages = (product.product_images ?? []).sort((a, b) => a.position - b.position);
       const colorMedia: Record<string, Array<string | null>> = {};
 
-      (product.product_color_media ?? []).forEach((entry) => {
+      (colorMediaByProduct[product.id] ?? []).forEach((entry) => {
         const color = typeof entry.color_hex === 'string' ? normalizeColorHex(entry.color_hex) : '';
         if (!color || typeof entry.position !== 'number' || entry.position < 1 || entry.position > MAX_IMAGES) {
           return;
