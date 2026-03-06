@@ -12,12 +12,52 @@ interface ProductCardProps {
   compact?: boolean;
 }
 
+
+const normalizeColor = (color: string) => color.trim().toLowerCase();
+
+const getMediaForColor = (product: Product, selectedColor: string | null): string[] => {
+  const fallbackImages = product.images.filter((image): image is string => Boolean(image));
+  if (!selectedColor || !product.colorMedia) {
+    return fallbackImages;
+  }
+
+  const colorKey = Object.keys(product.colorMedia).find(
+    (key) => normalizeColor(key) === normalizeColor(selectedColor)
+  );
+
+  if (!colorKey) {
+    return fallbackImages;
+  }
+
+  const colorImages = (product.colorMedia[colorKey] ?? []).filter(
+    (image): image is string => Boolean(image)
+  );
+
+  return colorImages.length ? colorImages : fallbackImages;
+};
+
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }) => {
   const whatsappNumber = "5511968268034";
   const message = encodeURIComponent(`Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`);
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-  const availableImages = product.images.filter(
-    (image): image is string => Boolean(image)
+  const productColors = product.colors ?? [];
+  const normalizedDisabledColors = React.useMemo(
+    () => new Set((product.disabledColors ?? []).map(normalizeColor)),
+    [product.disabledColors]
+  );
+  const initialColor = React.useMemo(() => {
+    const candidates = [product.defaultColor ?? null, ...productColors];
+    return candidates.find((color): color is string => Boolean(color) && !normalizedDisabledColors.has(normalizeColor(color))) ?? null;
+  }, [product.defaultColor, productColors, normalizedDisabledColors]);
+  const [selectedColor, setSelectedColor] = React.useState<string | null>(initialColor);
+
+  React.useEffect(() => {
+    setSelectedColor(initialColor);
+  }, [initialColor, product.id]);
+
+  const availableImages = React.useMemo(
+    () => getMediaForColor(product, selectedColor),
+    [product, selectedColor]
   );
   const coverImage =
     availableImages[0] ??
@@ -34,6 +74,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
   const touchStartX = React.useRef(0);
   const touchStartY = React.useRef(0);
   const didSwipe = React.useRef(false);
+
+
+  React.useEffect(() => {
+    setHoverIndex(0);
+  }, [selectedColor, product.id]);
 
   const handlePreview = React.useCallback(() => {
     onPreview(product, images[hoverIndex]);
@@ -192,6 +237,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
                 {product.code}
               </span>
             </div>
+
+            <ColorDots
+              colors={productColors}
+              selectedColor={selectedColor}
+              onSelectColor={setSelectedColor}
+              disabledColors={product.disabledColors}
+              className="top-1.5 right-1.5 bottom-auto"
+            />
           </div>
         </div>
       </div>
@@ -268,7 +321,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
         <div className="relative z-10 flex flex-col h-full min-h-[600px]">
           {/* Imagem/Vídeo nítido em carrossel - ocupa todo espaço */}
           <div className="flex-1 relative">
-            <ColorDots colors={product.colors} />
+            <ColorDots
+              colors={productColors}
+              selectedColor={selectedColor}
+              onSelectColor={setSelectedColor}
+              disabledColors={product.disabledColors}
+            />
             {images.map((image, index) => {
               const isVideo = isVideoUrl(image);
               return isVideo ? (
