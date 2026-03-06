@@ -13,6 +13,9 @@ export interface Product {
   observation?: string | null;
   description?: string | null;
   colors?: string[];
+  defaultColor?: string | null;
+  disabledColors?: string[];
+  colorMedia?: Record<string, Array<string | null>>;
   createdAt: string;
 }
 
@@ -31,6 +34,10 @@ export interface ProductUpsertPayload {
   observation?: string;
   description?: string;
   colors?: string[];
+  defaultColor?: string | null;
+  disabledColors?: string[];
   existingImages: Array<string | null>;
   newImages: Array<File | null>;
+  colorMedia?: Record<string, Array<string | null>>;
+  newColorMedia?: Record<string, Array<File | null>>;
 }

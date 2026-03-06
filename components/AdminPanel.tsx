@@ -19,6 +19,24 @@ interface AdminPanelProps {
 const MAX_IMAGES = 5;
 const ADMIN_VERSION = 'v0.20260224_1100';
 
+type ColorMediaDraft = {
+  existing: Array<string | null>;
+  newFiles: Array<File | null>;
+  isEnabled: boolean;
+};
+
+const normalizeColorHex = (value: string) => value.trim().toUpperCase();
+
+const normalizeMediaSlots = (items?: Array<string | null>) => {
+  const next = Array<string | null>(MAX_IMAGES).fill(null);
+  (items ?? []).forEach((item, index) => {
+    if (index < MAX_IMAGES) {
+      next[index] = item ?? null;
+    }
+  });
+  return next;
+};
+
 const sanitizePriceInput = (value: string) => {
   const normalized = value.replace(/\./g, ',').replace(/[^\d,]/g, '');
   const [integerPart, ...decimalParts] = normalized.split(',');
@@ -149,6 +167,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   });
   const [sizeInput, setSizeInput] = useState('');
   const [colorInput, setColorInput] = useState('#D05B92');
+  const [defaultColor, setDefaultColor] = useState<string | null>(null);
+  const [colorMediaDraft, setColorMediaDraft] = useState<Record<string, ColorMediaDraft>>({});
+  const [activeColorEditor, setActiveColorEditor] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -207,6 +228,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     existing.reduce((count, url, index) => count + (nextFiles[index] ? 1 : url ? 1 : 0), 0);
 
   const startEdit = (product: Product) => {
+    const productColors = (product.colors ?? []).map(normalizeColorHex);
+    const nextDefaultColor = product.defaultColor && productColors.includes(normalizeColorHex(product.defaultColor))
+      ? normalizeColorHex(product.defaultColor)
+      : productColors[0] ?? null;
+    const disabledSet = new Set((product.disabledColors ?? []).map(normalizeColorHex));
+    const nextDraft: Record<string, ColorMediaDraft> = {};
+
+    productColors.forEach((color) => {
+      nextDraft[color] = {
+        existing: normalizeMediaSlots(product.colorMedia?.[color]),
+        newFiles: Array(MAX_IMAGES).fill(null),
+        isEnabled: !disabledSet.has(color)
+      };
+    });
+
     setEditingId(product.id);
     setFormData({
       code: product.code,
@@ -227,7 +263,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       sizes: product.sizes,
       observation: product.observation || '',
       description: product.description || '',
-      colors: product.colors ?? []
+      colors: productColors
     });
     setExistingImages(normalizeImageSlots(product.images));
     setNewImages(Array(MAX_IMAGES).fill(null));
@@ -236,7 +272,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     );
     setShowAddForm(true);
     setSizeInput('');
-    setColorInput((product.colors && product.colors[0]) || '#D05B92');
+    setColorInput(productColors[0] || '#D05B92');
+    setDefaultColor(nextDefaultColor);
+    setColorMediaDraft(nextDraft);
+    setActiveColorEditor(nextDefaultColor ?? productColors[0] ?? null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -264,6 +303,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     setIsSubmitting(false);
     setSizeInput('');
     setColorInput('#D05B92');
+    setDefaultColor(null);
+    setColorMediaDraft({});
+    setActiveColorEditor(null);
   };
 
   const remainingSlots = useMemo(() => {
@@ -288,13 +330,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     const uniqueColors = new Set<string>();
     products.forEach((product) => {
       (product.colors ?? []).forEach((color) => {
-        const normalized = color.trim().toUpperCase();
+        const normalized = normalizeColorHex(color);
         if (/^#[0-9A-F]{6}$/.test(normalized)) {
           uniqueColors.add(normalized);
         }
       });
     });
-    return Array.from(uniqueColors);
+    return Array.from(uniqueColors).slice(0, 8);
   }, [products]);
 
   const addSize = (rawSize: string) => {
@@ -317,7 +359,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
 
   const normalizeColor = (value: string) => {
-    const normalized = value.trim().toUpperCase();
+    const normalized = normalizeColorHex(value);
     if (/^#[0-9A-F]{6}$/.test(normalized)) {
       return normalized;
     }
@@ -331,6 +373,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       if (prev.colors.includes(normalized)) return prev;
       return { ...prev, colors: [...prev.colors, normalized] };
     });
+    setColorMediaDraft((prev) => {
+      if (prev[normalized]) return prev;
+      return {
+        ...prev,
+        [normalized]: {
+          existing: Array(MAX_IMAGES).fill(null),
+          newFiles: Array(MAX_IMAGES).fill(null),
+          isEnabled: true
+        }
+      };
+    });
+    setDefaultColor((prev) => prev ?? normalized);
+    setActiveColorEditor(normalized);
+    setColorInput(normalized);
   };
 
   const removeColor = (colorToRemove: string) => {
@@ -338,6 +394,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       ...prev,
       colors: prev.colors.filter((color) => color !== colorToRemove)
     }));
+    setColorMediaDraft((prev) => {
+      const next = { ...prev };
+      delete next[colorToRemove];
+      return next;
+    });
+    setDefaultColor((prev) => (prev === colorToRemove ? null : prev));
+    setActiveColorEditor((prev) => (prev === colorToRemove ? null : prev));
   };
 
   const handlePriceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -418,6 +481,107 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       const next = [...prev];
       next[index] = null;
       return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!formData.colors.length) {
+      if (defaultColor !== null) setDefaultColor(null);
+      if (activeColorEditor !== null) setActiveColorEditor(null);
+      return;
+    }
+
+    if (!defaultColor || !formData.colors.includes(defaultColor)) {
+      setDefaultColor(formData.colors[0]);
+    }
+
+    if (!activeColorEditor || !formData.colors.includes(activeColorEditor)) {
+      setActiveColorEditor(formData.colors[0]);
+    }
+  }, [formData.colors, defaultColor, activeColorEditor]);
+
+  const handleColorMediaFileChange = async (color: string, index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
+
+    if (isVideoFile(file)) {
+      const validation = await validateVideoDuration(file, 30);
+      if (!validation.valid) {
+        alert(`❌ ${validation.message}\n\nPor favor, edite o vídeo para ter no máximo 30 segundos e tente novamente.`);
+        event.target.value = '';
+        return;
+      }
+    }
+
+    setColorMediaDraft((prev) => {
+      const current = prev[color] ?? {
+        existing: Array(MAX_IMAGES).fill(null),
+        newFiles: Array(MAX_IMAGES).fill(null),
+        isEnabled: true
+      };
+      const nextFiles = [...current.newFiles];
+      nextFiles[index] = file;
+      return {
+        ...prev,
+        [color]: {
+          ...current,
+          newFiles: nextFiles
+        }
+      };
+    });
+  };
+
+  const removeExistingColorMedia = (color: string, index: number) => {
+    setColorMediaDraft((prev) => {
+      const current = prev[color];
+      if (!current) return prev;
+      const existing = [...current.existing];
+      existing[index] = null;
+      return {
+        ...prev,
+        [color]: {
+          ...current,
+          existing
+        }
+      };
+    });
+  };
+
+  const removeNewColorMedia = (color: string, index: number) => {
+    setColorMediaDraft((prev) => {
+      const current = prev[color];
+      if (!current) return prev;
+      const newFiles = [...current.newFiles];
+      newFiles[index] = null;
+      return {
+        ...prev,
+        [color]: {
+          ...current,
+          newFiles
+        }
+      };
+    });
+  };
+
+  const toggleColorEnabled = (color: string) => {
+    setColorMediaDraft((prev) => {
+      const current = prev[color] ?? {
+        existing: Array(MAX_IMAGES).fill(null),
+        newFiles: Array(MAX_IMAGES).fill(null),
+        isEnabled: true
+      };
+      const nextEnabled = !current.isEnabled;
+      if (!nextEnabled && defaultColor === color) {
+        const replacement = formData.colors.find((item) => item !== color && (prev[item]?.isEnabled ?? true));
+        setDefaultColor(replacement ?? null);
+      }
+      return {
+        ...prev,
+        [color]: {
+          ...current,
+          isEnabled: nextEnabled
+        }
+      };
     });
   };
 
@@ -516,8 +680,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       observation: formData.observation,
       description: formData.description,
       colors: formData.colors,
+      defaultColor,
+      disabledColors: formData.colors.filter((color) => !(colorMediaDraft[color]?.isEnabled ?? true)),
       existingImages: reorderedImages,
-      newImages: reorderedNewImages
+      newImages: reorderedNewImages,
+      colorMedia: Object.fromEntries(
+        formData.colors.map((color) => [color, normalizeMediaSlots(colorMediaDraft[color]?.existing)])
+      ),
+      newColorMedia: Object.fromEntries(
+        formData.colors.map((color) => [color, colorMediaDraft[color]?.newFiles ?? Array(MAX_IMAGES).fill(null)])
+      )
     };
 
     try {
@@ -558,8 +730,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       observation: product.observation ?? '',
       description: product.description ?? '',
       colors: product.colors ?? [],
+      defaultColor: product.defaultColor ?? null,
+      disabledColors: product.disabledColors ?? [],
       existingImages: normalizeImageSlots(product.images),
-      newImages: Array(MAX_IMAGES).fill(null)
+      newImages: Array(MAX_IMAGES).fill(null),
+      colorMedia: product.colorMedia ?? {},
+      newColorMedia: {}
     };
     try {
       await onUpdate(payload);
@@ -586,8 +762,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       observation: product.observation ?? '',
       description: product.description ?? '',
       colors: product.colors ?? [],
+      defaultColor: product.defaultColor ?? null,
+      disabledColors: product.disabledColors ?? [],
       existingImages: normalizeImageSlots(product.images),
-      newImages: Array(MAX_IMAGES).fill(null)
+      newImages: Array(MAX_IMAGES).fill(null),
+      colorMedia: product.colorMedia ?? {},
+      newColorMedia: {}
     };
 
     try {
@@ -829,7 +1009,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 </button>
               </div>
               {colorOptions.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-1">
+                  <p className="text-[11px] text-gray-500">Últimas cores usadas</p>
+                  <div className="flex flex-wrap gap-2">
                   {colorOptions.map((color) => (
                     <button
                       key={color}
@@ -840,6 +1022,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       title={`Usar ${color}`}
                     />
                   ))}
+                  </div>
                 </div>
               )}
               {formData.colors.length > 0 ? (
@@ -856,6 +1039,98 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 </div>
               ) : (
                 <p className="text-[11px] text-gray-400">Sem cores definidas.</p>
+              )}
+
+              {formData.colors.length > 0 && (
+                <div className="space-y-3 pt-2 border-t border-gray-200">
+                  <p className="text-[11px] font-semibold text-gray-600">Configuração por cor</p>
+                  <div className="flex flex-col gap-2">
+                    {formData.colors.map((color) => {
+                      const draft = colorMediaDraft[color] ?? {
+                        existing: Array(MAX_IMAGES).fill(null),
+                        newFiles: Array(MAX_IMAGES).fill(null),
+                        isEnabled: true
+                      };
+                      const isDefault = defaultColor === color;
+                      return (
+                        <div key={`${color}-settings`} className="bg-white border border-gray-200 rounded-lg p-2.5 flex flex-wrap items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setActiveColorEditor(color)}
+                            className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-xs font-semibold ${
+                              activeColorEditor === color ? 'border-[#D05B92] text-[#D05B92]' : 'border-gray-200 text-gray-600'
+                            }`}
+                          >
+                            <span className="w-3.5 h-3.5 rounded-full border border-gray-300" style={{ backgroundColor: color }} />
+                            {color}
+                          </button>
+
+                          <label className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                            <input
+                              type="checkbox"
+                              checked={draft.isEnabled}
+                              onChange={() => toggleColorEnabled(color)}
+                            />
+                            Ativa
+                          </label>
+
+                          <label className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                            <input
+                              type="radio"
+                              name="defaultColor"
+                              checked={isDefault}
+                              disabled={!draft.isEnabled}
+                              onChange={() => setDefaultColor(color)}
+                            />
+                            Cor padrão
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {activeColorEditor && colorMediaDraft[activeColorEditor] && (
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+                      <p className="text-[11px] font-semibold text-gray-700">
+                        Mídias da cor {activeColorEditor} (5 posições)
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {Array.from({ length: MAX_IMAGES }).map((_, index) => {
+                          const draft = colorMediaDraft[activeColorEditor];
+                          const existing = draft.existing[index];
+                          const pending = draft.newFiles[index];
+                          return (
+                            <div key={`${activeColorEditor}-${index}`} className="space-y-1.5">
+                              <label className="relative block aspect-square border-2 border-dashed rounded-md overflow-hidden bg-gray-50 border-gray-300 cursor-pointer">
+                                {pending ? (
+                                  <img src={URL.createObjectURL(pending)} alt="preview" className="w-full h-full object-cover" />
+                                ) : existing ? (
+                                  isVideoUrl(existing) ? (
+                                    <video src={existing} className="w-full h-full object-cover" muted preload="metadata" />
+                                  ) : (
+                                    <img src={existing} alt="mídia" className="w-full h-full object-cover" />
+                                  )
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">{index + 1}</div>
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/*,video/*"
+                                  className="hidden"
+                                  onChange={(event) => handleColorMediaFileChange(activeColorEditor, index, event)}
+                                />
+                              </label>
+                              <div className="flex gap-1">
+                                <button type="button" onClick={() => removeExistingColorMedia(activeColorEditor, index)} className="text-[10px] px-2 py-1 rounded bg-gray-100">Limpar atual</button>
+                                <button type="button" onClick={() => removeNewColorMedia(activeColorEditor, index)} className="text-[10px] px-2 py-1 rounded bg-gray-100">Limpar novo</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

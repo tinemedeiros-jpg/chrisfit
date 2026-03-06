@@ -987,9 +987,10 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                   <p className="text-xs text-[#BA4680]/70 mb-4">{activeModal.product.observation}</p>
                 )}
 
-                {/* Galeria de fotos/vídeos: 2 colunas no mobile, 1 coluna no desktop */}
+                {/* Galeria de fotos/vídeos: 2 colunas no mobile e no desktop */}
+                {/* Comentário técnico: manter grid em 2 colunas para consistência visual entre breakpoints. */}
                 {modalImages.length > 1 && (
-                  <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-1 lg:gap-2 mb-4">
+                  <div className="grid grid-cols-2 gap-1.5 lg:gap-2 mb-4">
                     {modalImages.map((image, index) => {
                       const isThumbVideo = isVideoUrl(image);
                       return (
