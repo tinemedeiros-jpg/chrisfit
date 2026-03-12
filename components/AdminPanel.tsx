@@ -76,8 +76,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
-  const [sortColumn, setSortColumn] = useState<'code' | 'name' | 'price' | null>(null);
+  const [sortColumn, setSortColumn] = useState<'visual' | 'code' | 'name' | 'price' | 'status' | 'sizes' | 'observation' | 'images' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [showPromoOnly, setShowPromoOnly] = useState(false);
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [showInactiveOnly, setShowInactiveOnly] = useState(false);
 
   // Função para calcular o próximo código disponível
   const getNextAvailableCode = () => {
@@ -96,25 +100,55 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   };
 
   // Handler para ordenação de colunas
-  const handleSort = (column: 'code' | 'name' | 'price') => {
-    if (sortColumn === column) {
-      // Se já está ordenando por essa coluna, inverte a direção
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
+  const handleSort = (column: 'visual' | 'code' | 'name' | 'price' | 'status' | 'sizes' | 'observation' | 'images') => {
+    if (sortColumn !== column) {
       // Nova coluna, começa com ascendente
       setSortColumn(column);
       setSortDirection('asc');
     }
   };
 
-  // Produtos ordenados
-  const sortedProducts = useMemo(() => {
-    if (!sortColumn) return products;
+  const handleSortDirectionToggle = (column: 'visual' | 'code' | 'name' | 'price' | 'status' | 'sizes' | 'observation' | 'images') => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
 
-    return [...products].sort((a, b) => {
+    setSortColumn(column);
+    setSortDirection('desc');
+  };
+
+  const renderSortIcon = (column: 'visual' | 'code' | 'name' | 'price' | 'status' | 'sizes' | 'observation' | 'images') => {
+    if (sortColumn !== column) return null;
+    return sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
+  };
+
+  // Produtos ordenados
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const isActive = product.isActive !== false;
+
+      if (showPromoOnly && !product.isPromo) return false;
+      if (showFeaturedOnly && !product.isFeatured) return false;
+
+      if (showActiveOnly && !showInactiveOnly && !isActive) return false;
+      if (showInactiveOnly && !showActiveOnly && isActive) return false;
+
+      return true;
+    });
+  }, [products, showPromoOnly, showFeaturedOnly, showActiveOnly, showInactiveOnly]);
+
+  const sortedProducts = useMemo(() => {
+    if (!sortColumn) return filteredProducts;
+
+    return [...filteredProducts].sort((a, b) => {
       let comparison = 0;
 
       switch (sortColumn) {
+        case 'visual':
+          comparison = (a.images.findIndex((image) => Boolean(image)) === -1 ? 1 : 0)
+            - (b.images.findIndex((image) => Boolean(image)) === -1 ? 1 : 0);
+          break;
         case 'code':
           comparison = a.code.localeCompare(b.code);
           break;
@@ -126,11 +160,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
           const priceB = b.isPromo && b.promoPrice ? b.promoPrice : b.price;
           comparison = priceA - priceB;
           break;
+        case 'status': {
+          const statusWeightA = (a.isActive !== false ? 4 : 0) + (a.isFeatured ? 2 : 0) + (a.isPromo ? 1 : 0);
+          const statusWeightB = (b.isActive !== false ? 4 : 0) + (b.isFeatured ? 2 : 0) + (b.isPromo ? 1 : 0);
+          comparison = statusWeightA - statusWeightB;
+          break;
+        }
+        case 'sizes':
+          comparison = a.sizes.join(', ').localeCompare(b.sizes.join(', '));
+          break;
+        case 'observation':
+          comparison = (a.observation ?? '').localeCompare(b.observation ?? '');
+          break;
+        case 'images':
+          comparison = a.images.filter(Boolean).length - b.images.filter(Boolean).length;
+          break;
       }
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [products, sortColumn, sortDirection]);
+  }, [filteredProducts, sortColumn, sortDirection]);
 
   const catalogBaseUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -1251,48 +1300,128 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       )}
 
       <div className="bg-[#f4fbff] shadow-2xl overflow-hidden border border-[#D05B92]/10">
+        <div className="px-4 sm:px-8 py-4 border-b border-[#D05B92]/10 flex flex-wrap gap-3 text-xs sm:text-sm text-gray-600">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showPromoOnly}
+              onChange={(event) => setShowPromoOnly(event.target.checked)}
+              className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92]"
+            />
+            Apenas promoção
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showFeaturedOnly}
+              onChange={(event) => setShowFeaturedOnly(event.target.checked)}
+              className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92]"
+            />
+            Apenas destaque
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showActiveOnly}
+              onChange={(event) => setShowActiveOnly(event.target.checked)}
+              className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92]"
+            />
+            Apenas ativos
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showInactiveOnly}
+              onChange={(event) => setShowInactiveOnly(event.target.checked)}
+              className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92]"
+            />
+            Apenas inativos
+          </label>
+        </div>
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#D05B92]/5 text-[#D05B92] font-bold uppercase text-[10px] tracking-[0.2em]">
               <tr>
-                <th className="px-8 py-6">Visual</th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('visual')}
+                  onDoubleClick={() => handleSortDirectionToggle('visual')}
+                >
+                  <div className="flex items-center gap-2">
+                    Visual
+                    {renderSortIcon('visual')}
+                  </div>
+                </th>
                 <th
                   className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
                   onClick={() => handleSort('code')}
+                  onDoubleClick={() => handleSortDirectionToggle('code')}
                 >
                   <div className="flex items-center gap-2">
                     Cód.
-                    {sortColumn === 'code' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
+                    {renderSortIcon('code')}
                   </div>
                 </th>
                 <th
                   className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
                   onClick={() => handleSort('name')}
+                  onDoubleClick={() => handleSortDirectionToggle('name')}
                 >
                   <div className="flex items-center gap-2">
                     Nome
-                    {sortColumn === 'name' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
+                    {renderSortIcon('name')}
                   </div>
                 </th>
                 <th
                   className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
                   onClick={() => handleSort('price')}
+                  onDoubleClick={() => handleSortDirectionToggle('price')}
                 >
                   <div className="flex items-center gap-2">
                     Preço
-                    {sortColumn === 'price' && (
-                      sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                    )}
+                    {renderSortIcon('price')}
                   </div>
                 </th>
-                <th className="px-8 py-6">Status</th>
-                <th className="px-8 py-6">Tamanhos</th>
-                <th className="px-8 py-6">Observações</th>
-                <th className="px-8 py-6">Imagens</th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('status')}
+                  onDoubleClick={() => handleSortDirectionToggle('status')}
+                >
+                  <div className="flex items-center gap-2">
+                    Status
+                    {renderSortIcon('status')}
+                  </div>
+                </th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('sizes')}
+                  onDoubleClick={() => handleSortDirectionToggle('sizes')}
+                >
+                  <div className="flex items-center gap-2">
+                    Tamanhos
+                    {renderSortIcon('sizes')}
+                  </div>
+                </th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('observation')}
+                  onDoubleClick={() => handleSortDirectionToggle('observation')}
+                >
+                  <div className="flex items-center gap-2">
+                    Observações
+                    {renderSortIcon('observation')}
+                  </div>
+                </th>
+                <th
+                  className="px-8 py-6 cursor-pointer hover:bg-[#D05B92]/10 transition-colors"
+                  onClick={() => handleSort('images')}
+                  onDoubleClick={() => handleSortDirectionToggle('images')}
+                >
+                  <div className="flex items-center gap-2">
+                    Imagens
+                    {renderSortIcon('images')}
+                  </div>
+                </th>
                 <th className="px-8 py-6 text-right">Ações</th>
               </tr>
             </thead>
@@ -1426,6 +1555,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   </td>
                 </tr>
               ))}
+              {sortedProducts.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-8 py-10 text-center text-sm text-gray-400">
+                    Nenhum item encontrado com os filtros selecionados.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -1534,6 +1670,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
               </div>
             </div>
           ))}
+          {sortedProducts.length === 0 && (
+            <div className="p-6 text-center text-sm text-gray-400">
+              Nenhum item encontrado com os filtros selecionados.
+            </div>
+          )}
         </div>
 
         {isLoading && (
