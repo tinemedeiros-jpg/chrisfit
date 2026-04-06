@@ -420,14 +420,14 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
 
                 {/* 1. FUNDO EM BLUR — container fixo, imagens movem dentro */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  <div className="absolute inset-0" style={{ transform: isAnimating ? 'translateX(-100%)' : 'translateX(0)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
+                  <div className="absolute inset-0 overflow-hidden" style={{ transform: isAnimating ? 'translateX(-100%)' : 'translateX(0)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
                     {activeFeaturedImage && (isVideoUrl(activeFeaturedImage)
                       ? <video src={activeFeaturedImage} className="h-full w-full object-cover blur-sm brightness-75 scale-110" muted loop playsInline autoPlay preload="metadata" />
                       : <img src={activeFeaturedImage} alt="" aria-hidden="true" className="h-full w-full object-cover blur-sm brightness-75 scale-110" />
                     )}
                     <div className="absolute inset-0 bg-[#BA4680]/40" />
                   </div>
-                  <div className="absolute inset-0" style={{ transform: isAnimating ? 'translateX(0)' : 'translateX(100%)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
+                  <div className="absolute inset-0 overflow-hidden" style={{ transform: isAnimating ? 'translateX(0)' : 'translateX(100%)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
                     {nextFeaturedImage && (isVideoUrl(nextFeaturedImage)
                       ? <video src={nextFeaturedImage} className="h-full w-full object-cover blur-sm brightness-75 scale-110" muted loop playsInline autoPlay preload="metadata" />
                       : <img src={nextFeaturedImage} alt="" aria-hidden="true" className="h-full w-full object-cover blur-sm brightness-75 scale-110" />
