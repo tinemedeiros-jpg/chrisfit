@@ -51,6 +51,17 @@
       @media (min-width: 640px) { .catalog-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; } }
       @media (min-width: 1024px) { .catalog-grid-compact { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; } }
       @media (min-width: 1280px) { .catalog-grid-compact { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.75rem; } }
+
+      @keyframes scroll-hint {
+        0%, 100%   { transform: translateY(0); opacity: 0.7; }
+        8%         { transform: translateY(7px); opacity: 1; }
+        16%        { transform: translateY(0); opacity: 0.7; }
+        24%        { transform: translateY(7px); opacity: 1; }
+        32%        { transform: translateY(0); opacity: 0.7; }
+      }
+      .animate-scroll-hint {
+        animation: scroll-hint 5s ease-in-out infinite;
+      }
     </style>
     <script type="importmap">
     {

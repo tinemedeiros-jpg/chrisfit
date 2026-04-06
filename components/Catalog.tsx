@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Product } from '../types';
 import ProductCard from './ProductCard';
-import { X, Search, Play, LayoutGrid, AlignJustify } from 'lucide-react';
+import { X, Search, Play, LayoutGrid, AlignJustify, ChevronDown } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 import PriceText from './PriceText';
 import ColorDots from './ColorDots';
@@ -498,6 +498,15 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   className="pointer-events-none absolute inset-0"
                   style={{ boxShadow: 'inset 0 -16px 30px rgba(0,0,0,0.25)' }}
                 />
+
+                {/* Indicador de scroll — mobile only */}
+                <div className="pointer-events-none absolute bottom-5 right-0 z-20 flex flex-col items-center">
+                  <ChevronDown
+                    size={18}
+                    strokeWidth={1.5}
+                    className="animate-scroll-hint text-white/70"
+                  />
+                </div>
               </div>
 
               <div className={`${forceMinimalFeaturedLayout ? 'hidden' : 'hidden md:block'} h-full`}>
