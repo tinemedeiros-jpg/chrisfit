@@ -442,7 +442,13 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       <img src={nextFeaturedImage ?? ''} alt={nextFeaturedProduct?.name ?? 'Destaque'} className="h-full w-full object-cover" />
                     )}
                   </button>
-                  <div className="relative z-10 text-center text-white px-5 pb-5 flex flex-col items-center">
+                  <div
+                    className="relative z-10 text-center text-white px-5 pb-5 flex flex-col items-center"
+                    style={{
+                      transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+                      transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
+                    }}
+                  >
                     <p className="uppercase tracking-[0.35em] text-[10px] text-white/85 mb-2">destaques</p>
                     <h3 className="text-lg font-semibold leading-tight">{nextFeaturedProduct?.name}</h3>
                     <p className="text-2xl font-bold mt-2">
