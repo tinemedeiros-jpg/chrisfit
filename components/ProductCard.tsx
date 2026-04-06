@@ -8,7 +8,7 @@ import ColorDots from './ColorDots';
 
 interface ProductCardProps {
   product: Product;
-  onPreview: (product: Product, image: string) => void;
+  onPreview: (product: Product, image: string, opts?: { selectedColor?: string | null }) => void;
   compact?: boolean;
 }
 
@@ -73,8 +73,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
   }, [selectedColor, product.id]);
 
   const handlePreview = React.useCallback(() => {
-    onPreview(product, images[hoverIndex]);
-  }, [hoverIndex, images, onPreview, product]);
+    onPreview(product, images[hoverIndex], { selectedColor });
+  }, [hoverIndex, images, onPreview, product, selectedColor]);
 
   const handleClick = React.useCallback(() => {
     if (didSwipe.current) {
