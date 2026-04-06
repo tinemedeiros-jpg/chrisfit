@@ -500,7 +500,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                 />
 
                 {/* Indicador de scroll — mobile only */}
-                <div className="pointer-events-none absolute bottom-5 right-0 z-20 flex flex-col items-center">
+                <div className="pointer-events-none absolute bottom-5 right-[5px] z-20 flex flex-col items-center">
                   <ChevronDown
                     size={18}
                     strokeWidth={1.5}
