@@ -418,97 +418,80 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
             >
               <div className={`${forceMinimalFeaturedLayout ? 'block' : 'md:hidden'} relative h-full overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.35)]`}>
 
-                {/* LAYER BASE — próximo produto, fica abaixo, estático */}
-                <div className="absolute inset-0 z-[1] flex flex-col justify-between">
-                  {nextFeaturedImage && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      {isVideoUrl(nextFeaturedImage) ? (
-                        <video src={nextFeaturedImage} className="h-full w-full object-cover blur-sm brightness-75 scale-110" muted loop playsInline autoPlay preload="metadata" />
-                      ) : (
-                        <img src={nextFeaturedImage} alt="" aria-hidden="true" className="h-full w-full object-cover blur-sm brightness-75 scale-110" />
-                      )}
-                      <div className="absolute inset-0 bg-[#BA4680]/40" />
-                    </div>
-                  )}
+                {/* 1. FUNDO EM BLUR — container fixo, imagens movem dentro */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  <div className="absolute inset-0" style={{ transform: isAnimating ? 'translateX(-100%)' : 'translateX(0)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
+                    {activeFeaturedImage && (isVideoUrl(activeFeaturedImage)
+                      ? <video src={activeFeaturedImage} className="h-full w-full object-cover blur-sm brightness-75 scale-110" muted loop playsInline autoPlay preload="metadata" />
+                      : <img src={activeFeaturedImage} alt="" aria-hidden="true" className="h-full w-full object-cover blur-sm brightness-75 scale-110" />
+                    )}
+                    <div className="absolute inset-0 bg-[#BA4680]/40" />
+                  </div>
+                  <div className="absolute inset-0" style={{ transform: isAnimating ? 'translateX(0)' : 'translateX(100%)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
+                    {nextFeaturedImage && (isVideoUrl(nextFeaturedImage)
+                      ? <video src={nextFeaturedImage} className="h-full w-full object-cover blur-sm brightness-75 scale-110" muted loop playsInline autoPlay preload="metadata" />
+                      : <img src={nextFeaturedImage} alt="" aria-hidden="true" className="h-full w-full object-cover blur-sm brightness-75 scale-110" />
+                    )}
+                    <div className="absolute inset-0 bg-[#BA4680]/40" />
+                  </div>
+                </div>
+
+                {/* 2. MÁSCARA DO CARD — container fixo, imagens movem dentro da máscara */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl rounded-br-[2.5rem]">
+                  <div className="absolute inset-0" style={{ transform: isAnimating ? 'translateX(-100%)' : 'translateX(0)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
+                    {activeFeaturedImage && (isVideoUrl(activeFeaturedImage)
+                      ? <video src={activeFeaturedImage} className="h-full w-full object-cover" muted loop playsInline autoPlay preload="metadata" />
+                      : <img src={activeFeaturedImage} alt={activeFeaturedProduct?.name ?? 'Destaque'} className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                  <div className="absolute inset-0" style={{ transform: isAnimating ? 'translateX(0)' : 'translateX(100%)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}>
+                    {nextFeaturedImage && (isVideoUrl(nextFeaturedImage)
+                      ? <video src={nextFeaturedImage} className="h-full w-full object-cover" muted loop playsInline preload="metadata" />
+                      : <img src={nextFeaturedImage} alt={nextFeaturedProduct?.name ?? 'Destaque'} className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                  <ColorDots
+                    colors={activeFeaturedProduct?.colors}
+                    selectedColor={activeFeaturedSelectedColor}
+                    onSelectColor={(color) => {
+                      if (!activeFeaturedProduct) return;
+                      setFeaturedColorSelection((prev) => ({ ...prev, [activeFeaturedProduct.id]: color }));
+                    }}
+                    disabledColors={activeFeaturedProduct?.disabledColors}
+                  />
                   <button
                     type="button"
-                    tabIndex={-1}
-                    onClick={() => { if (nextFeaturedImage && nextFeaturedProduct) openModal(nextFeaturedProduct, nextFeaturedImage, { selectedColor: nextFeaturedSelectedColor }); }}
-                    className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl rounded-br-[2.5rem] pointer-events-none"
-                  >
-                    {nextFeaturedImage && isVideoUrl(nextFeaturedImage) ? (
-                      <video src={nextFeaturedImage} className="h-full w-full object-cover" muted loop playsInline preload="metadata" />
-                    ) : (
-                      <img src={nextFeaturedImage ?? ''} alt={nextFeaturedProduct?.name ?? 'Destaque'} className="h-full w-full object-cover" />
-                    )}
-                  </button>
+                    className="absolute inset-0 z-20"
+                    onClick={() => { if (activeFeaturedImage && activeFeaturedProduct) openModal(activeFeaturedProduct, activeFeaturedImage, { selectedColor: activeFeaturedSelectedColor }); }}
+                    aria-label="Ver detalhes"
+                  />
+                </div>
+
+                {/* 3. TEXTO — container fixo na base, textos movem dentro */}
+                <div className="absolute bottom-0 left-0 right-0 z-10 h-[127px] overflow-hidden">
                   <div
-                    className="relative z-10 text-center text-white px-5 pb-5 flex flex-col items-center"
-                    style={{
-                      transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
-                      transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
-                    }}
+                    className="absolute inset-0 flex flex-col items-center justify-end pb-5 text-white text-center px-5"
+                    style={{ transform: isAnimating ? 'translateX(-100%)' : 'translateX(0)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}
+                  >
+                    <p className="uppercase tracking-[0.35em] text-[10px] text-white/85 mb-2">destaques</p>
+                    <h3 className="text-lg font-semibold leading-tight">{activeFeaturedProduct?.name}</h3>
+                    <p className="text-2xl font-bold mt-2">
+                      {activeFeaturedProduct && (<>R$ <PriceText value={activeFeaturedProduct.isPromo && activeFeaturedProduct.promoPrice ? activeFeaturedProduct.promoPrice : activeFeaturedProduct.price} decimalsClassName="text-[0.33em]" /></>)}
+                    </p>
+                  </div>
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-end pb-5 text-white text-center px-5"
+                    style={{ transform: isAnimating ? 'translateX(0)' : 'translateX(100%)', transition: isAnimating ? 'transform 500ms ease-in-out' : 'none' }}
                   >
                     <p className="uppercase tracking-[0.35em] text-[10px] text-white/85 mb-2">destaques</p>
                     <h3 className="text-lg font-semibold leading-tight">{nextFeaturedProduct?.name}</h3>
                     <p className="text-2xl font-bold mt-2">
-                      {nextFeaturedProduct ? (
-                        <>R$ <PriceText value={nextFeaturedProduct.isPromo && nextFeaturedProduct.promoPrice ? nextFeaturedProduct.promoPrice : nextFeaturedProduct.price} decimalsClassName="text-[0.33em]" /></>
-                      ) : ''}
+                      {nextFeaturedProduct && (<>R$ <PriceText value={nextFeaturedProduct.isPromo && nextFeaturedProduct.promoPrice ? nextFeaturedProduct.promoPrice : nextFeaturedProduct.price} decimalsClassName="text-[0.33em]" /></>)}
                     </p>
                   </div>
                 </div>
 
-                {/* LAYER ATUAL — produto corrente, desliza pra esquerda ao animar */}
-                <div
-                  className="absolute inset-0 z-[2] flex flex-col justify-between"
-                  style={{
-                    transform: isAnimating ? 'translateX(-100%)' : 'translateX(0)',
-                    transition: isAnimating ? 'transform 500ms ease-in-out' : 'none'
-                  }}
-                >
-                  {activeFeaturedImage && (
-                    <div className="absolute inset-0 pointer-events-none">
-                      {isVideoUrl(activeFeaturedImage) ? (
-                        <video src={activeFeaturedImage} className="h-full w-full object-cover blur-sm brightness-75 scale-110" muted loop playsInline autoPlay preload="metadata" />
-                      ) : (
-                        <img src={activeFeaturedImage} alt="" aria-hidden="true" className="h-full w-full object-cover blur-sm brightness-75 scale-110" />
-                      )}
-                      <div className="absolute inset-0 bg-[#BA4680]/40" />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => { if (activeFeaturedImage && activeFeaturedProduct) openModal(activeFeaturedProduct, activeFeaturedImage, { selectedColor: activeFeaturedSelectedColor }); }}
-                    className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl rounded-br-[2.5rem]"
-                  >
-                    <ColorDots
-                      colors={activeFeaturedProduct?.colors}
-                      selectedColor={activeFeaturedSelectedColor}
-                      onSelectColor={(color) => {
-                        if (!activeFeaturedProduct) return;
-                        setFeaturedColorSelection((prev) => ({ ...prev, [activeFeaturedProduct.id]: color }));
-                      }}
-                      disabledColors={activeFeaturedProduct?.disabledColors}
-                    />
-                    {activeFeaturedImage && isVideoUrl(activeFeaturedImage) ? (
-                      <video src={activeFeaturedImage} className="h-full w-full object-cover" muted loop playsInline autoPlay preload="metadata" />
-                    ) : (
-                      <img src={activeFeaturedImage ?? ''} alt={activeFeaturedProduct?.name ?? 'Destaque'} className="h-full w-full object-cover" />
-                    )}
-                  </button>
-                  <div className="relative z-10 text-center text-white px-5 pb-5 flex flex-col items-center">
-                    <p className="uppercase tracking-[0.35em] text-[10px] text-white/85 mb-2">destaques</p>
-                    <h3 className="text-lg font-semibold leading-tight">{activeFeaturedProduct?.name}</h3>
-                    <p className="text-2xl font-bold mt-2">
-                      {activeFeaturedProduct ? (
-                        <>R$ <PriceText value={activeFeaturedProduct.isPromo && activeFeaturedProduct.promoPrice ? activeFeaturedProduct.promoPrice : activeFeaturedProduct.price} decimalsClassName="text-[0.33em]" /></>
-                      ) : ''}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Sombra interna + scroll indicator — fixos acima de tudo */}
+                {/* Sombra + scroll indicator — fixos acima de tudo */}
                 <div className="pointer-events-none absolute inset-0 z-[3]" style={{ boxShadow: 'inset 0 -16px 30px rgba(0,0,0,0.25)' }} />
                 <div className="pointer-events-none absolute bottom-5 right-[5px] z-[4] flex flex-col items-center">
                   <ChevronDown size={18} strokeWidth={1.5} className="animate-scroll-hint text-white/70" />
