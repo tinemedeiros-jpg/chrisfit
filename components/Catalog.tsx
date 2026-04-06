@@ -1063,39 +1063,60 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                   <h3 className="text-xl lg:text-2xl font-semibold text-[#BA4680]">{activeModal.product.name}</h3>
                 </div>
 
-                {/* Preço + seletor de cor */}
-                <div className="text-[#BA4680] mb-6 flex items-start justify-between gap-4">
-                  <div>
-                    {activeModal.product.isPromo && activeModal.product.promoPrice ? (
-                      <div className="flex flex-col">
-                        <span className="text-xs line-through text-[#BA4680]/60">
+                {/* Preço */}
+                <div className="text-[#BA4680] mb-4">
+                  {activeModal.product.isPromo && activeModal.product.promoPrice ? (
+                    <div className="flex flex-col">
+                      <span className="text-xs line-through text-[#BA4680]/60">
 R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" />
-                        </span>
-                        <span className="text-3xl font-bold">
+                      </span>
+                      <span className="text-3xl font-bold">
 R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.33em]" />
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-3xl font-bold">R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" /></span>
-                    )}
-                  </div>
-
-                  <ColorDots
-                    colors={activeModal.product.colors}
-                    selectedColor={activeModal.selectedColor}
-                    disabledColors={activeModal.product.disabledColors}
-                    absolute={false}
-                    className="static shrink-0"
-                    onSelectColor={(color) => {
-                      const nextMedia = getProductMediaByColor(activeModal.product, color);
-                      setActiveModal({
-                        ...activeModal,
-                        selectedColor: color,
-                        image: nextMedia[0] ?? activeModal.image
-                      });
-                    }}
-                  />
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-3xl font-bold">R$ <PriceText value={activeModal.product.price} decimalsClassName="text-[0.33em]" /></span>
+                  )}
                 </div>
+
+                {/* Cores */}
+                {(activeModal.product.colors ?? []).length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-[#BA4680]/60 mb-2">Cores</p>
+                    <ColorDots
+                      colors={activeModal.product.colors}
+                      selectedColor={activeModal.selectedColor}
+                      disabledColors={activeModal.product.disabledColors}
+                      absolute={false}
+                      className="static"
+                      onSelectColor={(color) => {
+                        const nextMedia = getProductMediaByColor(activeModal.product, color);
+                        setActiveModal({
+                          ...activeModal,
+                          selectedColor: color,
+                          image: nextMedia[0] ?? activeModal.image
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Tamanhos */}
+                {activeModal.product.sizes.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-[#BA4680]/60 mb-2">Tamanhos</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeModal.product.sizes.map((size) => (
+                        <span
+                          key={size}
+                          className="px-2.5 py-1 text-xs font-medium text-[#BA4680] border border-[#BA4680]/30 rounded-full bg-white"
+                        >
+                          {size}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Descrição - abaixo do preço */}
                 {activeModal.product.description && (
