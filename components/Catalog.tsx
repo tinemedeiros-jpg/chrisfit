@@ -313,8 +313,11 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
     }))
     .filter((entry) => Boolean(entry.image));
 
-  const openModal = (product: Product, image: string, options?: { syncUrl?: boolean }) => {
-    setActiveModal({ product, image, initialImage: image, selectedColor: null });
+  const openModal = (product: Product, image: string, options?: { syncUrl?: boolean; selectedColor?: string | null }) => {
+    const initialColor = options?.selectedColor !== undefined
+      ? options.selectedColor
+      : getSelectedColorForProduct(product);
+    setActiveModal({ product, image, initialImage: image, selectedColor: initialColor });
 
     if (options?.syncUrl === false) return;
 
@@ -436,7 +439,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                   onClick={() => {
                     const activeProduct = activeFeaturedProduct;
                     const img = activeFeaturedImage;
-                    if (img && activeProduct) openModal(activeProduct, img);
+                    if (img && activeProduct) openModal(activeProduct, img, { selectedColor: activeFeaturedSelectedColor });
                   }}
                   className="relative z-10 mx-auto h-[485px] w-[273px] md:h-[190px] md:w-[107px] overflow-hidden shadow-xl rounded-br-[2.5rem]"
                 >
@@ -520,7 +523,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       type="button"
                       onClick={() => {
                         const img = activeFeaturedImage;
-                        if (img && activeFeaturedProduct) openModal(activeFeaturedProduct, img);
+                        if (img && activeFeaturedProduct) openModal(activeFeaturedProduct, img, { selectedColor: activeFeaturedSelectedColor });
                       }}
                       className="absolute inset-0 w-full h-full relative"
                       style={{ zIndex: 1 }}
@@ -655,7 +658,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                         type="button"
                         onClick={() => {
                           const img = activeFeaturedImage;
-                          if (img && activeFeaturedProduct) openModal(activeFeaturedProduct, img);
+                          if (img && activeFeaturedProduct) openModal(activeFeaturedProduct, img, { selectedColor: activeFeaturedSelectedColor });
                         }}
                         className="absolute inset-0 w-full h-full relative"
                         style={{ zIndex: 1 }}
@@ -1015,6 +1018,8 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                     <video
                       src={activeModal.image}
                       controls
+                      muted
+                      playsInline
                       className="w-full h-full object-contain"
                       preload="metadata"
                     />
