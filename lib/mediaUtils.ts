@@ -1,3 +1,10 @@
+// Tipo para progresso do corte de vídeo
+export type VideoTrimProgress = {
+  percent: number;
+  currentTime: number;
+  totalDuration: number;
+};
+
 // Verifica se uma URL é de vídeo baseado na extensão
 export const isVideoUrl = (url: string | null): boolean => {
   if (!url) return false;
@@ -71,18 +78,33 @@ export const validateVideoDuration = async (file: File, maxDuration: number = 30
 };
 
 // Corta um vídeo para os primeiros maxDuration segundos usando MediaRecorder
-export const trimVideoTo30Seconds = (file: File, maxDuration: number = 30): Promise<File> => {
+export const trimVideoTo30Seconds = (
+  file: File,
+  maxDuration: number = 30,
+  onProgress?: (progress: VideoTrimProgress) => void
+): Promise<File> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.playsInline = true;
+    video.muted = true; // Necessário para autoplay funcionar nos navegadores
 
     const objectUrl = URL.createObjectURL(file);
     video.src = objectUrl;
     video.preload = 'metadata';
 
+    // Timeout de segurança - 2 minutos máximo
+    const safetyTimeout = setTimeout(() => {
+      video.ontimeupdate = null;
+      video.pause();
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Tempo limite excedido ao processar o vídeo.'));
+    }, 120000);
+
     video.onloadedmetadata = () => {
       if (video.duration <= maxDuration) {
+        clearTimeout(safetyTimeout);
         URL.revokeObjectURL(objectUrl);
+        onProgress?.({ percent: 100, currentTime: video.duration, totalDuration: video.duration });
         resolve(file);
         return;
       }
@@ -95,6 +117,7 @@ export const trimVideoTo30Seconds = (file: File, maxDuration: number = 30): Prom
           : null;
 
       if (!captureStream || typeof MediaRecorder === 'undefined') {
+        clearTimeout(safetyTimeout);
         URL.revokeObjectURL(objectUrl);
         reject(new Error('Seu navegador não suporta corte automático de vídeo.'));
         return;
@@ -118,24 +141,37 @@ export const trimVideoTo30Seconds = (file: File, maxDuration: number = 30): Prom
       };
 
       mediaRecorder.onstop = () => {
+        clearTimeout(safetyTimeout);
         URL.revokeObjectURL(objectUrl);
         const finalMime = supportedMime || 'video/webm';
         const ext = finalMime.includes('mp4') ? '.mp4' : '.webm';
         const blob = new Blob(chunks, { type: finalMime });
         const baseName = file.name.replace(/\.[^/.]+$/, '');
         const trimmedFile = new File([blob], `${baseName}_30s${ext}`, { type: finalMime });
+        onProgress?.({ percent: 100, currentTime: maxDuration, totalDuration: maxDuration });
         resolve(trimmedFile);
       };
 
       mediaRecorder.onerror = () => {
+        clearTimeout(safetyTimeout);
         URL.revokeObjectURL(objectUrl);
         reject(new Error('Erro ao gravar o vídeo cortado.'));
       };
 
       mediaRecorder.start(100);
-      video.play().catch(() => {/* autoplay may require muted in some browsers */});
+      video.play().catch(() => {
+        clearTimeout(safetyTimeout);
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Não foi possível reproduzir o vídeo para corte. Tente um formato diferente.'));
+      });
 
       video.ontimeupdate = () => {
+        const progress = Math.min((video.currentTime / maxDuration) * 100, 100);
+        onProgress?.({
+          percent: progress,
+          currentTime: video.currentTime,
+          totalDuration: maxDuration
+        });
         if (video.currentTime >= maxDuration) {
           video.ontimeupdate = null;
           video.pause();
@@ -147,6 +183,7 @@ export const trimVideoTo30Seconds = (file: File, maxDuration: number = 30): Prom
     };
 
     video.onerror = () => {
+      clearTimeout(safetyTimeout);
       URL.revokeObjectURL(objectUrl);
       reject(new Error('Erro ao carregar o vídeo.'));
     };

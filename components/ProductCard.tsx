@@ -43,6 +43,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
   const productColors = product.colors ?? [];
   const [selectedColor, setSelectedColor] = React.useState<string | null>(null);
 
+  // Auto-disable colors that have no media uploaded
+  const effectiveDisabledColors = React.useMemo(() => {
+    const manual = product.disabledColors ?? [];
+    const noMedia = productColors.filter((color) => {
+      if (!product.colorMedia) return true;
+      const colorKey = Object.keys(product.colorMedia).find(
+        (key) => normalizeColor(key) === normalizeColor(color)
+      );
+      if (!colorKey) return true;
+      return !(product.colorMedia[colorKey] ?? []).some((item) => Boolean(item));
+    });
+    return Array.from(new Set([...manual, ...noMedia]));
+  }, [product.disabledColors, product.colorMedia, productColors]);
+
   React.useEffect(() => {
     setSelectedColor(null);
   }, [product.id]);
@@ -234,7 +248,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
               colors={productColors}
               selectedColor={selectedColor}
               onSelectColor={setSelectedColor}
-              disabledColors={product.disabledColors}
+              disabledColors={effectiveDisabledColors}
               className="top-1.5 right-1.5 bottom-auto"
             />
           </div>
@@ -317,7 +331,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
               colors={productColors}
               selectedColor={selectedColor}
               onSelectColor={setSelectedColor}
-              disabledColors={product.disabledColors}
+              disabledColors={effectiveDisabledColors}
             />
             {images.map((image, index) => {
               const isVideo = isVideoUrl(image);

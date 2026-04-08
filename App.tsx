@@ -317,7 +317,7 @@ const App: React.FC = () => {
     }
   };
 
-  const addProduct = async (payload: ProductUpsertPayload) => {
+  const addProduct = async (payload: ProductUpsertPayload): Promise<string> => {
     if (!isSupabaseConfigured) {
       throw new Error('Configuração do Supabase ausente.');
     }
@@ -357,6 +357,7 @@ const App: React.FC = () => {
     await syncProductImages(data.id, payload.existingImages, payload.newImages);
     await syncColorMedia(data.id, payload.colorMedia ?? {}, payload.newColorMedia ?? {});
     await fetchProducts();
+    return data.id;
   };
 
   const updateProduct = async (payload: ProductUpsertPayload) => {
@@ -416,6 +417,29 @@ const App: React.FC = () => {
     }
   };
 
+  const handleBackgroundVideoUpload = async (productId: string, position: number, file: File) => {
+    try {
+      const filePath = `${productId}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file, {
+        upsert: true
+      });
+      if (uploadError) throw new Error(uploadError.message);
+
+      const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+
+      const { error: insertError } = await supabase.from('product_images').insert({
+        products_id: productId,
+        url: data.publicUrl,
+        position
+      });
+      if (insertError) throw new Error(insertError.message);
+
+      await fetchProducts();
+    } catch (err) {
+      console.error('Erro ao enviar vídeo em segundo plano:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header searchTerm={searchTerm} onSearchChange={setSearchTerm} />
@@ -424,14 +448,15 @@ const App: React.FC = () => {
         {viewMode === 'catalog' ? (
           <Catalog products={products} isLoading={isLoading} error={error} searchTerm={searchTerm} onSearchChange={setSearchTerm} />
         ) : (
-          <AdminPanel 
-            products={products} 
+          <AdminPanel
+            products={products}
             isLoading={isLoading}
             error={error}
-            onAdd={addProduct} 
+            onAdd={addProduct}
             onUpdate={updateProduct}
-            onDelete={deleteProduct} 
+            onDelete={deleteProduct}
             onRefresh={fetchProducts}
+            onBackgroundVideoUpload={handleBackgroundVideoUpload}
           />
         )}
       </main>
