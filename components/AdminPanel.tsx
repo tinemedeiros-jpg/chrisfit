@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Product, ProductUpsertPayload } from '../types';
 import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { isVideoFile, validateVideoDuration, isVideoUrl } from '../lib/mediaUtils';
+import { isVideoFile, validateVideoDuration, isVideoUrl, trimVideoTo30Seconds } from '../lib/mediaUtils';
 import PriceText from './PriceText';
 
 interface AdminPanelProps {
@@ -76,6 +76,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
+  const [isTrimmingVideo, setIsTrimmingVideo] = useState(false);
   const [sortColumn, setSortColumn] = useState<'visual' | 'code' | 'name' | 'price' | 'status' | 'sizes' | 'observation' | 'images' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showPromoOnly, setShowPromoOnly] = useState(false);
@@ -488,33 +489,56 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     return { images: nextImages, nextFiles: updatedFiles };
   };
 
+  const applyFileToSlot = (index: number, file: File) => {
+    setNewImages((prev) => {
+      const next = [...prev];
+      next[index] = file;
+      const totalImages = countImages(normalizeImageSlots(existingImages), next);
+      if (totalImages > MAX_IMAGES) {
+        alert(`Você pode enviar no máximo ${MAX_IMAGES} imagens por produto.`);
+        return prev;
+      }
+      return next;
+    });
+  };
+
+  const processVideoFile = async (file: File): Promise<File | null> => {
+    const validation = await validateVideoDuration(file, 30);
+    if (validation.valid) return file;
+    setIsTrimmingVideo(true);
+    try {
+      return await trimVideoTo30Seconds(file, 30);
+    } catch {
+      alert('Não foi possível cortar o vídeo automaticamente. Por favor, corte para até 30 segundos e tente novamente.');
+      return null;
+    } finally {
+      setIsTrimmingVideo(false);
+    }
+  };
+
   const handleFileChange = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
 
-    // Validar duração do vídeo (máximo 30 segundos)
     if (isVideoFile(file)) {
-      const validation = await validateVideoDuration(file, 30);
-      if (!validation.valid) {
-        alert(`❌ ${validation.message}\n\nPor favor, edite o vídeo para ter no máximo 30 segundos e tente novamente.`);
-        event.target.value = '';
-        return;
-      }
+      const processed = await processVideoFile(file);
+      event.target.value = '';
+      if (!processed) return;
+      applyFileToSlot(index, processed);
+      return;
     }
 
-    setNewImages((prev) => {
-      const next = [...prev];
-      next[index] = file;
+    applyFileToSlot(index, file);
+  };
 
-      const totalImages = countImages(normalizeImageSlots(existingImages), next);
-      if (totalImages > MAX_IMAGES) {
-        alert(`Você pode enviar no máximo ${MAX_IMAGES} imagens por produto.`);
-        event.target.value = '';
-        return prev;
-      }
-
-      return next;
-    });
+  const handleFileDrop = async (index: number, file: File) => {
+    if (isVideoFile(file)) {
+      const processed = await processVideoFile(file);
+      if (!processed) return;
+      applyFileToSlot(index, processed);
+      return;
+    }
+    applyFileToSlot(index, file);
   };
 
   const removeExistingImage = (index: number) => {
@@ -550,16 +574,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   }, [formData.colors, defaultColor, activeColorEditor]);
 
   const handleColorMediaFileChange = async (color: string, index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
+    let file = event.target.files?.[0] ?? null;
     if (!file) return;
 
     if (isVideoFile(file)) {
-      const validation = await validateVideoDuration(file, 30);
-      if (!validation.valid) {
-        alert(`❌ ${validation.message}\n\nPor favor, edite o vídeo para ter no máximo 30 segundos e tente novamente.`);
-        event.target.value = '';
-        return;
-      }
+      const processed = await processVideoFile(file);
+      event.target.value = '';
+      if (!processed) return;
+      file = processed;
     }
 
     setColorMediaDraft((prev) => {
@@ -1198,7 +1220,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
             <p className="text-[10px] font-black uppercase tracking-widest text-[#D05B92]">Imagens do Produto</p>
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-gray-600">Selecionar imagens</p>
+              <p className="text-xs font-semibold text-gray-600">
+                Selecionar imagens
+                <span className="ml-1 text-gray-400 font-normal">(clique ou arraste do computador)</span>
+              </p>
+              {isTrimmingVideo && (
+                <div className="flex items-center gap-2 text-xs text-[#D05B92] font-medium animate-pulse">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Cortando vídeo para 30 segundos...
+                </div>
+              )}
               <div className="grid grid-cols-5 gap-2">
                 {Array.from({ length: MAX_IMAGES }).map((_, index) => {
                   const hasImage = existingImages[index] || newImages[index];
@@ -1209,13 +1243,27 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       onDragStart={() => handleImageDragStart(index)}
                       onDragOver={(event) => {
                         event.preventDefault();
-                        if (draggedImageIndex !== null && dragOverImageIndex !== index) {
-                          setDragOverImageIndex(index);
+                        if (draggedImageIndex !== null) {
+                          if (dragOverImageIndex !== index) setDragOverImageIndex(index);
+                        } else if (event.dataTransfer.types.includes('Files')) {
+                          if (dragOverImageIndex !== index) setDragOverImageIndex(index);
                         }
                       }}
-                      onDrop={(event) => {
+                      onDragLeave={(event) => {
+                        // Only clear when truly leaving the label (not entering a child)
+                        if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                          if (draggedImageIndex === null) setDragOverImageIndex(null);
+                        }
+                      }}
+                      onDrop={async (event) => {
                         event.preventDefault();
-                        handleImageDrop(index);
+                        if (draggedImageIndex !== null) {
+                          handleImageDrop(index);
+                        } else {
+                          const file = event.dataTransfer.files[0];
+                          if (file) await handleFileDrop(index, file);
+                          setDragOverImageIndex(null);
+                        }
                       }}
                       onDragEnd={resetDragState}
                       className={`relative aspect-square border-2 border-dashed hover:border-[#D05B92] cursor-pointer flex items-center justify-center bg-white transition-colors overflow-hidden rounded-lg ${
