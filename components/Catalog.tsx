@@ -18,9 +18,23 @@ interface CatalogProps {
 
 const normalizeColor = (color: string) => color.trim().toLowerCase();
 
+const getEffectiveDisabledColors = (product: Product): string[] => {
+  const manual = product.disabledColors ?? [];
+  const productColors = product.colors ?? [];
+  const noMedia = productColors.filter((color) => {
+    if (!product.colorMedia) return true;
+    const colorKey = Object.keys(product.colorMedia).find(
+      (key) => normalizeColor(key) === normalizeColor(color)
+    );
+    if (!colorKey) return true;
+    return !(product.colorMedia[colorKey] ?? []).some((item) => Boolean(item));
+  });
+  return Array.from(new Set([...manual, ...noMedia]));
+};
+
 const getSelectedColorForProduct = (product: Product, preferredColor?: string | null): string | null => {
   const productColors = product.colors ?? [];
-  const disabledSet = new Set((product.disabledColors ?? []).map(normalizeColor));
+  const disabledSet = new Set(getEffectiveDisabledColors(product).map(normalizeColor));
   const preferred = preferredColor ? normalizeColor(preferredColor) : null;
 
   if (preferred) {
@@ -457,7 +471,7 @@ const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTer
                       if (!activeFeaturedProduct) return;
                       setFeaturedColorSelection((prev) => ({ ...prev, [activeFeaturedProduct.id]: color }));
                     }}
-                    disabledColors={activeFeaturedProduct?.disabledColors}
+                    disabledColors={activeFeaturedProduct ? getEffectiveDisabledColors(activeFeaturedProduct) : []}
                   />
                   <button
                     type="button"
@@ -689,7 +703,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                               [activeFeaturedProduct.id]: color
                             }));
                           }}
-                          disabledColors={activeFeaturedProduct?.disabledColors}
+                          disabledColors={activeFeaturedProduct ? getEffectiveDisabledColors(activeFeaturedProduct) : []}
                         />
                       </button>
                     );
@@ -1084,7 +1098,7 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                     <ColorDots
                       colors={activeModal.product.colors}
                       selectedColor={activeModal.selectedColor}
-                      disabledColors={activeModal.product.disabledColors}
+                      disabledColors={getEffectiveDisabledColors(activeModal.product)}
                       absolute={false}
                       className="static"
                       onSelectColor={(color) => {

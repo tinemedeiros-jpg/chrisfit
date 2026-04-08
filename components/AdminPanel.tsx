@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Product, ProductUpsertPayload } from '../types';
 import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
@@ -10,10 +10,11 @@ interface AdminPanelProps {
   products: Product[];
   isLoading: boolean;
   error: string | null;
-  onAdd: (payload: ProductUpsertPayload) => Promise<void>;
+  onAdd: (payload: ProductUpsertPayload) => Promise<string>;
   onUpdate: (payload: ProductUpsertPayload) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onRefresh: () => Promise<void>;
+  onBackgroundVideoUpload?: (productId: string, position: number, file: File) => Promise<void>;
 }
 
 const MAX_IMAGES = 5;
@@ -62,7 +63,7 @@ const formatPriceDisplay = (value: string) => {
   });
 };
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onAdd, onUpdate, onDelete, onRefresh }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onAdd, onUpdate, onDelete, onRefresh, onBackgroundVideoUpload }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,7 +77,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
-  const [isTrimmingVideo, setIsTrimmingVideo] = useState(false);
+  const [activeProcessing, setActiveProcessing] = useState<{
+    type: 'main' | 'color';
+    slotIndex: number;
+    colorHex?: string;
+    file: File;
+    progress: number;
+  } | null>(null);
+  const [backgroundTaskCount, setBackgroundTaskCount] = useState(0);
+  const videoProcessingPromiseRef = useRef<{ slotIndex: number; promise: Promise<File | null> } | null>(null);
   const [sortColumn, setSortColumn] = useState<'visual' | 'code' | 'name' | 'price' | 'status' | 'sizes' | 'observation' | 'images' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showPromoOnly, setShowPromoOnly] = useState(false);
@@ -502,18 +511,42 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
   };
 
-  const processVideoFile = async (file: File): Promise<File | null> => {
+  const processVideoFile = async (
+    file: File,
+    onProgress?: (percent: number) => void
+  ): Promise<File | null> => {
     const validation = await validateVideoDuration(file, 30);
     if (validation.valid) return file;
-    setIsTrimmingVideo(true);
+
     try {
-      return await trimVideoTo30Seconds(file, 30);
+      return await trimVideoTo30Seconds(file, 30, (progress) => {
+        onProgress?.(Math.round(progress.percent));
+      });
     } catch {
       alert('Não foi possível cortar o vídeo automaticamente. Por favor, corte para até 30 segundos e tente novamente.');
       return null;
-    } finally {
-      setIsTrimmingVideo(false);
     }
+  };
+
+  const startVideoProcessing = async (index: number, file: File, type: 'main' | 'color' = 'main', colorHex?: string) => {
+    setActiveProcessing({ type, slotIndex: index, colorHex, file, progress: 0 });
+
+    const processPromise = processVideoFile(file, (percent) => {
+      setActiveProcessing((prev) => (prev ? { ...prev, progress: percent } : null));
+    });
+
+    if (type === 'main') {
+      videoProcessingPromiseRef.current = { slotIndex: index, promise: processPromise };
+    }
+
+    const processed = await processPromise;
+
+    if (type === 'main') {
+      videoProcessingPromiseRef.current = null;
+    }
+    setActiveProcessing(null);
+
+    return processed;
   };
 
   const handleFileChange = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
@@ -521,8 +554,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     if (!file) return;
 
     if (isVideoFile(file)) {
-      const processed = await processVideoFile(file);
       event.target.value = '';
+      const processed = await startVideoProcessing(index, file, 'main');
       if (!processed) return;
       applyFileToSlot(index, processed);
       return;
@@ -533,7 +566,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const handleFileDrop = async (index: number, file: File) => {
     if (isVideoFile(file)) {
-      const processed = await processVideoFile(file);
+      const processed = await startVideoProcessing(index, file, 'main');
       if (!processed) return;
       applyFileToSlot(index, processed);
       return;
@@ -578,8 +611,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     if (!file) return;
 
     if (isVideoFile(file)) {
-      const processed = await processVideoFile(file);
       event.target.value = '';
+      const processed = await startVideoProcessing(index, file, 'color', color);
       if (!processed) return;
       file = processed;
     }
@@ -732,9 +765,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     }
     setIsSubmitting(true);
     const normalizedImages = normalizeImageSlots(existingImages);
+
+    // Check for pending video processing
+    const pendingVideo = videoProcessingPromiseRef.current;
+    const adjustedNewImages = [...newImages];
+    if (pendingVideo) {
+      adjustedNewImages[pendingVideo.slotIndex] = null; // Exclude pending video from save
+    }
+
     const { images: reorderedImages, nextFiles: reorderedNewImages } = reorderImagesForFeatured(
       normalizedImages,
-      newImages,
+      adjustedNewImages,
       featuredImageIndex
     );
 
@@ -764,11 +805,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     };
 
     try {
+      let productId: string | undefined;
       if (editingId) {
         await onUpdate(payload);
+        productId = editingId;
       } else {
-        await onAdd(payload);
+        productId = await onAdd(payload);
       }
+
+      // If there's a pending video, schedule background upload
+      if (pendingVideo && productId && onBackgroundVideoUpload) {
+        const bgSlotIndex = pendingVideo.slotIndex;
+        const bgPromise = pendingVideo.promise;
+        const bgProductId = productId;
+        setBackgroundTaskCount((prev) => prev + 1);
+        bgPromise
+          .then((file) => {
+            if (file) return onBackgroundVideoUpload(bgProductId, bgSlotIndex + 1, file);
+          })
+          .finally(() => {
+            setBackgroundTaskCount((prev) => prev - 1);
+          });
+      }
+
       cancelEdit();
     } catch (submitError) {
       alert(submitError instanceof Error ? submitError.message : 'Erro ao salvar.');
@@ -1170,14 +1229,39 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                           const draft = colorMediaDraft[activeColorEditor];
                           const existing = draft.existing[index];
                           const pending = draft.newFiles[index];
+                          const isColorProcessing = activeProcessing?.type === 'color' && activeProcessing.colorHex === activeColorEditor && activeProcessing.slotIndex === index;
                           return (
                             <div key={`${activeColorEditor}-${index}`} className="space-y-1.5">
-                              <label className="relative block aspect-square border-2 border-dashed rounded-md overflow-hidden bg-gray-50 border-gray-300 cursor-pointer">
-                                {pending ? (
-                                  <img src={URL.createObjectURL(pending)} alt="preview" className="w-full h-full object-cover" />
+                              <label className={`relative block aspect-square border-2 border-dashed rounded-md overflow-hidden bg-gray-50 cursor-pointer ${isColorProcessing ? 'border-[#D05B92] ring-2 ring-[#D05B92]/30' : 'border-gray-300'}`}>
+                                {isColorProcessing ? (
+                                  <div className="relative w-full h-full">
+                                    <video src={URL.createObjectURL(activeProcessing!.file)} className="w-full h-full object-cover opacity-40" muted preload="metadata" />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                                      <div className="w-3/4 h-1.5 bg-white/30 rounded-full overflow-hidden">
+                                        <div className="h-full bg-[#D05B92] rounded-full transition-all duration-300" style={{ width: `${activeProcessing!.progress}%` }} />
+                                      </div>
+                                      <span className="text-white text-[9px] font-bold mt-1">{activeProcessing!.progress}%</span>
+                                    </div>
+                                  </div>
+                                ) : pending ? (
+                                  isVideoFile(pending) ? (
+                                    <div className="relative w-full h-full">
+                                      <video src={URL.createObjectURL(pending)} className="w-full h-full object-cover" muted preload="metadata" />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                        <Play size={14} fill="white" className="text-white" />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <img src={URL.createObjectURL(pending)} alt="preview" className="w-full h-full object-cover" />
+                                  )
                                 ) : existing ? (
                                   isVideoUrl(existing) ? (
-                                    <video src={existing} className="w-full h-full object-cover" muted preload="metadata" />
+                                    <div className="relative w-full h-full">
+                                      <video src={existing} className="w-full h-full object-cover" muted preload="metadata" />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                        <Play size={14} fill="white" className="text-white" />
+                                      </div>
+                                    </div>
                                   ) : (
                                     <img src={existing} alt="mídia" className="w-full h-full object-cover" />
                                   )
@@ -1224,22 +1308,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 Selecionar imagens
                 <span className="ml-1 text-gray-400 font-normal">(clique ou arraste do computador)</span>
               </p>
-              {isTrimmingVideo && (
-                <div className="flex items-center gap-2 text-xs text-[#D05B92] font-medium animate-pulse">
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Cortando vídeo para 30 segundos...
-                </div>
-              )}
               <div className="grid grid-cols-5 gap-2">
                 {Array.from({ length: MAX_IMAGES }).map((_, index) => {
-                  const hasImage = existingImages[index] || newImages[index];
+                  const isProcessingThisSlot = activeProcessing?.type === 'main' && activeProcessing.slotIndex === index;
+                  const hasImage = existingImages[index] || newImages[index] || isProcessingThisSlot;
                   return (
                     <label
                       key={`image-input-${index}`}
-                      draggable={Boolean(hasImage)}
+                      draggable={Boolean(existingImages[index] || newImages[index])}
                       onDragStart={() => handleImageDragStart(index)}
                       onDragOver={(event) => {
                         event.preventDefault();
@@ -1269,15 +1345,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                       className={`relative aspect-square border-2 border-dashed hover:border-[#D05B92] cursor-pointer flex items-center justify-center bg-white transition-colors overflow-hidden rounded-lg ${
                         dragOverImageIndex === index && draggedImageIndex !== index
                           ? 'border-[#D05B92] ring-2 ring-[#D05B92]/20'
+                          : isProcessingThisSlot
+                          ? 'border-[#D05B92] ring-2 ring-[#D05B92]/30'
                           : 'border-gray-300'
                       }`}
                     >
                       <input type="file" accept="image/*,video/*" onChange={(event) => handleFileChange(index, event)} className="hidden" />
-                      {hasImage ? (
+                      {isProcessingThisSlot ? (
+                        <div className="relative w-full h-full">
+                          <video src={URL.createObjectURL(activeProcessing!.file)} className="w-full h-full object-cover opacity-40" muted preload="metadata" />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                            <div className="w-3/4 h-1.5 bg-white/30 rounded-full overflow-hidden">
+                              <div className="h-full bg-[#D05B92] rounded-full transition-all duration-300" style={{ width: `${activeProcessing!.progress}%` }} />
+                            </div>
+                            <span className="text-white text-[9px] font-bold mt-1">{activeProcessing!.progress}%</span>
+                          </div>
+                        </div>
+                      ) : hasImage ? (
                         <div className="relative w-full h-full">
                           {existingImages[index] ? (
                             <>
-                              <img src={existingImages[index] ?? ''} alt={`${index + 1}`} className="w-full h-full object-cover" />
+                              {isVideoUrl(existingImages[index]) ? (
+                                <video src={existingImages[index] ?? ''} className="w-full h-full object-cover" muted preload="metadata" />
+                              ) : (
+                                <img src={existingImages[index] ?? ''} alt={`${index + 1}`} className="w-full h-full object-cover" />
+                              )}
                               {isVideoUrl(existingImages[index]) && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
                                   <Play size={16} fill="white" className="text-white" />
@@ -1293,9 +1385,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                             </>
                           ) : newImages[index] ? (
                             <>
-                              <div className="w-full h-full flex items-center justify-center bg-pink-50 text-[#D05B92] text-[10px] font-bold">
-                                Novo
-                              </div>
+                              {isVideoFile(newImages[index]!) ? (
+                                <>
+                                  <video src={URL.createObjectURL(newImages[index]!)} className="w-full h-full object-cover" muted preload="metadata" />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                                    <Play size={16} fill="white" className="text-white" />
+                                  </div>
+                                </>
+                              ) : (
+                                <img src={URL.createObjectURL(newImages[index]!)} alt="preview" className="w-full h-full object-cover" />
+                              )}
                               <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); removeNewImage(index); }}
@@ -1333,6 +1432,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             <p className="text-[11px] text-gray-400">Máximo de {MAX_IMAGES} imagens. Espaços restantes: {remainingSlots}. Você pode arrastar e soltar as mídias para reorganizar a ordem.</p>
           </div>
 
+          {activeProcessing && (
+            <div className="flex items-center gap-2 text-xs text-[#D05B92] font-medium bg-[#D05B92]/5 border border-[#D05B92]/20 rounded-lg px-3 py-2">
+              <svg className="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              <span>Cortando vídeo para 30s... {activeProcessing.progress}% — Você pode salvar agora, o vídeo será adicionado automaticamente ao finalizar.</span>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button type="submit" disabled={isSubmitting} className="flex-grow bg-[#D05B92] text-white py-3.5 rounded-xl font-bold shadow-lg hover:brightness-110 transition-all flex items-center justify-center space-x-2 disabled:opacity-60">
               <CheckCircle2 size={20} />
@@ -1345,6 +1454,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
             )}
           </div>
         </form>
+      )}
+
+      {backgroundTaskCount > 0 && (
+        <div className="mb-4 bg-[#D05B92]/10 border border-[#D05B92]/20 rounded-lg p-3 flex items-center gap-2 text-sm text-[#D05B92] font-medium">
+          <svg className="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
+          Processando vídeo em segundo plano... O vídeo aparecerá automaticamente no produto quando pronto.
+        </div>
       )}
 
       <div className="bg-[#f4fbff] shadow-2xl overflow-hidden border border-[#D05B92]/10">
