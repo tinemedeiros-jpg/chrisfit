@@ -28,30 +28,39 @@ const ColorDots: React.FC<ColorDotsProps> = ({
 
   return (
     <div className={`${positionClass} z-20 flex items-center gap-1.5 ${className}`}>
-      {colors.slice(0, 6).map((color) => (
-        <button
-          key={color}
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelectColor?.(color);
-          }}
-          disabled={disabledSet.has(normalizeColor(color))}
-          className={`h-3 w-3 rounded-full border shadow transition-all ${
-            normalizedSelected === normalizeColor(color)
-              ? 'border-white ring-2 ring-white/80 scale-110'
-              : 'border-white/70'
-          } ${
-            isInteractive
-              ? 'cursor-pointer hover:scale-110'
-              : 'cursor-default'
-          } ${disabledSet.has(normalizeColor(color)) ? 'opacity-30 cursor-not-allowed' : ''}`}
-          style={{ backgroundColor: color }}
-          title={color}
-          aria-label={`Selecionar cor ${color}`}
-          aria-pressed={normalizedSelected === normalizeColor(color)}
-        />
-      ))}
+      {colors.slice(0, 6).map((color) => {
+        const isDisabled = disabledSet.has(normalizeColor(color));
+        return (
+          <button
+            key={color}
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelectColor?.(color);
+            }}
+            disabled={isDisabled}
+            className={`relative h-3 w-3 rounded-full border shadow transition-all group/dot ${
+              normalizedSelected === normalizeColor(color)
+                ? 'border-white ring-2 ring-white/80 scale-110'
+                : 'border-white/70'
+            } ${
+              isInteractive && !isDisabled
+                ? 'cursor-pointer hover:scale-110'
+                : isDisabled
+                ? 'cursor-not-allowed'
+                : 'cursor-default'
+            }`}
+            style={{ backgroundColor: color }}
+            title={color}
+            aria-label={`Selecionar cor ${color}`}
+            aria-pressed={normalizedSelected === normalizeColor(color)}
+          >
+            {isDisabled && (
+              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-red-500 border border-white opacity-0 group-hover/dot:opacity-100 transition-opacity" />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 };
