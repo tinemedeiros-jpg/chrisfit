@@ -89,7 +89,8 @@ const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
       className="relative pointer-events-none select-none"
       style={{
         width: s.width,
-        filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.28))'
+        filter:
+          'drop-shadow(0 4px 4px rgba(0,0,0,0.32)) drop-shadow(0 10px 14px rgba(0,0,0,0.22))'
       }}
       aria-label={def.label}
     >
@@ -171,18 +172,24 @@ export const ProductFlags: React.FC<ProductFlagsProps> = ({
   product,
   size = 'md',
   className,
-  gap = 6
+  gap
 }) => {
   const active = ORDER.filter((kind) => Boolean(product[KIND_BY_KEY[kind]]));
   if (active.length === 0) return null;
+  const s = SIZE_PRESETS[size];
+  // Negative overlap so the next badge's top tab tucks INTO the previous V-notch.
+  // We pull the next badge up by the notch depth plus a small bias so the tab
+  // sits visibly inside the chevron cut-out, like nested bookmarks.
+  const overlap = gap !== undefined ? -gap : -(s.notch + Math.round(s.foldHeight * 0.4));
 
   return (
     <div
       className={`flex flex-col items-center pointer-events-none ${className ?? ''}`}
-      style={{ gap }}
     >
-      {active.map((kind) => (
-        <FlagBadge key={kind} kind={kind} size={size} />
+      {active.map((kind, idx) => (
+        <div key={kind} style={idx > 0 ? { marginTop: overlap } : undefined}>
+          <FlagBadge kind={kind} size={size} />
+        </div>
       ))}
     </div>
   );

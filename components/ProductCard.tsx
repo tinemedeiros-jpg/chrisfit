@@ -256,7 +256,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
             <ProductFlags
               product={product}
               size="sm"
-              gap={4}
               className="absolute top-7 right-1.5 z-30"
             />
           </div>
@@ -267,7 +266,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
 
   // ── REGULAR MODE ──────────────────────────────────────────────────────────
   return (
-    <div className="group animate-in zoom-in duration-300">
+    <div className="group animate-in zoom-in duration-300 relative">
+      <ProductFlags
+        product={product}
+        size="md"
+        className="absolute top-0 right-5 z-40"
+      />
       <div
         className="relative overflow-hidden cursor-zoom-in rounded-tr-[2rem] shadow-[0_24px_55px_-18px_rgba(0,0,0,0.7)] hover:shadow-[0_34px_70px_-22px_rgba(0,0,0,0.8)] transition-shadow duration-300"
         onClick={handleClick}
@@ -340,12 +344,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
               selectedColor={selectedColor}
               onSelectColor={setSelectedColor}
               disabledColors={effectiveDisabledColors}
-            />
-            <ProductFlags
-              product={product}
-              size="md"
-              gap={6}
-              className="absolute top-0 right-5 z-30"
             />
             {images.map((image, index) => {
               const isVideo = isVideoUrl(image);

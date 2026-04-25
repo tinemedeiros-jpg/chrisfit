@@ -1007,8 +1007,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
               <ProductFlags
                 product={activeModal.product}
                 size="lg"
-                gap={8}
-                className="absolute top-0 right-5 z-30"
+                className="absolute top-0 right-5 z-40"
               />
 
               {/* Container da imagem/vídeo */}
