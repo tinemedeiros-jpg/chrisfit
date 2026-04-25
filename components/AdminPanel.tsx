@@ -219,6 +219,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     isPromo: false,
     isFeatured: false,
     isActive: true,
+    isNew: false,
+    isLastUnits: false,
+    isBestSeller: false,
     sizes: [] as string[],
     observation: '',
     description: '',
@@ -319,6 +322,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isPromo: Boolean(product.isPromo),
       isFeatured: Boolean(product.isFeatured),
       isActive: product.isActive !== false,
+      isNew: Boolean(product.isNew),
+      isLastUnits: Boolean(product.isLastUnits),
+      isBestSeller: Boolean(product.isBestSeller),
       sizes: product.sizes,
       observation: product.observation || '',
       description: product.description || '',
@@ -348,6 +354,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isPromo: false,
       isFeatured: false,
       isActive: true,
+      isNew: false,
+      isLastUnits: false,
+      isBestSeller: false,
       sizes: [],
       observation: '',
       description: '',
@@ -788,6 +797,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isPromo: formData.isPromo,
       isFeatured: formData.isFeatured,
       isActive: formData.isActive,
+      isNew: formData.isNew,
+      isLastUnits: formData.isLastUnits,
+      isBestSeller: formData.isBestSeller,
       sizes: formData.sizes,
       observation: formData.observation,
       description: formData.description,
@@ -835,13 +847,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     }
   };
 
-  const handleStatusToggle = async (product: Product, field: 'isFeatured' | 'isPromo') => {
+  const handleStatusToggle = async (
+    product: Product,
+    field: 'isFeatured' | 'isPromo' | 'isNew' | 'isLastUnits' | 'isBestSeller'
+  ) => {
     if (statusUpdatingId) return;
     if (field === 'isPromo' && !product.isPromo) {
       return;
     }
     const nextIsFeatured = field === 'isFeatured' ? !product.isFeatured : product.isFeatured;
     const nextIsPromo = field === 'isPromo' ? !product.isPromo : product.isPromo;
+    const nextIsNew = field === 'isNew' ? !product.isNew : Boolean(product.isNew);
+    const nextIsLastUnits = field === 'isLastUnits' ? !product.isLastUnits : Boolean(product.isLastUnits);
+    const nextIsBestSeller = field === 'isBestSeller' ? !product.isBestSeller : Boolean(product.isBestSeller);
     if (field === 'isPromo' && !product.isPromo && (!product.promoPrice || product.promoPrice <= 0)) {
       alert('Defina o preço promocional na edição antes de ativar a promoção.');
       return;
@@ -856,6 +874,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isPromo: nextIsPromo,
       isFeatured: nextIsFeatured,
       isActive: product.isActive,
+      isNew: nextIsNew,
+      isLastUnits: nextIsLastUnits,
+      isBestSeller: nextIsBestSeller,
       sizes: product.sizes,
       observation: product.observation ?? '',
       description: product.description ?? '',
@@ -888,6 +909,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isPromo: product.isPromo,
       isFeatured: product.isFeatured,
       isActive: !product.isActive,
+      isNew: Boolean(product.isNew),
+      isLastUnits: Boolean(product.isLastUnits),
+      isBestSeller: Boolean(product.isBestSeller),
       sizes: product.sizes,
       observation: product.observation ?? '',
       description: product.description ?? '',
@@ -1028,6 +1052,47 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                 />
                 Marcar como promoção
               </label>
+            </div>
+            <div className="pt-2 border-t border-gray-200/80 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#D05B92]">Bandeirinhas</p>
+              <div className="flex flex-wrap gap-5">
+                <label className="flex items-center gap-2 text-sm text-gray-700 font-medium cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={formData.isNew}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, isNew: event.target.checked }))}
+                    className="h-4 w-4 rounded border-gray-300 text-[#A8266F] focus:ring-[#A8266F] cursor-pointer"
+                  />
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#A8266F' }} />
+                    Novo
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 font-medium cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={formData.isBestSeller}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, isBestSeller: event.target.checked }))}
+                    className="h-4 w-4 rounded border-gray-300 text-[#D63757] focus:ring-[#D63757] cursor-pointer"
+                  />
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#D63757' }} />
+                    Mais vendido
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 font-medium cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={formData.isLastUnits}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, isLastUnits: event.target.checked }))}
+                    className="h-4 w-4 rounded border-gray-300 text-[#C9A21F] focus:ring-[#C9A21F] cursor-pointer"
+                  />
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#F2C53E' }} />
+                    Últimas unidades
+                  </span>
+                </label>
+              </div>
             </div>
             {formData.isPromo && (
               <div className="space-y-1.5">
@@ -1663,6 +1728,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                           <span>Promoção</span>
                         </label>
                       )}
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(product.isNew)}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleStatusToggle(product, 'isNew')}
+                          className="h-4 w-4 border-gray-300 text-[#A8266F] focus:ring-[#A8266F] disabled:opacity-50"
+                        />
+                        <span>Novo</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(product.isBestSeller)}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleStatusToggle(product, 'isBestSeller')}
+                          className="h-4 w-4 border-gray-300 text-[#D63757] focus:ring-[#D63757] disabled:opacity-50"
+                        />
+                        <span>Mais vendido</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(product.isLastUnits)}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleStatusToggle(product, 'isLastUnits')}
+                          className="h-4 w-4 border-gray-300 text-[#C9A21F] focus:ring-[#C9A21F] disabled:opacity-50"
+                        />
+                        <span>Últimas unidades</span>
+                      </label>
                     </div>
                   </td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
@@ -1832,6 +1927,38 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         Promo
                       </label>
                     )}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                    <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(product.isNew)}
+                        disabled={statusUpdatingId === product.id}
+                        onChange={() => handleStatusToggle(product, 'isNew')}
+                        className="h-3.5 w-3.5 border-gray-300 text-[#A8266F] focus:ring-[#A8266F] disabled:opacity-50"
+                      />
+                      Novo
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(product.isBestSeller)}
+                        disabled={statusUpdatingId === product.id}
+                        onChange={() => handleStatusToggle(product, 'isBestSeller')}
+                        className="h-3.5 w-3.5 border-gray-300 text-[#D63757] focus:ring-[#D63757] disabled:opacity-50"
+                      />
+                      Mais vendido
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(product.isLastUnits)}
+                        disabled={statusUpdatingId === product.id}
+                        onChange={() => handleStatusToggle(product, 'isLastUnits')}
+                        className="h-3.5 w-3.5 border-gray-300 text-[#C9A21F] focus:ring-[#C9A21F] disabled:opacity-50"
+                      />
+                      Últimas
+                    </label>
                   </div>
                 </div>
               </div>

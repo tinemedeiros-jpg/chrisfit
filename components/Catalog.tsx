@@ -6,6 +6,7 @@ import { X, Search, Play, LayoutGrid, AlignJustify, ChevronDown } from 'lucide-r
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 import PriceText from './PriceText';
 import ColorDots from './ColorDots';
+import { ProductFlags } from './FlagBadge';
 
 interface CatalogProps {
   products: Product[];
@@ -1001,6 +1002,14 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                   </span>
                 </div>
               </div>
+
+              {/* Bandeirinhas - lado direito superior */}
+              <ProductFlags
+                product={activeModal.product}
+                size="lg"
+                gap={8}
+                className="absolute top-0 right-5 z-30"
+              />
 
               {/* Container da imagem/vídeo */}
               <div className="relative w-full h-full bg-black overflow-hidden">
