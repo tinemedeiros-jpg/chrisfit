@@ -975,7 +975,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
           <div className="relative z-[1201] flex items-start lg:items-center justify-center min-h-full p-2 sm:p-4 lg:p-8">
           {/* Modal: no mobile cresce livremente; no desktop altura fixa com overflow interno */}
           <div
-            className="relative w-full shadow-2xl lg:overflow-hidden bg-[#f4fbff] max-w-[1320px] lg:h-[min(92vh,920px)] flex flex-col lg:flex-row my-auto"
+            className="relative w-full shadow-2xl bg-[#f4fbff] max-w-[1320px] lg:h-[min(92vh,920px)] flex flex-col lg:flex-row my-auto"
           >
             {/* Botão fechar - sobreposto à mídia no compacto */}
             <button
