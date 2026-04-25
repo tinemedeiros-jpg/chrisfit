@@ -5,6 +5,7 @@ import { MessageCircle, Play } from 'lucide-react';
 import { isVideoUrl, getVideoMimeType } from '../lib/mediaUtils';
 import PriceText from './PriceText';
 import ColorDots from './ColorDots';
+import { ProductFlags } from './FlagBadge';
 
 interface ProductCardProps {
   product: Product;
@@ -251,6 +252,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
               disabledColors={effectiveDisabledColors}
               className="top-1.5 right-1.5 bottom-auto"
             />
+
+            <ProductFlags
+              product={product}
+              size="sm"
+              gap={4}
+              className="absolute top-7 right-1.5 z-30"
+            />
           </div>
         </div>
       </div>
@@ -332,6 +340,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
               selectedColor={selectedColor}
               onSelectColor={setSelectedColor}
               disabledColors={effectiveDisabledColors}
+            />
+            <ProductFlags
+              product={product}
+              size="md"
+              gap={6}
+              className="absolute top-0 right-5 z-30"
             />
             {images.map((image, index) => {
               const isVideo = isVideoUrl(image);

@@ -8,6 +8,9 @@ export interface Product {
   isPromo?: boolean;
   isFeatured?: boolean;
   isActive?: boolean;
+  isNew?: boolean;
+  isLastUnits?: boolean;
+  isBestSeller?: boolean;
   sizes: string[];
   images: Array<string | null>;
   observation?: string | null;
@@ -30,6 +33,9 @@ export interface ProductUpsertPayload {
   isPromo?: boolean;
   isFeatured?: boolean;
   isActive?: boolean;
+  isNew?: boolean;
+  isLastUnits?: boolean;
+  isBestSeller?: boolean;
   sizes: string[];
   observation?: string;
   description?: string;

@@ -43,7 +43,7 @@ const App: React.FC = () => {
     const { data, error: fetchError } = await supabase
       .from('products')
       .select(
-        'id, code, name, price, promo_price, is_promo, is_featured, is_active, sizes, colors, default_color, disabled_colors, observation, description, created_at'
+        'id, code, name, price, promo_price, is_promo, is_featured, is_active, is_new, is_last_units, is_best_seller, sizes, colors, default_color, disabled_colors, observation, description, created_at'
       )
       .order('created_at', { ascending: false });
 
@@ -149,6 +149,9 @@ const App: React.FC = () => {
         isPromo: Boolean(product.is_promo),
         isFeatured: Boolean(product.is_featured),
         isActive: product.is_active !== false,
+        isNew: Boolean(product.is_new),
+        isLastUnits: Boolean(product.is_last_units),
+        isBestSeller: Boolean(product.is_best_seller),
         sizes: Array.isArray(product.sizes) ? product.sizes : [],
         colors,
         defaultColor: typeof product.default_color === 'string' ? normalizeColorHex(product.default_color) : null,
@@ -340,6 +343,9 @@ const App: React.FC = () => {
         is_promo: payload.isPromo ?? false,
         is_featured: payload.isFeatured ?? false,
         is_active: payload.isActive ?? true,
+        is_new: payload.isNew ?? false,
+        is_last_units: payload.isLastUnits ?? false,
+        is_best_seller: payload.isBestSeller ?? false,
         sizes: payload.sizes,
         colors: payload.colors ?? [],
         default_color: payload.defaultColor ?? null,
@@ -383,6 +389,9 @@ const App: React.FC = () => {
         is_promo: payload.isPromo ?? false,
         is_featured: payload.isFeatured ?? false,
         is_active: payload.isActive ?? true,
+        is_new: payload.isNew ?? false,
+        is_last_units: payload.isLastUnits ?? false,
+        is_best_seller: payload.isBestSeller ?? false,
         sizes: payload.sizes,
         colors: payload.colors ?? [],
         default_color: payload.defaultColor ?? null,
