@@ -38,37 +38,37 @@ const FLAGS: Record<FlagKind, FlagDefinition> = {
 
 const SIZE_PRESETS = {
   sm: {
-    width: 64,
-    foldWidth: 22,
-    foldHeight: 8,
-    paddingX: 8,
-    paddingY: 6,
-    notch: 8,
+    width: 56,
+    strapWidth: 12,
+    strapHeight: 14,
+    paddingX: 5,
+    paddingY: 7,
+    notch: 18,
     iconSize: 10,
-    fontSize: 8,
-    gap: 4
+    fontSize: 7,
+    gap: 3
   },
   md: {
-    width: 86,
-    foldWidth: 28,
-    foldHeight: 10,
-    paddingX: 10,
-    paddingY: 8,
-    notch: 10,
+    width: 74,
+    strapWidth: 16,
+    strapHeight: 20,
+    paddingX: 7,
+    paddingY: 9,
+    notch: 24,
     iconSize: 12,
-    fontSize: 9,
-    gap: 5
+    fontSize: 8.5,
+    gap: 4
   },
   lg: {
-    width: 104,
-    foldWidth: 34,
-    foldHeight: 12,
-    paddingX: 12,
-    paddingY: 9,
-    notch: 12,
+    width: 92,
+    strapWidth: 20,
+    strapHeight: 26,
+    paddingX: 9,
+    paddingY: 11,
+    notch: 30,
     iconSize: 14,
     fontSize: 10,
-    gap: 6
+    gap: 5
   }
 };
 
@@ -94,22 +94,23 @@ const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
       }}
       aria-label={def.label}
     >
-      {/* Voltinha: small darker tab acting as the fold-back coming from behind the card */}
+      {/* Tirinha/strap fino sobre o card, com topo arredondado */}
       <div
         className="absolute left-1/2"
         style={{
-          width: s.foldWidth,
-          height: s.foldHeight,
-          top: -Math.round(s.foldHeight * 0.6),
-          transform: 'translateX(-50%) skewX(-6deg)',
+          width: s.strapWidth,
+          height: s.strapHeight,
+          top: -s.strapHeight,
+          transform: 'translateX(-50%)',
           backgroundColor: def.fold,
-          borderTopLeftRadius: 3,
-          borderTopRightRadius: 3,
-          boxShadow: 'inset 0 -2px 0 rgba(0,0,0,0.18)'
+          borderTopLeftRadius: s.strapWidth / 2,
+          borderTopRightRadius: s.strapWidth / 2,
+          boxShadow:
+            'inset 0 -2px 3px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.12)'
         }}
       />
 
-      {/* Main flag body with festa-junina V-notch at the bottom */}
+      {/* Corpo do marcador em forma de pingente, com V-notch profundo embaixo */}
       <div
         className="relative"
         style={{
@@ -121,12 +122,12 @@ const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
           clipPath: `polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - ${s.notch}px), 0 100%)`
         }}
       >
-        {/* Subtle inner shadow at top to suggest the curl/fold */}
+        {/* Sombrinha sutil no topo, simulando o vinco onde a tirinha encosta */}
         <div
           className="absolute inset-x-0 top-0 pointer-events-none"
           style={{
-            height: Math.round(s.foldHeight * 0.9),
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.22), rgba(0,0,0,0))'
+            height: 6,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.28), rgba(0,0,0,0))'
           }}
         />
         <div
@@ -177,10 +178,12 @@ export const ProductFlags: React.FC<ProductFlagsProps> = ({
   const active = ORDER.filter((kind) => Boolean(product[KIND_BY_KEY[kind]]));
   if (active.length === 0) return null;
   const s = SIZE_PRESETS[size];
-  // Negative overlap so the next badge's top tab tucks INTO the previous V-notch.
-  // We pull the next badge up by the notch depth plus a small bias so the tab
-  // sits visibly inside the chevron cut-out, like nested bookmarks.
-  const overlap = gap !== undefined ? -gap : -(s.notch + Math.round(s.foldHeight * 0.4));
+  // Encaixe: o próximo marcador sobe pra que sua tirinha fique dentro do
+  // V-notch do anterior, formando um cascateado de pingentes.
+  const overlap =
+    gap !== undefined
+      ? -gap
+      : -(s.notch + s.strapHeight - Math.round(s.strapHeight / 2));
 
   return (
     <div
