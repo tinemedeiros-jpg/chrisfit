@@ -5,6 +5,8 @@ type FlagKind = 'new' | 'lastUnits' | 'bestSeller';
 
 interface FlagDefinition {
   label: string;
+  icon: string;
+  iconSize: number;
   bg: string;
   shadow: string;
   text: string;
@@ -13,18 +15,24 @@ interface FlagDefinition {
 const FLAGS: Record<FlagKind, FlagDefinition> = {
   new: {
     label: 'NOVIDADE',
+    icon: '✦  ✦  ✦',
+    iconSize: 15,
     bg: '#A862F0',
     shadow: '#7B3CC4',
     text: '#0E0E0E'
   },
   bestSeller: {
-    label: '+VENDIDOS',
+    label: 'VENDIDOS',
+    icon: '+',
+    iconSize: 34,
     bg: '#ED2A66',
     shadow: '#B81747',
     text: '#0E0E0E'
   },
   lastUnits: {
     label: 'ACABANDO',
+    icon: '!!!',
+    iconSize: 22,
     bg: '#F5BE1B',
     shadow: '#C49510',
     text: '#0E0E0E'
@@ -44,11 +52,26 @@ interface FlagBadgeProps {
   size?: FlagSize;
 }
 
-// Geometria fixa em coordenadas do viewBox (220 x 200). O rótulo gira -28°
-// dentro do SVG; o componente externo só escala via `width`. Assim os
-// proporções (furo, barbante, espessura) ficam idênticas em qualquer tamanho.
+// viewBox fixo; tudo escala via width no container.
 const VB_W = 220;
 const VB_H = 200;
+
+// Círculo como subpath (dois arcos) para usar em evenodd e furar o corpo.
+// cx=168 cy=70 r=8  →  pontas em (160,70) e (176,70)
+const HOLE_PATH = 'M 160 70 A 8 8 0 1 0 176 70 A 8 8 0 1 0 160 70 Z';
+// Mesmo furo deslocado +4 em y para a camada de sombra
+const HOLE_PATH_SHADOW = 'M 160 74 A 8 8 0 1 0 176 74 A 8 8 0 1 0 160 74 Z';
+
+// Corpo principal (pentagon chanfrado no canto sup-dir)
+const BODY_PATH =
+  'M 18 52 L 150 52 L 188 84 L 188 146 Q 188 158 176 158 L 18 158 Q 6 158 6 146 L 6 64 Q 6 52 18 52 Z';
+// Camada de espessura (shadow), deslocada 4px abaixo
+const SHADOW_PATH =
+  'M 18 56 L 150 56 L 188 88 L 188 150 Q 188 162 176 162 L 18 162 Q 6 162 6 150 L 6 68 Q 6 56 18 56 Z';
+
+// Anel cinza do ilhós como donut (r=14 fora, r=8 dentro)
+const RING_PATH =
+  'M 154 70 A 14 14 0 1 0 182 70 A 14 14 0 1 0 154 70 Z ' + HOLE_PATH;
 
 const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
   const def = FLAGS[kind];
@@ -69,84 +92,82 @@ const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
         style={{ display: 'block', overflow: 'visible' }}
       >
         <defs>
-          <filter
-            id={shadowId}
-            x="-20%"
-            y="-20%"
-            width="140%"
-            height="140%"
-          >
-            <feDropShadow
-              dx="0"
-              dy="4"
-              stdDeviation="3"
-              floodColor="#000"
-              floodOpacity="0.35"
-            />
+          <filter id={shadowId} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#000" floodOpacity="0.35" />
           </filter>
         </defs>
 
-        {/* Conjunto inteiro (etiqueta + barbante) inclinado */}
-        <g transform={`rotate(-28 ${VB_W / 2} ${VB_H / 2})`}>
-          {/* Camada de espessura inferior (cor mais escura, aparece como
-              tira na base). Idêntica ao corpo, deslocada +4px em y. */}
-          <path
-            d="M 18 56
-               L 150 56
-               L 188 88
-               L 188 150
-               Q 188 162 176 162
-               L 18 162
-               Q 6 162 6 150
-               L 6 68
-               Q 6 56 18 56 Z"
-            fill={def.shadow}
-          />
-          {/* Corpo da etiqueta — pentágono com canto superior direito chanfrado */}
-          <path
-            d="M 18 52
-               L 150 52
-               L 188 84
-               L 188 146
-               Q 188 158 176 158
-               L 18 158
-               Q 6 158 6 146
-               L 6 64
-               Q 6 52 18 52 Z"
-            fill={def.bg}
-            filter={`url(#${shadowId})`}
-          />
+        {/* Deslocamento 5px para baixo em coordenadas de tela (wrapper externo),
+            depois a rotação de -28°. */}
+        <g transform="translate(0, 5)">
+          <g transform={`rotate(-28 ${VB_W / 2} ${VB_H / 2})`}>
 
-          {/* Anel cinza do furo (ilhós) */}
-          <circle cx="168" cy="70" r="14" fill="#9CA3AF" />
-          {/* Furo */}
-          <circle cx="168" cy="70" r="8" fill="#FFFFFF" />
+            {/* Camada de espessura (sombra 3D) com furo */}
+            <path
+              d={`${SHADOW_PATH} ${HOLE_PATH_SHADOW}`}
+              fillRule="evenodd"
+              fill={def.shadow}
+            />
 
-          {/* Barbante: arco preto curto saindo do furo */}
-          <path
-            d="M 168 70 C 184 52, 196 44, 204 42"
-            stroke="#0E0E0E"
-            strokeWidth="4"
-            fill="none"
-            strokeLinecap="round"
-          />
-          {/* Pontinha estilo buraquinho de papel: anel cinza com miolo preto */}
-          <circle cx="204" cy="42" r="7" fill="#9CA3AF" />
-          <circle cx="204" cy="42" r="4" fill="#0E0E0E" />
+            {/* Corpo com furo transparente */}
+            <path
+              d={`${BODY_PATH} ${HOLE_PATH}`}
+              fillRule="evenodd"
+              fill={def.bg}
+              filter={`url(#${shadowId})`}
+            />
 
-          {/* Texto seguindo a inclinação da etiqueta */}
-          <text
-            x="94"
-            y="118"
-            textAnchor="middle"
-            fontFamily="'Inter', system-ui, sans-serif"
-            fontWeight="900"
-            fontSize="21"
-            fill={def.text}
-            letterSpacing="0.6"
-          >
-            {def.label}
-          </text>
+            {/* Anel do ilhós: donut cinza escuro, 50% opaco */}
+            <path
+              d={RING_PATH}
+              fillRule="evenodd"
+              fill="#4B5563"
+              opacity="0.5"
+            />
+
+            {/* Barbante (desenhado APÓS o ilhós, então fica por cima) */}
+            <path
+              d="M 168 70 C 184 52, 196 44, 204 42"
+              stroke="#0E0E0E"
+              strokeWidth="4"
+              fill="none"
+              strokeLinecap="round"
+            />
+
+            {/* Pontinha do barbante — buraquinho de papel: anel cinza escuro
+                50% opaco + miolo preto */}
+            <circle cx="204" cy="42" r="7" fill="#4B5563" opacity="0.5" />
+            <circle cx="204" cy="42" r="4" fill="#0E0E0E" />
+
+            {/* Ícone acima do texto */}
+            <text
+              x="94"
+              y="97"
+              textAnchor="middle"
+              fontFamily="'Inter', system-ui, sans-serif"
+              fontWeight="900"
+              fontSize={def.iconSize}
+              fill={def.text}
+              letterSpacing="1"
+            >
+              {def.icon}
+            </text>
+
+            {/* Label */}
+            <text
+              x="94"
+              y="126"
+              textAnchor="middle"
+              fontFamily="'Inter', system-ui, sans-serif"
+              fontWeight="900"
+              fontSize="19"
+              fill={def.text}
+              letterSpacing="0.6"
+            >
+              {def.label}
+            </text>
+
+          </g>
         </g>
       </svg>
     </div>
@@ -180,14 +201,10 @@ export const ProductFlags: React.FC<ProductFlagsProps> = ({
   const active = ORDER.filter((kind) => Boolean(product[KIND_BY_KEY[kind]]));
   if (active.length === 0) return null;
 
-  // Etiquetas inclinadas se sobrepõem mal — empilho com leve overlap vertical
-  // (o barbante de uma fica atrás da próxima).
   const overlap = gap !== undefined ? -gap : -Math.round(SIZE_PRESETS[size].width * 0.18);
 
   return (
-    <div
-      className={`flex flex-col items-end pointer-events-none ${className ?? ''}`}
-    >
+    <div className={`flex flex-col items-end pointer-events-none ${className ?? ''}`}>
       {active.map((kind, idx) => (
         <div key={kind} style={idx > 0 ? { marginTop: overlap } : undefined}>
           <FlagBadge kind={kind} size={size} />
