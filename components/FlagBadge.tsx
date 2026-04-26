@@ -19,7 +19,7 @@ const FLAGS: Record<FlagKind, FlagDefinition> = {
     iconSize: 15,
     bg: '#A862F0',
     shadow: '#7B3CC4',
-    text: '#0E0E0E'
+    text: '#FFFFFF'
   },
   bestSeller: {
     label: 'VENDIDOS',
@@ -27,7 +27,7 @@ const FLAGS: Record<FlagKind, FlagDefinition> = {
     iconSize: 34,
     bg: '#ED2A66',
     shadow: '#B81747',
-    text: '#0E0E0E'
+    text: '#FFFFFF'
   },
   lastUnits: {
     label: 'ACABANDO',
