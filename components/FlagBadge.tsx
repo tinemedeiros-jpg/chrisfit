@@ -1,5 +1,4 @@
 import React from 'react';
-import { Sparkles, Flame, Heart } from 'lucide-react';
 import { Product } from '../types';
 
 type FlagKind = 'new' | 'lastUnits' | 'bestSeller';
@@ -7,69 +6,35 @@ type FlagKind = 'new' | 'lastUnits' | 'bestSeller';
 interface FlagDefinition {
   label: string;
   bg: string;
-  fold: string;
+  shadow: string;
   text: string;
-  Icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number; fill?: string }>;
 }
 
 const FLAGS: Record<FlagKind, FlagDefinition> = {
   new: {
-    label: 'Novo',
-    bg: '#A8266F',
-    fold: '#7A1A50',
-    text: '#FFFFFF',
-    Icon: Sparkles
+    label: 'NOVIDADE',
+    bg: '#A862F0',
+    shadow: '#7B3CC4',
+    text: '#0E0E0E'
   },
   bestSeller: {
-    label: 'Mais vendido',
-    bg: '#D63757',
-    fold: '#A82036',
-    text: '#FFFFFF',
-    Icon: Flame
+    label: '+VENDIDOS',
+    bg: '#ED2A66',
+    shadow: '#B81747',
+    text: '#0E0E0E'
   },
   lastUnits: {
-    label: 'Últimas unidades',
-    bg: '#F2C53E',
-    fold: '#C9A21F',
-    text: '#3A2A00',
-    Icon: Heart
+    label: 'ACABANDO',
+    bg: '#F5BE1B',
+    shadow: '#C49510',
+    text: '#0E0E0E'
   }
 };
 
 const SIZE_PRESETS = {
-  sm: {
-    width: 56,
-    strapWidth: 12,
-    strapHeight: 14,
-    paddingX: 5,
-    paddingY: 7,
-    notch: 18,
-    iconSize: 10,
-    fontSize: 7,
-    gap: 3
-  },
-  md: {
-    width: 74,
-    strapWidth: 16,
-    strapHeight: 20,
-    paddingX: 7,
-    paddingY: 9,
-    notch: 24,
-    iconSize: 12,
-    fontSize: 8.5,
-    gap: 4
-  },
-  lg: {
-    width: 92,
-    strapWidth: 20,
-    strapHeight: 26,
-    paddingX: 9,
-    paddingY: 11,
-    notch: 30,
-    iconSize: 14,
-    fontSize: 10,
-    gap: 5
-  }
+  sm: { width: 78 },
+  md: { width: 104 },
+  lg: { width: 132 }
 };
 
 type FlagSize = keyof typeof SIZE_PRESETS;
@@ -79,74 +44,110 @@ interface FlagBadgeProps {
   size?: FlagSize;
 }
 
+// Geometria fixa em coordenadas do viewBox (220 x 200). O rótulo gira -28°
+// dentro do SVG; o componente externo só escala via `width`. Assim os
+// proporções (furo, barbante, espessura) ficam idênticas em qualquer tamanho.
+const VB_W = 220;
+const VB_H = 200;
+
 const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
   const def = FLAGS[kind];
   const s = SIZE_PRESETS[size];
-  const { Icon } = def;
+
+  const uid = React.useId();
+  const shadowId = `tag-shadow-${uid}`;
 
   return (
     <div
-      className="relative pointer-events-none select-none"
-      style={{
-        width: s.width,
-        filter:
-          'drop-shadow(0 4px 4px rgba(0,0,0,0.32)) drop-shadow(0 10px 14px rgba(0,0,0,0.22))'
-      }}
+      className="pointer-events-none select-none"
+      style={{ width: s.width }}
       aria-label={def.label}
     >
-      {/* Tirinha/strap fino sobre o card, com topo arredondado */}
-      <div
-        className="absolute left-1/2"
-        style={{
-          width: s.strapWidth,
-          height: s.strapHeight,
-          top: -s.strapHeight,
-          transform: 'translateX(-50%)',
-          backgroundColor: def.fold,
-          borderTopLeftRadius: s.strapWidth / 2,
-          borderTopRightRadius: s.strapWidth / 2,
-          boxShadow:
-            'inset 0 -2px 3px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.12)'
-        }}
-      />
-
-      {/* Corpo do marcador em forma de pingente, com V-notch profundo embaixo */}
-      <div
-        className="relative"
-        style={{
-          backgroundColor: def.bg,
-          paddingTop: s.paddingY,
-          paddingBottom: s.paddingY + s.notch,
-          paddingLeft: s.paddingX,
-          paddingRight: s.paddingX,
-          clipPath: `polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - ${s.notch}px), 0 100%)`
-        }}
+      <svg
+        viewBox={`0 0 ${VB_W} ${VB_H}`}
+        width="100%"
+        style={{ display: 'block', overflow: 'visible' }}
       >
-        {/* Sombrinha sutil no topo, simulando o vinco onde a tirinha encosta */}
-        <div
-          className="absolute inset-x-0 top-0 pointer-events-none"
-          style={{
-            height: 6,
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.28), rgba(0,0,0,0))'
-          }}
-        />
-        <div
-          className="flex flex-col items-center justify-center"
-          style={{ gap: s.gap, color: def.text }}
-        >
-          <Icon size={s.iconSize} strokeWidth={2.2} fill={def.text} className="opacity-95" />
-          <span
-            className="text-center leading-tight font-bold uppercase"
-            style={{
-              fontSize: s.fontSize,
-              letterSpacing: '0.04em',
-              color: def.text
-            }}
+        <defs>
+          <filter
+            id={shadowId}
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
+            <feDropShadow
+              dx="0"
+              dy="4"
+              stdDeviation="3"
+              floodColor="#000"
+              floodOpacity="0.35"
+            />
+          </filter>
+        </defs>
+
+        {/* Conjunto inteiro (etiqueta + barbante) inclinado */}
+        <g transform={`rotate(-28 ${VB_W / 2} ${VB_H / 2})`}>
+          {/* Camada de espessura inferior (cor mais escura, aparece como
+              tira na base). Idêntica ao corpo, deslocada +4px em y. */}
+          <path
+            d="M 24 56
+               L 150 56
+               L 188 88
+               L 188 150
+               Q 188 162 176 162
+               L 24 162
+               Q 12 162 12 150
+               L 12 68
+               Q 12 56 24 56 Z"
+            fill={def.shadow}
+          />
+          {/* Corpo da etiqueta — pentágono com canto superior direito chanfrado */}
+          <path
+            d="M 24 52
+               L 150 52
+               L 188 84
+               L 188 146
+               Q 188 158 176 158
+               L 24 158
+               Q 12 158 12 146
+               L 12 64
+               Q 12 52 24 52 Z"
+            fill={def.bg}
+            filter={`url(#${shadowId})`}
+          />
+
+          {/* Anel cinza do furo (ilhós) */}
+          <circle cx="168" cy="70" r="14" fill="#9CA3AF" />
+          {/* Furo */}
+          <circle cx="168" cy="70" r="8" fill="#FFFFFF" />
+
+          {/* Barbante: arco preto saindo do furo pra cima/direita */}
+          <path
+            d="M 168 70 C 196 38, 215 26, 224 22"
+            stroke="#0E0E0E"
+            strokeWidth="4.5"
+            fill="none"
+            strokeLinecap="round"
+          />
+          {/* Pontinha (nozinho) do barbante */}
+          <circle cx="224" cy="22" r="5" fill="#0E0E0E" />
+
+          {/* Texto seguindo a inclinação da etiqueta */}
+          <text
+            x="96"
+            y="118"
+            textAnchor="middle"
+            fontFamily="'Inter', system-ui, sans-serif"
+            fontWeight="900"
+            fontSize="26"
+            fill={def.text}
+            letterSpacing="1"
           >
             {def.label}
-          </span>
-        </div>
-      </div>
+          </text>
+        </g>
+      </svg>
     </div>
   );
 };
@@ -177,17 +178,14 @@ export const ProductFlags: React.FC<ProductFlagsProps> = ({
 }) => {
   const active = ORDER.filter((kind) => Boolean(product[KIND_BY_KEY[kind]]));
   if (active.length === 0) return null;
-  const s = SIZE_PRESETS[size];
-  // Encaixe: o próximo marcador sobe pra que sua tirinha fique dentro do
-  // V-notch do anterior, formando um cascateado de pingentes.
-  const overlap =
-    gap !== undefined
-      ? -gap
-      : -(s.notch + s.strapHeight - Math.round(s.strapHeight / 2));
+
+  // Etiquetas inclinadas se sobrepõem mal — empilho com leve overlap vertical
+  // (o barbante de uma fica atrás da próxima).
+  const overlap = gap !== undefined ? -gap : -Math.round(SIZE_PRESETS[size].width * 0.18);
 
   return (
     <div
-      className={`flex flex-col items-center pointer-events-none ${className ?? ''}`}
+      className={`flex flex-col items-end pointer-events-none ${className ?? ''}`}
     >
       {active.map((kind, idx) => (
         <div key={kind} style={idx > 0 ? { marginTop: overlap } : undefined}>
