@@ -91,28 +91,28 @@ const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
           {/* Camada de espessura inferior (cor mais escura, aparece como
               tira na base). Idêntica ao corpo, deslocada +4px em y. */}
           <path
-            d="M 24 56
+            d="M 18 56
                L 150 56
                L 188 88
                L 188 150
                Q 188 162 176 162
-               L 24 162
-               Q 12 162 12 150
-               L 12 68
-               Q 12 56 24 56 Z"
+               L 18 162
+               Q 6 162 6 150
+               L 6 68
+               Q 6 56 18 56 Z"
             fill={def.shadow}
           />
           {/* Corpo da etiqueta — pentágono com canto superior direito chanfrado */}
           <path
-            d="M 24 52
+            d="M 18 52
                L 150 52
                L 188 84
                L 188 146
                Q 188 158 176 158
-               L 24 158
-               Q 12 158 12 146
-               L 12 64
-               Q 12 52 24 52 Z"
+               L 18 158
+               Q 6 158 6 146
+               L 6 64
+               Q 6 52 18 52 Z"
             fill={def.bg}
             filter={`url(#${shadowId})`}
           />
@@ -122,27 +122,28 @@ const FlagBadge: React.FC<FlagBadgeProps> = ({ kind, size = 'md' }) => {
           {/* Furo */}
           <circle cx="168" cy="70" r="8" fill="#FFFFFF" />
 
-          {/* Barbante: arco preto saindo do furo pra cima/direita */}
+          {/* Barbante: arco preto curto saindo do furo */}
           <path
-            d="M 168 70 C 196 38, 215 26, 224 22"
+            d="M 168 70 C 184 52, 196 44, 204 42"
             stroke="#0E0E0E"
-            strokeWidth="4.5"
+            strokeWidth="4"
             fill="none"
             strokeLinecap="round"
           />
-          {/* Pontinha (nozinho) do barbante */}
-          <circle cx="224" cy="22" r="5" fill="#0E0E0E" />
+          {/* Pontinha estilo buraquinho de papel: anel cinza com miolo preto */}
+          <circle cx="204" cy="42" r="7" fill="#9CA3AF" />
+          <circle cx="204" cy="42" r="4" fill="#0E0E0E" />
 
           {/* Texto seguindo a inclinação da etiqueta */}
           <text
-            x="96"
+            x="94"
             y="118"
             textAnchor="middle"
             fontFamily="'Inter', system-ui, sans-serif"
             fontWeight="900"
-            fontSize="26"
+            fontSize="21"
             fill={def.text}
-            letterSpacing="1"
+            letterSpacing="0.6"
           >
             {def.label}
           </text>
