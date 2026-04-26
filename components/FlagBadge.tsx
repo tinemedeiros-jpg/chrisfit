@@ -21,7 +21,7 @@ const FLAGS: Record<FlagKind, FlagDefinition> = {
   },
   bestSeller: {
     emoji: '',
-    lines: ['MAIS VENDIDO'],
+    lines: ['MAIS', 'VENDIDO'],
     bg: '#f23a7e',
     shadow: '#c12060',
     text: '#FFFFFF'
