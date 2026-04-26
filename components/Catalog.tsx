@@ -77,7 +77,7 @@ const getProductMediaByColor = (product: Product, color: string | null): string[
 
 const Catalog: React.FC<CatalogProps> = ({ products, isLoading, error, searchTerm, onSearchChange }) => {
   const [activeModal, setActiveModal] = useState<{ product: Product; image: string; initialImage: string; selectedColor: string | null } | null>(null);
-  const [sortOrder, setSortOrder] = useState<'code' | 'name' | 'recent' | 'promo'>('code');
+  const [sortOrder, setSortOrder] = useState<'code' | 'name' | 'recent' | 'promo'>('recent');
   const [compactMode, setCompactMode] = useState(false);
   const [featuredColorSelection, setFeaturedColorSelection] = useState<Record<string, string | null>>({});
 
