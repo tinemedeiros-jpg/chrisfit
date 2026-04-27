@@ -77,11 +77,12 @@ export const validateVideoDuration = async (file: File, maxDuration: number = 30
   }
 };
 
-// Corta um vídeo para os primeiros maxDuration segundos usando MediaRecorder
+// Corta um vídeo de startTime até startTime+maxDuration segundos usando MediaRecorder
 export const trimVideoTo30Seconds = (
   file: File,
   maxDuration: number = 30,
-  onProgress?: (progress: VideoTrimProgress) => void
+  onProgress?: (progress: VideoTrimProgress) => void,
+  startTime: number = 5
 ): Promise<File> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -101,11 +102,10 @@ export const trimVideoTo30Seconds = (
     }, 120000);
 
     video.onloadedmetadata = () => {
-      if (video.duration <= maxDuration) {
+      if (video.duration <= startTime) {
         clearTimeout(safetyTimeout);
         URL.revokeObjectURL(objectUrl);
-        onProgress?.({ percent: 100, currentTime: video.duration, totalDuration: video.duration });
-        resolve(file);
+        reject(new Error(`O vídeo precisa ter mais de ${startTime} segundos.`));
         return;
       }
 
@@ -131,54 +131,63 @@ export const trimVideoTo30Seconds = (
       ];
       const supportedMime = mimeTypes.find((t) => MediaRecorder.isTypeSupported(t)) ?? '';
 
-      const stream = captureStream();
-      const chunks: BlobPart[] = [];
-      const recorderOptions = supportedMime ? { mimeType: supportedMime } : {};
-      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+      const endTime = startTime + maxDuration;
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
+      video.currentTime = startTime;
 
-      mediaRecorder.onstop = () => {
-        clearTimeout(safetyTimeout);
-        URL.revokeObjectURL(objectUrl);
-        const finalMime = supportedMime || 'video/webm';
-        const ext = finalMime.includes('mp4') ? '.mp4' : '.webm';
-        const blob = new Blob(chunks, { type: finalMime });
-        const baseName = file.name.replace(/\.[^/.]+$/, '');
-        const trimmedFile = new File([blob], `${baseName}_30s${ext}`, { type: finalMime });
-        onProgress?.({ percent: 100, currentTime: maxDuration, totalDuration: maxDuration });
-        resolve(trimmedFile);
-      };
+      video.onseeked = () => {
+        video.onseeked = null;
 
-      mediaRecorder.onerror = () => {
-        clearTimeout(safetyTimeout);
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error('Erro ao gravar o vídeo cortado.'));
-      };
+        const stream = captureStream();
+        const chunks: BlobPart[] = [];
+        const recorderOptions = supportedMime ? { mimeType: supportedMime } : {};
+        const mediaRecorder = new MediaRecorder(stream, recorderOptions);
 
-      mediaRecorder.start(100);
-      video.play().catch(() => {
-        clearTimeout(safetyTimeout);
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error('Não foi possível reproduzir o vídeo para corte. Tente um formato diferente.'));
-      });
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
 
-      video.ontimeupdate = () => {
-        const progress = Math.min((video.currentTime / maxDuration) * 100, 100);
-        onProgress?.({
-          percent: progress,
-          currentTime: video.currentTime,
-          totalDuration: maxDuration
+        mediaRecorder.onstop = () => {
+          clearTimeout(safetyTimeout);
+          URL.revokeObjectURL(objectUrl);
+          const finalMime = supportedMime || 'video/webm';
+          const ext = finalMime.includes('mp4') ? '.mp4' : '.webm';
+          const blob = new Blob(chunks, { type: finalMime });
+          const baseName = file.name.replace(/\.[^/.]+$/, '');
+          const trimmedFile = new File([blob], `${baseName}_30s${ext}`, { type: finalMime });
+          onProgress?.({ percent: 100, currentTime: maxDuration, totalDuration: maxDuration });
+          resolve(trimmedFile);
+        };
+
+        mediaRecorder.onerror = () => {
+          clearTimeout(safetyTimeout);
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('Erro ao gravar o vídeo cortado.'));
+        };
+
+        mediaRecorder.start(100);
+        video.play().catch(() => {
+          clearTimeout(safetyTimeout);
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('Não foi possível reproduzir o vídeo para corte. Tente um formato diferente.'));
         });
-        if (video.currentTime >= maxDuration) {
-          video.ontimeupdate = null;
-          video.pause();
-          setTimeout(() => {
-            if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-          }, 150);
-        }
+
+        video.ontimeupdate = () => {
+          const elapsed = video.currentTime - startTime;
+          const progress = Math.min((elapsed / maxDuration) * 100, 100);
+          onProgress?.({
+            percent: progress,
+            currentTime: elapsed,
+            totalDuration: maxDuration
+          });
+          if (video.currentTime >= endTime) {
+            video.ontimeupdate = null;
+            video.pause();
+            setTimeout(() => {
+              if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            }, 150);
+          }
+        };
       };
     };
 
