@@ -1,4 +1,6 @@
 
+export type ThumbPosition = 'top' | 'center' | 'bottom';
+
 export interface Product {
   id: string;
   code: string;
@@ -13,6 +15,7 @@ export interface Product {
   isBestSeller?: boolean;
   sizes: string[];
   images: Array<string | null>;
+  imageThumbPositions?: Array<ThumbPosition>;
   observation?: string | null;
   description?: string | null;
   colors?: string[];
@@ -44,6 +47,7 @@ export interface ProductUpsertPayload {
   disabledColors?: string[];
   existingImages: Array<string | null>;
   newImages: Array<File | null>;
+  imageThumbPositions?: Array<ThumbPosition>;
   colorMedia?: Record<string, Array<string | null>>;
   newColorMedia?: Record<string, Array<File | null>>;
 }

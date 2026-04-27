@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Product, ProductUpsertPayload } from '../types';
+import { Product, ProductUpsertPayload, ThumbPosition } from '../types';
 import { Plus, Trash2, Camera, X, Edit2, LogIn, CheckCircle2, LogOut, Play, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { isVideoFile, validateVideoDuration, isVideoUrl, trimVideoTo30Seconds } from '../lib/mediaUtils';
@@ -74,6 +74,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [existingImages, setExistingImages] = useState<Array<string | null>>([]);
   const [newImages, setNewImages] = useState<Array<File | null>>(() => Array(MAX_IMAGES).fill(null));
+  const [imageThumbPositions, setImageThumbPositions] = useState<Array<ThumbPosition>>(() => Array(MAX_IMAGES).fill('center'));
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
@@ -332,6 +333,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
     setExistingImages(normalizeImageSlots(product.images));
     setNewImages(Array(MAX_IMAGES).fill(null));
+    setImageThumbPositions(() => {
+      const next = Array<ThumbPosition>(MAX_IMAGES).fill('center');
+      (product.imageThumbPositions ?? []).forEach((pos, i) => {
+        if (i < MAX_IMAGES) next[i] = pos ?? 'center';
+      });
+      return next;
+    });
     setFeaturedImageIndex(
       getFirstAvailableImageIndex(normalizeImageSlots(product.images), Array(MAX_IMAGES).fill(null))
     );
@@ -364,6 +372,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     });
     setExistingImages([]);
     setNewImages(Array(MAX_IMAGES).fill(null));
+    setImageThumbPositions(Array(MAX_IMAGES).fill('center'));
     setFeaturedImageIndex(0);
     setDraggedImageIndex(null);
     setDragOverImageIndex(null);
@@ -788,6 +797,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       featuredImageIndex
     );
 
+    const reorderedThumbPositions = [...imageThumbPositions];
+    if (featuredImageIndex > 0 && featuredImageIndex < MAX_IMAGES) {
+      [reorderedThumbPositions[0], reorderedThumbPositions[featuredImageIndex]] =
+        [reorderedThumbPositions[featuredImageIndex], reorderedThumbPositions[0]];
+    }
+
     const payload: ProductUpsertPayload = {
       id: editingId || undefined,
       code: formData.code,
@@ -808,6 +823,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       disabledColors: formData.colors.filter((color) => !(colorMediaDraft[color]?.isEnabled ?? true)),
       existingImages: reorderedImages,
       newImages: reorderedNewImages,
+      imageThumbPositions: reorderedThumbPositions,
       colorMedia: Object.fromEntries(
         formData.colors.map((color) => [color, normalizeMediaSlots(colorMediaDraft[color]?.existing)])
       ),
@@ -1489,6 +1505,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         onChange={() => setFeaturedImageIndex(index)}
                         className="h-4 w-4 text-[#D05B92] focus:ring-[#D05B92] cursor-pointer"
                       />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-2">Alinhamento da thumbnail</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: MAX_IMAGES }).map((_, index) => (
+                    <div key={`thumb-align-${index}`} className="flex flex-col gap-1">
+                      {(['top', 'center', 'bottom'] as const).map((pos) => (
+                        <label key={pos} className="flex items-center gap-1 cursor-pointer text-[10px] text-gray-500 select-none">
+                          <input
+                            type="radio"
+                            name={`thumb-align-${index}`}
+                            value={pos}
+                            checked={imageThumbPositions[index] === pos}
+                            onChange={() => setImageThumbPositions((prev) => {
+                              const next = [...prev] as Array<ThumbPosition>;
+                              next[index] = pos;
+                              return next;
+                            })}
+                            className="h-3 w-3 text-[#D05B92] focus:ring-[#D05B92] cursor-pointer"
+                          />
+                          {pos === 'top' ? 'Topo' : pos === 'center' ? 'Centro' : 'Base'}
+                        </label>
+                      ))}
                     </div>
                   ))}
                 </div>
