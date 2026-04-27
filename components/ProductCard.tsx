@@ -247,7 +247,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
             </div>
 
             {/* Tag de código compacta */}
-            <div className="absolute top-1.5 left-1.5 bg-[#D05B92]/90 px-1.5 py-0.5 rounded">
+            <div className="absolute top-2.5 left-1.5 bg-[#D05B92]/90 px-1.5 py-0.5 rounded">
               <span className="text-white text-[8px] uppercase tracking-widest font-bold">
                 {product.code}
               </span>
@@ -258,13 +258,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
               selectedColor={selectedColor}
               onSelectColor={setSelectedColor}
               disabledColors={effectiveDisabledColors}
-              className="top-1.5 right-1.5 bottom-auto"
+              className="top-2.5 right-1.5 bottom-auto"
             />
 
             <ProductFlags
               product={product}
               size="sm"
-              className="absolute top-7 right-1.5 z-30"
+              className="absolute top-8 right-1.5 z-30"
             />
           </div>
         </div>
@@ -278,7 +278,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
       <ProductFlags
         product={product}
         size="md"
-        className="absolute top-0 right-5 z-40"
+        className="absolute top-1 right-5 z-40"
       />
       <div
         className="relative overflow-hidden cursor-zoom-in rounded-tr-[2rem] shadow-[0_24px_55px_-18px_rgba(0,0,0,0.7)] hover:shadow-[0_34px_70px_-22px_rgba(0,0,0,0.8)] transition-shadow duration-300"
