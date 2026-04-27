@@ -1037,9 +1037,10 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                   {isVideoUrl(activeModal.image) ? (
                     <video
                       src={activeModal.image}
-                      controls
                       muted
                       playsInline
+                      autoPlay
+                      loop
                       className="w-full h-full object-contain"
                       preload="metadata"
                     />

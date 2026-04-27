@@ -533,15 +533,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     file: File,
     onProgress?: (percent: number) => void
   ): Promise<File | null> => {
-    const validation = await validateVideoDuration(file, 30);
-    if (validation.valid) return file;
-
     try {
       return await trimVideoTo30Seconds(file, 30, (progress) => {
         onProgress?.(Math.round(progress.percent));
       });
     } catch {
-      alert('Não foi possível cortar o vídeo automaticamente. Por favor, corte para até 30 segundos e tente novamente.');
+      alert('Não foi possível cortar o vídeo automaticamente. O vídeo precisa ter mais de 5 segundos e estar em um formato compatível.');
       return null;
     }
   };
