@@ -37,6 +37,13 @@ const getMediaForColor = (product: Product, selectedColor: string | null): strin
   return colorImages.length ? colorImages : fallbackImages;
 };
 
+const getObjPosition = (product: Product, imageUrl: string): string => {
+  const idx = product.images.indexOf(imageUrl);
+  if (idx < 0) return 'object-center';
+  const pos = product.imageThumbPositions?.[idx] ?? 'center';
+  return pos === 'top' ? 'object-top' : pos === 'bottom' ? 'object-bottom' : 'object-center';
+};
+
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }) => {
   const whatsappNumber = "5511968268034";
   const message = encodeURIComponent(`Olá Chris! Vi no catálogo e tenho interesse no item: ${product.code} - ${product.name}`);
@@ -188,12 +195,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
             {/* Imagens/vídeos em carrossel */}
             {images.map((image, index) => {
               const isVideo = isVideoUrl(image);
+              const objPos = getObjPosition(product, image);
               return isVideo ? (
                 <video
                   key={`${product.id}-compact-${image}-${index}`}
                   ref={(el) => { videoRefs.current[index] = el; }}
                   src={image}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                  className={`absolute inset-0 w-full h-full object-cover ${objPos} transition-opacity duration-500 ${
                     hoverIndex === index ? 'opacity-100' : 'opacity-0'
                   }`}
                   muted
@@ -207,7 +215,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
                   key={`${product.id}-compact-${image}-${index}`}
                   src={image}
                   alt={`${product.name}`}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                  className={`absolute inset-0 w-full h-full object-cover ${objPos} transition-opacity duration-500 ${
                     hoverIndex === index ? 'opacity-100' : 'opacity-0'
                   }`}
                   loading="lazy"
@@ -347,6 +355,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
             />
             {images.map((image, index) => {
               const isVideo = isVideoUrl(image);
+              const objPos = getObjPosition(product, image);
               return isVideo ? (
                 <video
                   key={`${product.id}-${image}-${index}`}
@@ -354,7 +363,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
                     videoRefs.current[index] = el;
                   }}
                   src={image}
-                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+                  className={`absolute inset-0 w-full h-full object-cover ${objPos} transition-all duration-700 ${
                     hoverIndex === index ? 'opacity-100' : 'opacity-0'
                   }`}
                   muted
@@ -368,7 +377,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
                   key={`${product.id}-${image}-${index}`}
                   src={image}
                   alt={`${product.name} - ${index + 1}`}
-                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+                  className={`absolute inset-0 w-full h-full object-cover ${objPos} transition-all duration-700 ${
                     hoverIndex === index ? 'opacity-100' : 'opacity-0'
                   }`}
                   loading="lazy"
