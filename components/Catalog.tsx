@@ -1169,16 +1169,21 @@ R$ <PriceText value={activeModal.product.promoPrice} decimalsClassName="text-[0.
                           }`}
                           aria-label={`${isThumbVideo ? 'Vídeo' : 'Foto'} ${index + 1}`}
                         >
-                          {isThumbVideo ? (
-                            <>
-                              <video src={image} className="h-full w-full object-cover" preload="metadata" muted />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <Play size={14} fill="white" className="text-white" />
-                              </div>
-                            </>
-                          ) : (
-                            <img src={image} alt="" className="h-full w-full object-cover" />
-                          )}
+                          {(() => {
+                            const origIdx = activeModal.product.images.indexOf(image);
+                            const tp = origIdx >= 0 ? (activeModal.product.imageThumbPositions?.[origIdx] ?? 'center') : 'center';
+                            const objPos = tp === 'top' ? 'object-top' : tp === 'bottom' ? 'object-bottom' : 'object-center';
+                            return isThumbVideo ? (
+                              <>
+                                <video src={image} className={`h-full w-full object-cover ${objPos}`} preload="metadata" muted />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                  <Play size={14} fill="white" className="text-white" />
+                                </div>
+                              </>
+                            ) : (
+                              <img src={image} alt="" className={`h-full w-full object-cover ${objPos}`} />
+                            );
+                          })()}
                         </button>
                       );
                     })}

@@ -447,10 +447,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
                         }`}
                         aria-label={`Mostrar ${isThumbVideo ? 'vídeo' : 'imagem'} ${index + 1}`}
                       >
-                        <span
-                          className="block h-full w-full bg-cover bg-center"
-                          style={{ backgroundImage: `url(${image})` }}
-                        />
+                        {(() => {
+                          const origIdx = product.images.indexOf(image);
+                          const tp = origIdx >= 0 ? (product.imageThumbPositions?.[origIdx] ?? 'center') : 'center';
+                          const bgPos = tp === 'top' ? 'bg-top' : tp === 'bottom' ? 'bg-bottom' : 'bg-center';
+                          return (
+                            <span
+                              className={`block h-full w-full bg-cover ${bgPos}`}
+                              style={{ backgroundImage: `url(${image})` }}
+                            />
+                          );
+                        })()}
                         {isThumbVideo && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                             <Play size={14} fill="white" className="text-white" />

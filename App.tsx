@@ -61,7 +61,7 @@ const App: React.FC = () => {
     if (productIds.length > 0) {
       const { data: productImageRows, error: productImageError } = await supabase
         .from('product_images')
-        .select('products_id, url, position')
+        .select('products_id, url, position, thumb_position')
         .in('products_id', productIds);
 
       if (productImageError) {
@@ -78,9 +78,9 @@ const App: React.FC = () => {
         if (!acc[productId]) {
           acc[productId] = [];
         }
-        acc[productId].push({ url, position });
+        acc[productId].push({ url, position, thumb_position: (row.thumb_position as string) ?? 'center' });
         return acc;
-      }, {} as Record<string, Array<{ url: string; position: number }>>);
+      }, {} as Record<string, Array<{ url: string; position: number; thumb_position: string }>>);
 
       const { data: colorMediaRows, error: colorMediaError } = await supabase
         .from('product_color_media')
@@ -109,6 +109,7 @@ const App: React.FC = () => {
 
     const mappedProducts = (data ?? []).map((product) => {
       const images = Array<string | null>(MAX_IMAGES).fill(null);
+      const imageThumbPositions = Array<'top' | 'center' | 'bottom'>(MAX_IMAGES).fill('center');
       const sortedImages = (productImagesByProduct[product.id] ?? []).sort((a, b) => a.position - b.position);
       const colorMedia: Record<string, Array<string | null>> = {};
 
@@ -126,6 +127,8 @@ const App: React.FC = () => {
       sortedImages.forEach((image) => {
         if (image.position >= 1 && image.position <= MAX_IMAGES) {
           images[image.position - 1] = resolveImageUrl(image.url);
+          const pos = image.thumb_position;
+          imageThumbPositions[image.position - 1] = (pos === 'top' || pos === 'bottom') ? pos : 'center';
         }
       });
 
@@ -160,6 +163,7 @@ const App: React.FC = () => {
           : [],
         colorMedia,
         images,
+        imageThumbPositions,
         observation: product.observation ?? null,
         description: product.description ?? null,
         createdAt: product.created_at ?? ''
@@ -210,7 +214,8 @@ const App: React.FC = () => {
   const syncProductImages = async (
     productId: string,
     existingImages: Array<string | null>,
-    newImages: Array<File | null>
+    newImages: Array<File | null>,
+    imageThumbPositions: Array<'top' | 'center' | 'bottom'> = Array(MAX_IMAGES).fill('center')
   ) => {
     const imagesWithPosition = newImages
       .map((file, index) => (file ? { file, position: index + 1 } : null))
@@ -245,11 +250,12 @@ const App: React.FC = () => {
           ? {
               products_id: productId,
               url,
-              position: index + 1
+              position: index + 1,
+              thumb_position: imageThumbPositions[index] ?? 'center'
             }
           : null
       )
-      .filter((entry): entry is { products_id: string; url: string; position: number } => Boolean(entry));
+      .filter((entry): entry is { products_id: string; url: string; position: number; thumb_position: string } => Boolean(entry));
 
     if (payload.length > 0) {
       const { error: insertError } = await supabase.from('product_images').insert(payload);
@@ -360,7 +366,7 @@ const App: React.FC = () => {
       throw new Error(insertError.message);
     }
 
-    await syncProductImages(data.id, payload.existingImages, payload.newImages);
+    await syncProductImages(data.id, payload.existingImages, payload.newImages, payload.imageThumbPositions ?? Array(MAX_IMAGES).fill('center'));
     await syncColorMedia(data.id, payload.colorMedia ?? {}, payload.newColorMedia ?? {});
     await fetchProducts();
     return data.id;
@@ -405,7 +411,7 @@ const App: React.FC = () => {
       throw new Error(updateError.message);
     }
 
-    await syncProductImages(payload.id, payload.existingImages, payload.newImages);
+    await syncProductImages(payload.id, payload.existingImages, payload.newImages, payload.imageThumbPositions ?? Array(MAX_IMAGES).fill('center'));
     await syncColorMedia(payload.id, payload.colorMedia ?? {}, payload.newColorMedia ?? {});
     await fetchProducts();
   };
