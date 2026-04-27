@@ -538,7 +538,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
         onProgress?.(Math.round(progress.percent));
       });
     } catch {
-      alert('Não foi possível cortar o vídeo automaticamente. O vídeo precisa ter mais de 5 segundos e estar em um formato compatível.');
+      alert('Não foi possível cortar o vídeo automaticamente. O vídeo precisa ter mais de 10 segundos e estar em um formato compatível.');
       return null;
     }
   };

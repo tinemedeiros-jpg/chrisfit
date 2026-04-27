@@ -82,7 +82,7 @@ export const trimVideoTo30Seconds = (
   file: File,
   maxDuration: number = 30,
   onProgress?: (progress: VideoTrimProgress) => void,
-  startTime: number = 5
+  startTime: number = 10
 ): Promise<File> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
