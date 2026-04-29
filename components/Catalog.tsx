@@ -1055,7 +1055,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
 
                 {activeModal.product.isEsgotado && (
                   <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-                    <div className="absolute inset-0 bg-white/50" />
+                    <div className="absolute inset-0 bg-black/50" />
                     <img
                       src="/esgotado.png"
                       alt="Esgotado"
@@ -1073,7 +1073,7 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                         className={`rounded-full transition-all duration-300 ${
                           i === modalImageIndex
                             ? 'w-4 h-1.5 bg-white shadow-sm'
-                            : 'w-1.5 h-1.5 bg-white/50'
+                            : 'w-1.5 h-1.5 bg-black/50'
                         }`}
                       />
                     ))}

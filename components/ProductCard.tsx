@@ -232,7 +232,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
                     className={`rounded-full transition-all duration-300 ${
                       i === hoverIndex
                         ? 'w-3 h-1.5 bg-white'
-                        : 'w-1.5 h-1.5 bg-white/50'
+                        : 'w-1.5 h-1.5 bg-black/50'
                     }`}
                   />
                 ))}
@@ -269,7 +269,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
 
             {product.isEsgotado && (
               <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-                <div className="absolute inset-0 bg-white/50" />
+                <div className="absolute inset-0 bg-black/50" />
                 <img
                   src="/esgotado.png"
                   alt="Esgotado"
@@ -398,7 +398,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
 
             {product.isEsgotado && (
               <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-                <div className="absolute inset-0 bg-white/50" />
+                <div className="absolute inset-0 bg-black/50" />
                 <img
                   src="/esgotado.png"
                   alt="Esgotado"
@@ -416,7 +416,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
                     className={`rounded-full transition-all duration-300 ${
                       i === hoverIndex
                         ? 'w-4 h-1.5 bg-white'
-                        : 'w-1.5 h-1.5 bg-white/50'
+                        : 'w-1.5 h-1.5 bg-black/50'
                     }`}
                   />
                 ))}
