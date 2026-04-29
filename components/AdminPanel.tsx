@@ -223,6 +223,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     isNew: false,
     isLastUnits: false,
     isBestSeller: false,
+    isEsgotado: false,
     sizes: [] as string[],
     observation: '',
     description: '',
@@ -326,6 +327,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isNew: Boolean(product.isNew),
       isLastUnits: Boolean(product.isLastUnits),
       isBestSeller: Boolean(product.isBestSeller),
+      isEsgotado: Boolean(product.isEsgotado),
       sizes: product.sizes,
       observation: product.observation || '',
       description: product.description || '',
@@ -365,6 +367,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isNew: false,
       isLastUnits: false,
       isBestSeller: false,
+      isEsgotado: false,
       sizes: [],
       observation: '',
       description: '',
@@ -812,6 +815,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isNew: formData.isNew,
       isLastUnits: formData.isLastUnits,
       isBestSeller: formData.isBestSeller,
+      isEsgotado: formData.isEsgotado,
       sizes: formData.sizes,
       observation: formData.observation,
       description: formData.description,
@@ -862,7 +866,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
 
   const handleStatusToggle = async (
     product: Product,
-    field: 'isFeatured' | 'isPromo' | 'isNew' | 'isLastUnits' | 'isBestSeller'
+    field: 'isFeatured' | 'isPromo' | 'isNew' | 'isLastUnits' | 'isBestSeller' | 'isEsgotado'
   ) => {
     if (statusUpdatingId) return;
     if (field === 'isPromo' && !product.isPromo) {
@@ -873,6 +877,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
     const nextIsNew = field === 'isNew' ? !product.isNew : Boolean(product.isNew);
     const nextIsLastUnits = field === 'isLastUnits' ? !product.isLastUnits : Boolean(product.isLastUnits);
     const nextIsBestSeller = field === 'isBestSeller' ? !product.isBestSeller : Boolean(product.isBestSeller);
+    const nextIsEsgotado = field === 'isEsgotado' ? !product.isEsgotado : Boolean(product.isEsgotado);
     if (field === 'isPromo' && !product.isPromo && (!product.promoPrice || product.promoPrice <= 0)) {
       alert('Defina o preço promocional na edição antes de ativar a promoção.');
       return;
@@ -890,6 +895,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
       isNew: nextIsNew,
       isLastUnits: nextIsLastUnits,
       isBestSeller: nextIsBestSeller,
+      isEsgotado: nextIsEsgotado,
       sizes: product.sizes,
       observation: product.observation ?? '',
       description: product.description ?? '',
@@ -1106,6 +1112,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                   </span>
                 </label>
               </div>
+            </div>
+            <div className="pt-2 border-t border-gray-200/80">
+              <label className="flex items-center gap-2 text-sm text-gray-700 font-medium cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={formData.isEsgotado}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, isEsgotado: event.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-[#D05B92] focus:ring-[#D05B92] cursor-pointer"
+                />
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#D05B92' }} />
+                  Esgotado
+                </span>
+              </label>
             </div>
             {formData.isPromo && (
               <div className="space-y-1.5">

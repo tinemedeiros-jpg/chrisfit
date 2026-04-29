@@ -13,6 +13,7 @@ export interface Product {
   isNew?: boolean;
   isLastUnits?: boolean;
   isBestSeller?: boolean;
+  isEsgotado?: boolean;
   sizes: string[];
   images: Array<string | null>;
   imageThumbPositions?: Array<ThumbPosition>;
@@ -39,6 +40,7 @@ export interface ProductUpsertPayload {
   isNew?: boolean;
   isLastUnits?: boolean;
   isBestSeller?: boolean;
+  isEsgotado?: boolean;
   sizes: string[];
   observation?: string;
   description?: string;
