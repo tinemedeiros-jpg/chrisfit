@@ -269,10 +269,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
 
             {product.isEsgotado && (
               <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 bg-white/50" />
                 <img
                   src="/esgotado.png"
                   alt="Esgotado"
-                  className="w-4/5 max-w-[160px] drop-shadow-lg"
+                  className="relative w-4/5 max-w-[160px] drop-shadow-lg"
                 />
               </div>
             )}
@@ -397,10 +398,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPreview, compact }
 
             {product.isEsgotado && (
               <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 bg-white/50" />
                 <img
                   src="/esgotado.png"
                   alt="Esgotado"
-                  className="w-3/5 max-w-[220px] drop-shadow-xl"
+                  className="relative w-3/5 max-w-[220px] drop-shadow-xl"
                 />
               </div>
             )}
