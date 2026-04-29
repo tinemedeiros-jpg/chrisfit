@@ -1053,6 +1053,16 @@ R$ <PriceText value={featuredDisplay[activeFeaturedIndex].price} decimalsClassNa
                   )}
                 </div>
 
+                {activeModal.product.isEsgotado && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                    <img
+                      src="/esgotado.png"
+                      alt="Esgotado"
+                      className="w-3/5 max-w-[260px] drop-shadow-xl"
+                    />
+                  </div>
+                )}
+
                 {/* Dots de navegação - visíveis só no mobile quando há múltiplas fotos */}
                 {modalImages.length > 1 && (
                   <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5 pointer-events-none lg:hidden">
