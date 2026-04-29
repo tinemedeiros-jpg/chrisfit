@@ -1818,6 +1818,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         />
                         <span>Últimas unidades</span>
                       </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(product.isEsgotado)}
+                          disabled={statusUpdatingId === product.id}
+                          onChange={() => handleStatusToggle(product, 'isEsgotado')}
+                          className="h-4 w-4 border-gray-300 text-[#D05B92] focus:ring-[#D05B92] disabled:opacity-50"
+                        />
+                        <span>Esgotado</span>
+                      </label>
                     </div>
                   </td>
                   <td className="px-8 py-4 text-sm font-medium text-gray-500">{product.sizes.join(', ')}</td>
@@ -2018,6 +2028,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ products, isLoading, error, onA
                         className="h-3.5 w-3.5 border-gray-300 text-[#C9A21F] focus:ring-[#C9A21F] disabled:opacity-50"
                       />
                       Últimas
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px] text-gray-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(product.isEsgotado)}
+                        disabled={statusUpdatingId === product.id}
+                        onChange={() => handleStatusToggle(product, 'isEsgotado')}
+                        className="h-3.5 w-3.5 border-gray-300 text-[#D05B92] focus:ring-[#D05B92] disabled:opacity-50"
+                      />
+                      Esgotado
                     </label>
                   </div>
                 </div>
